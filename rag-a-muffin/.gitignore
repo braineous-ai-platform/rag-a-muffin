@@ -1,0 +1,28 @@
+# Maven target directory
+/target/
+
+# Eclipse/IDEA/NetBeans project files
+.classpath
+.project
+.settings/
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# Logs
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Maven wrapper files
+.mvn/wrapper/maven-wrapper.jar
+!/.mvn/wrapper/maven-wrapper.properties
+
+# Temporary files
+*.tmp
+*.swp
+
+#add_new
