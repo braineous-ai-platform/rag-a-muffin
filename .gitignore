@@ -25,4 +25,5 @@ Thumbs.db
 *.tmp
 *.swp
 
-#add_new
+#ignore conductor 
+/env_development/conductor/
