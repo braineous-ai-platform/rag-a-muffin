@@ -27,3 +27,4 @@ Thumbs.db
 
 #ignore conductor 
 env_development/conductor/
+replacements.txt
