@@ -27,3 +27,8 @@ Thumbs.db
 
 #add_new
 my_dev_notes.md
+
+# fastapi + java junk
+rag_fast_api/venv
+**/target/
+.idea/
