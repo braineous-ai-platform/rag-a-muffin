@@ -7,3 +7,4 @@ python-dotenv
 pytest
 pytest-asyncio
 httpx
+weaviate-client==4.16.9

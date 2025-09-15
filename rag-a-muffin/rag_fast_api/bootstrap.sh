@@ -45,6 +45,7 @@ python-dotenv
 pytest
 pytest-asyncio
 httpx
+weaviate-client==4.16.9
 REQS
   echo "📝 Wrote requirements.txt"
 fi
