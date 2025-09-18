@@ -32,3 +32,6 @@ my_dev_notes.md
 rag_fast_api/venv
 **/target/
 .idea/
+
+# vs_code
+.vscode/
