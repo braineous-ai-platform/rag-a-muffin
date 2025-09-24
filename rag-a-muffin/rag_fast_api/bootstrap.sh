@@ -46,6 +46,7 @@ pytest
 pytest-asyncio
 httpx
 weaviate-client==4.16.9
+requests>=2.31.0
 REQS
   echo "📝 Wrote requirements.txt"
 fi
