@@ -35,7 +35,7 @@ def query(payload: schemas.RawQueryIn):
     ###########################################
 
     # Define the API endpoint URL
-    api_url = "http://127.0.0.1:8080/hello"
+    api_url = "http://127.0.0.1:8080/prompt"
 
     # Define the data payload to send in the POST request
     # This data is typically in JSON format for REST APIs
