@@ -11,5 +11,11 @@
   },
   "workspaces":[
     "packages/*"
-  ]
+  ],
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "build": "tsc",
+    "start": "bun dist/server.js",
+    "test": "bun test"
+  }
 }
