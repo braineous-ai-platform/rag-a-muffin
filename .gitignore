@@ -1,6 +1,7 @@
 # Maven target directory
 /target/
 **/*.class
+**/target/
 
 # Eclipse/IDEA/NetBeans project files
 .classpath
