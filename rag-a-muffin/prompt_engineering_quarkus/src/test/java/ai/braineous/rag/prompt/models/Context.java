@@ -6,11 +6,7 @@ public class Context implements Serializable{
 
         private String role;
 
-        private String rules;
-
-        private String facts;
-
-        private String content;
+        private QueryRelationships queryRelationships;
 
         private String audience;
 
@@ -25,6 +21,20 @@ public class Context implements Serializable{
         //-----------------------------------------------------------
         //TODO: accessors, utilities, json generation once the model 
         //is lifted upwards where necessary from String -> Object
+        public String getRole() {
+            return role;
+        }
 
+        public QueryRelationships getQueryRelationships() {
+            return queryRelationships;
+        }
+
+        public void setRole(String role) {
+            this.role = role;
+        }
+
+        public void setQueryRelationships(QueryRelationships queryRelationships) {
+            this.queryRelationships = queryRelationships;
+        }
         //----------------------------------------------------------
 }
