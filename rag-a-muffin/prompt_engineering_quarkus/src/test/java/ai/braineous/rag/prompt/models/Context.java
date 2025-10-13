@@ -1,26 +1,22 @@
 package ai.braineous.rag.prompt.models;
 
-import java.io.Serializable;
-
-public class Context implements Serializable{
+public class Context {
 
         private String role;
 
         private QueryRelationships queryRelationships;
 
-        private String audience;
+        private Audience audience;
 
-        private String tone;
+        private Tone tone;
 
-        private String referenceData;
+        private ReferenceData referenceData;
 
         public Context(){
 
         }
 
         //-----------------------------------------------------------
-        //TODO: accessors, utilities, json generation once the model 
-        //is lifted upwards where necessary from String -> Object
         public String getRole() {
             return role;
         }
@@ -35,6 +31,30 @@ public class Context implements Serializable{
 
         public void setQueryRelationships(QueryRelationships queryRelationships) {
             this.queryRelationships = queryRelationships;
+        }
+
+        public Audience getAudience() {
+            return audience;
+        }
+
+        public void setAudience(Audience audience) {
+            this.audience = audience;
+        }
+
+        public Tone getTone() {
+            return tone;
+        }
+
+        public ReferenceData getReferenceData() {
+            return referenceData;
+        }
+
+        public void setTone(Tone tone) {
+            this.tone = tone;
+        }
+
+        public void setReferenceData(ReferenceData referenceData) {
+            this.referenceData = referenceData;
         }
         //----------------------------------------------------------
 }
