@@ -4,10 +4,14 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import ai.braineous.rag.prompt.utils.Resources;
+
 public class PromptEngineeringTests {
 
     @Test
     public void testContextModel() throws Exception {
         System.out.println("____testContextModel____");
+
+        System.out.println(Resources.getResource("models/simple_query_relationship_dataset/weaviate_embeddings.json"));
     }
 }
