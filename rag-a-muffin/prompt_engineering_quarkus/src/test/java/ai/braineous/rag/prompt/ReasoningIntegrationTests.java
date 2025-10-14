@@ -1,7 +1,5 @@
 package ai.braineous.rag.prompt;
 
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonArray;
@@ -9,6 +7,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import ai.braineous.rag.prompt.models.Context;
+import ai.braineous.rag.prompt.models.InputInstructions;
 import ai.braineous.rag.prompt.models.LLMPrompt;
 import ai.braineous.rag.prompt.models.QueryRelationships;
 import ai.braineous.rag.prompt.utils.Console;
@@ -22,6 +21,19 @@ public class ReasoningIntegrationTests {
     public void testReasoningMemePathAndAnswer() throws Exception {
         this.llmPrompt = new LLMPrompt();
 
+        //user_query
+        String userQuery = "son, are you bringing a date home for Christmas?";
+
+        //weaviate_embeddings
+        String embeddingsStr = Resources.getResource("models/reasoning/mom_son_relationship/weaviate_embeddings.json");
+        JsonObject embeddingsJson = JsonParser.parseString(embeddingsStr).getAsJsonObject();
+        JsonArray embeddingsArray = embeddingsJson.getAsJsonObject("data")
+                                                  .getAsJsonObject("Get")
+                                                  .getAsJsonArray("Fact");
+
+        InputInstructions inputInstructions = new InputInstructions(userQuery, embeddingsArray);
+        llmPrompt.setInput(inputInstructions);
+
         //parse_user_prompt
         String jsonStr = Resources.getResource("models/reasoning/mom_son_relationship/meme.json");
         this.parse(jsonStr);
@@ -30,6 +42,8 @@ public class ReasoningIntegrationTests {
         Context context = this.generateContext(this.userPrompt);
         llmPrompt.setContext(context);
         Console.log("llm_prompt", this.llmPrompt);
+
+        //set_output_instructions
     }
 
     private void parse(String jsonStr){

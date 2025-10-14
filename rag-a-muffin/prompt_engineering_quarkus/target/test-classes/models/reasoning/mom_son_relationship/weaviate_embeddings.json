@@ -1,0 +1,67 @@
+{
+  "data": {
+    "Get": {
+      "Fact": [
+        {
+          "_additional": {
+            "id": "f_mom_001",
+            "distance": 0.91,
+            "vector": [0.12, -0.43, 0.87, 0.31, ...]
+          },
+          "text": "Mom asks if you're bringing a girl home for Christmas.",
+          "context": "family, conversation, social pressure"
+        },
+        {
+          "_additional": {
+            "id": "f_transformer_002",
+            "distance": 0.84,
+            "vector": [-0.09, 0.67, 0.22, 0.48, ...]
+          },
+          "text": "Transformer decoder attends to prior tokens before generating the next word.",
+          "context": "AI model reasoning, masked attention"
+        },
+        {
+          "_additional": {
+            "id": "f_response_003",
+            "distance": 0.79,
+            "vector": [0.56, -0.28, 0.15, 0.92, ...]
+          },
+          "text": "Defer response until context and intent are clearer.",
+          "context": "decision making, cautious communication"
+        }
+      ],
+      "Rule": [
+        {
+          "_additional": {
+            "id": "r_1",
+            "distance": 0.73
+          },
+          "kind": "references",
+          "source": "f_mom_001",
+          "target": "f_transformer_002",
+          "note": "Mom’s question triggers contextual attention analogy."
+        },
+        {
+          "_additional": {
+            "id": "r_2",
+            "distance": 0.77
+          },
+          "kind": "explains",
+          "source": "f_transformer_002",
+          "target": "f_response_003",
+          "note": "Masked attention mirrors cautious next-token generation."
+        },
+        {
+          "_additional": {
+            "id": "r_3",
+            "distance": 0.81
+          },
+          "kind": "implies",
+          "source": "f_mom_001",
+          "target": "f_response_003",
+          "note": "Question implies reasoning before answering."
+        }
+      ]
+    }
+  }
+}
