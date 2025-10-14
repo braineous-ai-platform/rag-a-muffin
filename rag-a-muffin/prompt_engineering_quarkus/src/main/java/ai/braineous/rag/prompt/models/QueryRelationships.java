@@ -54,4 +54,20 @@ public class QueryRelationships {
 
     //----------------------graph_theory_algorithms---------------------------------------
     //TODO: deeper_thought_required  
+
+
+    //------------------------------------------------------------------------------------
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("QueryRelationships{");
+        sb.append("rules=").append(rules);
+        sb.append(", facts=").append(facts);
+        sb.append(", content=").append(content);
+        sb.append(", factsAdjancyGraph=").append(factsAdjancyGraph);
+        sb.append('}');
+        return sb.toString();
+    }
+
 }

@@ -57,4 +57,18 @@ public class Context {
             this.referenceData = referenceData;
         }
         //----------------------------------------------------------
+
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Context{");
+        sb.append("role=").append(role);
+        sb.append(", queryRelationships=").append(queryRelationships);
+        sb.append(", audience=").append(audience);
+        sb.append(", tone=").append(tone);
+        sb.append(", referenceData=").append(referenceData);
+        sb.append('}');
+        return sb.toString();
+    }
+
 }
