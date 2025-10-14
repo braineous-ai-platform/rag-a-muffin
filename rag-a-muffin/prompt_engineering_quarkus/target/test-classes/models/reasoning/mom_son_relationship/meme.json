@@ -1,0 +1,14 @@
+{
+  "facts": [
+    {"id":"F_mom","text":"Mom asks about bringing a girl home for Christmas."},
+    {"id":"F_transformer","text":"Transformer decoder attends to prior tokens and context before emitting next token."},
+    {"id":"F_response","text":"Defer answer; collect more context (timing, intent, constraints) before committing."}
+  ],
+  "rules": [
+    {"id":"R1","kind":"references","source":"F_mom","target":"F_transformer","note":"Use the diagram as reasoning scaffold."},
+    {"id":"R2","kind":"explains","source":"F_transformer","target":"F_response","note":"Masked attention -> cautious next-token emission."},
+    {"id":"R3","kind":"implies","source":"F_mom","target":"F_response","note":"Question → needs context-aware answer."}
+  ],
+  "start":"F_mom",
+  "goal":"F_response"
+}
