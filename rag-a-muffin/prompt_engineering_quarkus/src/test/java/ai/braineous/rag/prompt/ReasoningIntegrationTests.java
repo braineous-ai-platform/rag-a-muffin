@@ -9,6 +9,7 @@ import com.google.gson.JsonParser;
 import ai.braineous.rag.prompt.models.Context;
 import ai.braineous.rag.prompt.models.InputInstructions;
 import ai.braineous.rag.prompt.models.LLMPrompt;
+import ai.braineous.rag.prompt.models.OutputInstructions;
 import ai.braineous.rag.prompt.models.QueryRelationships;
 import ai.braineous.rag.prompt.utils.Console;
 import ai.braineous.rag.prompt.utils.Resources;
@@ -32,23 +33,25 @@ public class ReasoningIntegrationTests {
                                                   .getAsJsonArray("Fact");
 
         InputInstructions inputInstructions = new InputInstructions(userQuery, embeddingsArray);
-        llmPrompt.setInput(inputInstructions);
+        this.llmPrompt.setInput(inputInstructions);
 
         //parse_user_prompt
         String jsonStr = Resources.getResource("models/reasoning/mom_son_relationship/meme.json");
-        this.parse(jsonStr);
+        JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
+        this.userPrompt = json;
 
         //generate_context
         Context context = this.generateContext(this.userPrompt);
-        llmPrompt.setContext(context);
-        Console.log("llm_prompt", this.llmPrompt);
+        this.llmPrompt.setContext(context);
 
         //set_output_instructions
-    }
+        String goal = this.userPrompt.get("goal").getAsString();
+        String format = this.userPrompt.get("output_format").getAsString();
+        OutputInstructions outputInstructions = new OutputInstructions(goal, format);
+        this.llmPrompt.setOutput(outputInstructions);
 
-    private void parse(String jsonStr){
-        JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
-        this.userPrompt = json;
+        //out_put_the_prompt_state
+        Console.log("llm_prompt", this.llmPrompt);
     }
 
     private Context generateContext(JsonObject userPrompt){

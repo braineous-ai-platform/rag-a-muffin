@@ -39,9 +39,9 @@ public class LLMPrompt {
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LLMPrompt{");
-        sb.append("input=").append(input);
+        sb.append("output=").append(output);
+        sb.append(", input=").append(input);
         sb.append(", context=").append(context);
-        sb.append(", output=").append(output);
         sb.append('}');
         return sb.toString();
     }

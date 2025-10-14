@@ -10,5 +10,6 @@
     {"id":"R3","kind":"implies","source":"F_mom","target":"F_response","note":"Question → needs context-aware answer."}
   ],
   "start":"F_mom",
-  "goal":"F_response"
+  "goal":"F_response",
+  "output_format":"json"
 }
