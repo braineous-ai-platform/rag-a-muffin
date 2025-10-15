@@ -11,15 +11,21 @@ import ai.braineous.rag.prompt.models.InputInstructions;
 import ai.braineous.rag.prompt.models.LLMPrompt;
 import ai.braineous.rag.prompt.models.OutputInstructions;
 import ai.braineous.rag.prompt.models.QueryRelationships;
+import ai.braineous.rag.prompt.services.CausalOrchestrator;
 import ai.braineous.rag.prompt.utils.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 
 public class ReasoningIntegrationTests {
-    private JsonObject userPrompt;
     private LLMPrompt llmPrompt;
+
+    //TODO: [eventually] : make_it_quarkus_containarized. 
+    //For now no dependency_injection overhead
+    //@Inject
+    private CausalOrchestrator causalOrchestrator = new CausalOrchestrator();
 
     @Test
     public void testReasoningMemePathAndAnswer() throws Exception {
+        JsonObject userPrompt = new JsonObject();
         this.llmPrompt = new LLMPrompt();
 
         //user_query
@@ -38,20 +44,20 @@ public class ReasoningIntegrationTests {
         //parse_user_prompt
         String jsonStr = Resources.getResource("models/reasoning/mom_son_relationship/meme.json");
         JsonObject json = JsonParser.parseString(jsonStr).getAsJsonObject();
-        this.userPrompt = json;
+        userPrompt = json;
 
         //generate_context
-        Context context = this.generateContext(this.userPrompt);
+        Context context = this.generateContext(userPrompt);
         this.llmPrompt.setContext(context);
 
         //set_output_instructions
-        String goal = this.userPrompt.get("goal").getAsString();
-        String format = this.userPrompt.get("output_format").getAsString();
+        String goal = userPrompt.get("goal").getAsString();
+        String format = userPrompt.get("output_format").getAsString();
         OutputInstructions outputInstructions = new OutputInstructions(goal, format);
         this.llmPrompt.setOutput(outputInstructions);
 
-        //out_put_the_prompt_state
-        Console.log("llm_prompt", this.llmPrompt);
+        //start_orchestration based on "Causal Orchestration"
+        this.causalOrchestrator.orchestrate(llmPrompt);
     }
 
     private Context generateContext(JsonObject userPrompt){

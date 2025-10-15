@@ -1,5 +1,4 @@
 ai/braineous/rag/prompt/models/QueryRelationships.class
-ai/braineous/rag/prompt/services/LLMPromptOrchestrator.class
 ai/braineous/rag/prompt/models/ReferenceData.class
 ai/braineous/rag/prompt/services/PromptService.class
 ai/braineous/rag/prompt/models/Tone.class
