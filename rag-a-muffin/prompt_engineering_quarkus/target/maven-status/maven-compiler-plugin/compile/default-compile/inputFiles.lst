@@ -11,6 +11,8 @@
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/Tone.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/cgo/Edge.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/cgo/Fact.java
+/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/cgo/ReasoningContext.java
+/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/cgo/ReasoningPath.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/cgo/Rule.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/CausalOrchestrator.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/PromptService.java
