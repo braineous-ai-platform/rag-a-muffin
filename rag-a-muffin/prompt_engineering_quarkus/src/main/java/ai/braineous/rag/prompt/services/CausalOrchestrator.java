@@ -4,6 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import ai.braineous.rag.prompt.models.LLMPrompt;
+import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
 import ai.braineous.rag.prompt.utils.Console;
 import jakarta.enterprise.context.RequestScoped;
 
@@ -22,6 +23,15 @@ public class CausalOrchestrator {
       Console.log("query_embeddings", queryEmbeddings.toString());
       Console.log("query", query.toString());
 
+      //generate_context
+      JsonArray facts = query.get("facts").getAsJsonArray();
+      JsonArray rules = query.get("rules").getAsJsonArray();
+
+      Console.log("debug", facts);
+      Console.log("debug", rules);
+
+      ReasoningContext reasoningContext = new ReasoningContext();
+      Console.log("debug", reasoningContext);
     }
 }
 
