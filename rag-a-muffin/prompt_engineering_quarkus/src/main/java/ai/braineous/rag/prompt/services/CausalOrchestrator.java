@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.services;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import ai.braineous.rag.prompt.models.LLMPrompt;
@@ -16,7 +17,10 @@ public class CausalOrchestrator {
 
     }
 
-    public void orchestrate(JsonObject queryJson){
+    public void orchestrate(JsonArray queryEmbeddings, JsonObject query){
+      Console.log("causal_orchestrator", null);
+      Console.log("query_embeddings", queryEmbeddings.toString());
+      Console.log("query", query.toString());
 
     }
 }
