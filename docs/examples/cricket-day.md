@@ -1,5 +1,7 @@
 # Cricket Day — CGO Walkthrough
 
+_File: `docs/examples/cricket-day.md` (Java/Quarkus repo)_
+
 **Goal:** show CGO’s spine: **Facts → Rules → Reasoning Path → Closure** using a tiny cricket scenario.
 
 ## Flow (what CGO does)
@@ -49,6 +51,12 @@ mvn -q -Dtest=CausalOrchestratorTests test
 
 ---
 
+**Where things live**
+
+- Orchestrator: `src/main/java/.../services/CausalOrchestrator.java`
+- Test: `src/test/java/.../services/CausalOrchestratorTests.java`
+- Example docs (this file): `docs/examples/cricket-day.md`
+
 ## Status & daily wrap (Oct 15, 2025)
 
 **Status:** In progress. Cricket demo proves the CGO spine (**Facts → Rules → Path → Closure**).
@@ -65,7 +73,7 @@ mvn -q -Dtest=CausalOrchestratorTests test
 
 - Expose `/cgo/relationships/resolve` and `/cgo/relationships/example/cricket-day`
 - Input: `facts[] + rules[]` → Output: `edges[] + path + trace`
-- Add minimal **OpenAPI** spec at `src/main/resources/openapi.yaml`
+- Add minimal **OpenAPI** spec at `coming soon`
 
 ### 2) Ship docs & example
 
