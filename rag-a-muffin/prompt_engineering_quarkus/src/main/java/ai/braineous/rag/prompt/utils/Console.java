@@ -7,5 +7,7 @@ public class Console {
         if(obj != null){
             System.out.println(obj);
         }
+
+        
     }
 }
