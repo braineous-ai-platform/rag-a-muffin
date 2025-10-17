@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251017151918933_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-17T15-19-18_886-jvmRun1 surefire-20251017151918933_1tmp surefire_0-20251017151918933_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251017171307325_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-17T17-13-07_289-jvmRun1 surefire-20251017171307325_1tmp surefire_0-20251017171307325_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -32,7 +32,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251017151918933_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251017171307325_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -63,9 +63,11 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testExtract" classname="ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractorTests" time="0.023">
-    <system-out><![CDATA[____fact____
-{"id":"F_cricket","text":"Team says to each other. That's what it's all about. After winning the game of cricket","feats":{"venue":"gully_match","opponent_strength":0.6,"weather":"clear","crowd_support":0.7,"asof":"2025-10-15T18:30Z"}}
+  <testcase name="testExtract" classname="ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractorTests" time="0.024">
+    <system-out><![CDATA[____facts____
+[{"id":"F_cricket_game","text":"Team says to each other. That's what it's all about. After winning the game of cricket","feats":{"venue":"gully_match","opponent_strength":0.6,"weather":"clear","crowd_support":0.7,"asof":"2025-10-15T18:30Z"}},{"id":"F_cricket_game","text":"Team says to each other. That's what it's all about. After winning the game of cricket","feats":{"venue":"gully_match","opponent_strength":0.6,"weather":"clear","crowd_support":0.7,"asof":"2025-10-15T18:30Z"}}]
+____extracted_facts____
+[Fact [id=F_cricket_game:0, text=Team says to each other. That's what it's all about. After winning the game of cricket, feats={}], Fact [id=F_cricket_game:1, text=Team says to each other. That's what it's all about. After winning the game of cricket, feats={}]]
 ]]></system-out>
   </testcase>
 </testsuite>
