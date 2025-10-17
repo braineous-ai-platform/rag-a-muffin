@@ -1,7 +1,6 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +20,7 @@ public class CausalFactExtractor implements FactExtractor{
 
         for(int i=0; i<factsArray.size(); i++){
             Fact fact = new Fact();
-            Map<String, Object> featsMap = new HashMap<>();
+            Map<String, Object> featsMap;
 
             JsonObject factJson = factsArray.get(i).getAsJsonObject();
 
