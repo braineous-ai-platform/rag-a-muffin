@@ -21,6 +21,8 @@ public class ReasoningContext {
         this.state = state;
     }
 
+    
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
@@ -29,6 +31,22 @@ public class ReasoningContext {
         sb.append(", state=").append(state);
         sb.append('}');
         return sb.toString();
+    }
+
+    public List<Fact> getFacts() {
+        return facts;
+    }
+
+    public void setFacts(List<Fact> facts) {
+        this.facts = facts;
+    }
+
+    public Map<String, Object> getState() {
+        return state;
+    }
+
+    public void setState(Map<String, Object> state) {
+        this.state = state;
     }
 
 

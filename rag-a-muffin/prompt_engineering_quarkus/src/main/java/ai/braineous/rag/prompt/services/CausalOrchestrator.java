@@ -1,37 +1,41 @@
 package ai.braineous.rag.prompt.services;
 
+import java.util.List;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import ai.braineous.rag.prompt.models.LLMPrompt;
+import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
+import ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractor;
 import ai.braineous.rag.prompt.utils.Console;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
 public class CausalOrchestrator {
+
+    //TODO: [eventually] : make_it_quarkus_containarized. 
+    //For now no dependency_injection overhead
+    //@Inject
+    private CausalFactExtractor factExtractor = new CausalFactExtractor();
     
-    public void orchestrate(LLMPrompt prompt){
-        Console.log("causal_orchestrator", prompt);
-
-        //extract_facts
-
-    }
-
-    public void orchestrate(JsonArray queryEmbeddings, JsonObject query){
-      Console.log("causal_orchestrator", null);
+    public void orchestrate(String prompt, JsonArray queryEmbeddings, JsonObject query){
+      Console.log("causal_orchestrator", prompt);
       Console.log("query_embeddings", queryEmbeddings.toString());
       Console.log("query", query.toString());
 
-      //generate_context
-      JsonArray facts = query.get("facts").getAsJsonArray();
-      JsonArray rules = query.get("rules").getAsJsonArray();
+      JsonArray factsArray = query.get("facts").getAsJsonArray();
+      //JsonArray rulesArray = query.get("rules").getAsJsonArray();
 
-      Console.log("debug", facts);
-      Console.log("debug", rules);
-
+      //generate_reasoning_context
       ReasoningContext reasoningContext = new ReasoningContext();
-      Console.log("debug", reasoningContext);
+      List<Fact> facts = factExtractor.extract(prompt, factsArray);
+
+      reasoningContext.setFacts(facts);
+      Console.log("reasoning_context", reasoningContext);
+
+      //TODO: next: integrate_rule_components
+      //TODO: start_here
     }
 }
 

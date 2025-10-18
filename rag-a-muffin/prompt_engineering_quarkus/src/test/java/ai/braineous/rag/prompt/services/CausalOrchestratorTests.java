@@ -30,6 +30,7 @@ public class CausalOrchestratorTests {
         String jsonStr = Resources.getResource("models/reasoning/mom_son_relationship/meme.json");
         JsonObject query = JsonParser.parseString(jsonStr).getAsJsonObject();
 
-        this.causalOrchestrator.orchestrate(queryEmbeddings, query);
+        String prompt = "Team says to each other. That's what it's all about. After winning the game of cricket";
+        this.causalOrchestrator.orchestrate(prompt, queryEmbeddings, query);
     }
 }
