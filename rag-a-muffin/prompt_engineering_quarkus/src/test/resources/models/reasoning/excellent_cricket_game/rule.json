@@ -1,0 +1,7 @@
+{
+  "id": "R1",
+  "kind": "references",
+  "source": "F_mom",
+  "target": "F_transformer",
+  "note": "Use the diagram as reasoning scaffold."
+}

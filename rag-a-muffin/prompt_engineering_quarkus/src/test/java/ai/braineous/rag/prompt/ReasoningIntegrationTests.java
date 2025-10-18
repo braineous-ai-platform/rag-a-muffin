@@ -56,8 +56,7 @@ public class ReasoningIntegrationTests {
         OutputInstructions outputInstructions = new OutputInstructions(goal, format);
         this.llmPrompt.setOutput(outputInstructions);
 
-        //start_orchestration based on "Causal Orchestration"
-        this.causalOrchestrator.orchestrate(llmPrompt);
+        Console.log("llm_prompt", this.llmPrompt);
     }
 
     private Context generateContext(JsonObject userPrompt){
