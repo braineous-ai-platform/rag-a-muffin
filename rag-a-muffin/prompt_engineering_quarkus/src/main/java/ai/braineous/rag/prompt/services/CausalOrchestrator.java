@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.services;
 
 import java.util.List;
+import java.util.Map;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -36,6 +37,9 @@ public class CausalOrchestrator {
 
       //TODO: next: integrate_rule_components
       //TODO: start_here
+      Console.log("integrate_rule_components", null);
+      Map<String, Object> feats = facts.get(0).getFeats();
+      Console.log("feats", feats);
     }
 }
 
