@@ -8,8 +8,9 @@ import com.google.gson.JsonObject;
 
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
+import ai.braineous.rag.prompt.services.cgo.RuleEngine;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractor;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
@@ -19,13 +20,13 @@ public class CausalOrchestrator {
     //For now no dependency_injection overhead
     //@Inject
     private CausalFactExtractor factExtractor = new CausalFactExtractor();
+
+    //TODO: [eventually] : make_it_quarkus_containarized. 
+    //For now no dependency_injection overhead
+    //@Inject
+    private RuleEngine ruleEngine = new CausalRuleEngine();
     
     public void orchestrate(String prompt, JsonArray queryEmbeddings, JsonObject query){
-      //Console.log("causal_orchestrator", prompt);
-      //Console.log("query_embeddings", queryEmbeddings.toString());
-      //Console.log("query", query.toString());
-
-
       JsonArray factsArray = new JsonArray();
       factsArray.add(query);
       factsArray.add(query);
@@ -34,17 +35,11 @@ public class CausalOrchestrator {
       //generate_reasoning_context
       ReasoningContext reasoningContext = new ReasoningContext();
       List<Fact> facts = factExtractor.extract(prompt, factsArray);
-      //Console.log("facts", facts);
-
       reasoningContext.setFacts(facts);
-      //Console.log("reasoning_context", reasoningContext);
 
       //integrate_rule_components
-      Console.log("integrate_rule_components_0", null);
       Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
-      Console.log("feats", feats);
-
-      //TODO: start_here
+      this.ruleEngine.inferRules(facts, feats);
     }
 }
 
