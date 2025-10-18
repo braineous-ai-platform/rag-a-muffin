@@ -39,6 +39,7 @@ public class CausalFactExtractor implements FactExtractor{
             facts.add(fact);
         }
 
+        //Console.log("debug", facts);
         return facts;
     }
 

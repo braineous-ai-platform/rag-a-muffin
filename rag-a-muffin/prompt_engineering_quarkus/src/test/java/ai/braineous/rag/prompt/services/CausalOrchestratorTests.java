@@ -27,7 +27,7 @@ public class CausalOrchestratorTests {
 
 
         //parse_user_prompt
-        String jsonStr = Resources.getResource("models/reasoning/mom_son_relationship/meme.json");
+        String jsonStr = Resources.getResource("models/reasoning/excellent_cricket_game/fact.json");
         JsonObject query = JsonParser.parseString(jsonStr).getAsJsonObject();
 
         String prompt = "Team says to each other. That's what it's all about. After winning the game of cricket";

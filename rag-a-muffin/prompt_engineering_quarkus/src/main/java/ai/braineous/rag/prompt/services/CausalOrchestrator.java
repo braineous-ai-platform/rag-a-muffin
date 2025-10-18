@@ -21,25 +21,30 @@ public class CausalOrchestrator {
     private CausalFactExtractor factExtractor = new CausalFactExtractor();
     
     public void orchestrate(String prompt, JsonArray queryEmbeddings, JsonObject query){
-      Console.log("causal_orchestrator", prompt);
-      Console.log("query_embeddings", queryEmbeddings.toString());
-      Console.log("query", query.toString());
+      //Console.log("causal_orchestrator", prompt);
+      //Console.log("query_embeddings", queryEmbeddings.toString());
+      //Console.log("query", query.toString());
 
-      JsonArray factsArray = query.get("facts").getAsJsonArray();
+
+      JsonArray factsArray = new JsonArray();
+      factsArray.add(query);
+      factsArray.add(query);
       //JsonArray rulesArray = query.get("rules").getAsJsonArray();
 
       //generate_reasoning_context
       ReasoningContext reasoningContext = new ReasoningContext();
       List<Fact> facts = factExtractor.extract(prompt, factsArray);
+      //Console.log("facts", facts);
 
       reasoningContext.setFacts(facts);
-      Console.log("reasoning_context", reasoningContext);
+      //Console.log("reasoning_context", reasoningContext);
 
-      //TODO: next: integrate_rule_components
-      //TODO: start_here
-      Console.log("integrate_rule_components", null);
-      Map<String, Object> feats = facts.get(0).getFeats();
+      //integrate_rule_components
+      Console.log("integrate_rule_components_0", null);
+      Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
       Console.log("feats", feats);
+
+      //TODO: start_here
     }
 }
 
