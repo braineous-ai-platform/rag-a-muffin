@@ -23,7 +23,7 @@ public class RuleTests {
 
         JsonArray rulesArray = new JsonArray();
         rulesArray.add(ruleJson);
-        rulesArray.add(ruleJson);
+        //rulesArray.add(ruleJson);
         Console.log("facts", rulesArray);
 
         String prompt = ruleJson.get("id").getAsString();
