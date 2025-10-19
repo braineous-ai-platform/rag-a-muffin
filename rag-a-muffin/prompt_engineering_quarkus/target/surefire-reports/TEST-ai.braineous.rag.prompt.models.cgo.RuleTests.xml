@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.models.cgo.RuleTests" time="0.022" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.models.cgo.RuleTests" time="0.032" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251018184354002_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-18T18-43-53_962-jvmRun1 surefire-20251018184354002_1tmp surefire_0-20251018184354002_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251018202324025_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-18T20-23-23_983-jvmRun1 surefire-20251018202324025_1tmp surefire_0-20251018202324025_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -32,7 +32,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251018184354002_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251018202324025_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -63,8 +63,11 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testBuildRuleTopology" classname="ai.braineous.rag.prompt.models.cgo.RuleTests" time="0.013">
-    <system-out><![CDATA[____test_rule_topology____
+  <testcase name="testBuildRuleTopology" classname="ai.braineous.rag.prompt.models.cgo.RuleTests" time="0.022">
+    <system-out><![CDATA[____facts____
+[{"id":"R1","type":"references","transformer":"F_transformer","source":"F_cricket_game","instructions":"Use the diagram as reasoning scaffold."},{"id":"R1","type":"references","transformer":"F_transformer","source":"F_cricket_game","instructions":"Use the diagram as reasoning scaffold."}]
+____extracted_rules____
+[]
 ]]></system-out>
   </testcase>
 </testsuite>
