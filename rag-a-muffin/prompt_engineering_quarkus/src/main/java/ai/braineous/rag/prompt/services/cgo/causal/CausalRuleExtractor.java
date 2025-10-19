@@ -21,8 +21,15 @@ public class CausalRuleExtractor implements RuleExtractor{
             JsonObject ruleJson = rulesArray.get(i).getAsJsonObject();
 
             String id = prompt + ":" + i;
+            String type = ruleJson.get("type").getAsString();
+            String transformer = ruleJson.get("transformer").getAsString();
+            String instructions = ruleJson.get("instructions").getAsString();
 
             rule.setId(id);
+            rule.setName(id);
+            rule.setType(type);
+            rule.setTransformer(transformer);
+            rule.setInstructions(instructions);
 
             rules.add(rule);
         }
