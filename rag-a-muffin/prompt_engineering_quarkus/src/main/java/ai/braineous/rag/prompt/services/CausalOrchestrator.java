@@ -6,11 +6,14 @@ import java.util.Map;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
+import ai.braineous.rag.prompt.models.cgo.Edge;
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
+import ai.braineous.rag.prompt.models.cgo.Rule;
 import ai.braineous.rag.prompt.services.cgo.RuleEngine;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractor;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
+import ai.braineous.rag.prompt.services.cgo.causal.CausalSummarizer;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
@@ -25,6 +28,11 @@ public class CausalOrchestrator {
     //For now no dependency_injection overhead
     //@Inject
     private RuleEngine ruleEngine = new CausalRuleEngine();
+
+    //TODO: [eventually] : make_it_quarkus_containarized. 
+    //For now no dependency_injection overhead
+    //@Inject
+    private CausalSummarizer summarizer = new CausalSummarizer();
     
     public void orchestrate(String prompt, JsonArray queryEmbeddings, JsonObject query){
       JsonArray factsArray = new JsonArray();
@@ -39,7 +47,11 @@ public class CausalOrchestrator {
 
       //integrate_rule_components
       Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
-      this.ruleEngine.inferRules(facts, feats);
+      List<Rule> rules = this.ruleEngine.inferRules(facts, feats);
+      List<Edge> edges = this.ruleEngine.applyRules(reasoningContext, rules, feats);
+
+      //TODO: integrate_summarizer_components
+      //TODO: start_here
     }
 }
 

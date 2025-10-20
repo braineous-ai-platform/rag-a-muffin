@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
@@ -18,12 +19,17 @@ public class CausalRuleEngine implements RuleEngine{
         Console.log("facts", facts);
         Console.log("feats", feats);
 
-        return null;
+        return new ArrayList<>();
     }
 
     @Override
-    public List<Edge> applyRules(ReasoningContext cx, List<Rule> rules, Map<String, Object> cfg) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public List<Edge> applyRules(ReasoningContext ctx, List<Rule> rules, Map<String, Object> feats) {
+        Console.log("causal_rule_engine_applyRules", this.getClass().getName());
+        Console.log("reasoning_context", ctx);
+        Console.log("rules", rules);
+        Console.log("feats", feats);
+
+        return new ArrayList<>();
     }
 
 }
