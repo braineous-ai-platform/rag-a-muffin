@@ -1,0 +1,18 @@
+{
+  "name": "hello_world_workflow",
+  "description": "A simple workflow example",
+  "version": 1,
+  "tasks": [
+    {
+      "name": "task_1",
+      "taskReferenceName": "t1",
+      "type": "SIMPLE"
+    },
+    {
+      "name": "task_2",
+      "taskReferenceName": "t2",
+      "type": "SIMPLE"
+    }
+  ],
+  "schemaVersion": 2
+}

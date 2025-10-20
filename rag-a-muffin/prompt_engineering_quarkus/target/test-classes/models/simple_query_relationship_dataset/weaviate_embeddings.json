@@ -1,0 +1,43 @@
+{
+  "data": {
+    "Get": {
+      "Article": [
+        {
+          "_additional": {
+            "id": "06c70ad9-ab78-4aff-8c9a-326e20628de2"
+          },
+          "content": "Our standard paid time off policy covers vacation and personal days.",
+          "title": "PTO Policy Overview"
+        },
+        {
+          "_additional": {
+            "id": "2aa11c95-fded-45fa-a4cb-41932975e4d4"
+          },
+          "content": "Our standard paid time off policy covers vacation and personal days.",
+          "title": "PTO Policy Overview"
+        },
+        {
+          "_additional": {
+            "id": "3b3d397a-a428-4cf7-bf47-9fc42d9f8961"
+          },
+          "content": "Our standard paid time off policy covers vacation and personal days.",
+          "title": "PTO Policy Overview"
+        },
+        {
+          "_additional": {
+            "id": "74185895-0167-403f-bde1-d8289a49c478"
+          },
+          "content": "Our standard paid time off policy covers vacation and personal days.",
+          "title": "PTO Policy Overview"
+        },
+        {
+          "_additional": {
+            "id": "78a0974a-eb26-4dfc-b153-92d96f6041e2"
+          },
+          "content": "Our standard paid time off policy covers vacation and personal days.",
+          "title": "PTO Policy Overview"
+        }
+      ]
+    }
+  }
+}

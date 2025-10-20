@@ -1,0 +1,21 @@
+{
+  "name": "openai",
+  "module": "index.ts",
+  "type": "module",
+  "private": true,
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "workspaces":[
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "build": "tsc",
+    "start": "bun dist/server.js",
+    "test": "bun test"
+  }
+}

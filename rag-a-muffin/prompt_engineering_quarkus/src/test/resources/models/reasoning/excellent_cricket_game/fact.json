@@ -1,0 +1,11 @@
+{
+  "id": "F_cricket_game",
+  "text": "Team says to each other. That's what it's all about. After winning the game of cricket",
+  "feats": {
+    "venue": "gully_match",
+    "opponent_strength": 0.6,
+    "weather": "clear",
+    "crowd_support": 0.7,
+    "asof": "2025-10-15T18:30Z"
+  }
+}

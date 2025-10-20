@@ -1,0 +1,17 @@
+{
+  "name": "hello_world_java_0",
+  "version": 1,
+  "ownerEmail": "you@example.com",
+  "tasks": [
+    {
+      "name": "task_1",
+      "taskReferenceName": "t1",
+      "type": "SIMPLE",
+      "inputParameters": {
+        "greeting": "Hello from workflow",
+        "name": "${workflow.input.name}"
+      }
+    }
+  ],
+  "schemaVersion": 2
+}
