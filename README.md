@@ -1,5 +1,8 @@
 # rag-a-muffin
 
+⭐️ If you found this through the CGO post — welcome!  
+The reasoning cycle docs live under `/docs/cgo/`.
+
 ![This is an image](parallax-image.jpg)
 
 Retrieval-Augmented Generation (RAG) made powerful and simple
