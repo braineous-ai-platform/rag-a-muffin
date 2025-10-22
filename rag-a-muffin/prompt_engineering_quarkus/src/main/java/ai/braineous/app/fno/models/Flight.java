@@ -11,8 +11,8 @@ public class Flight implements FactExtractor{
 
     private String id;
     private String number;
-    private String origin;
-    private String dest;
+    private Airport origin;
+    private Airport dest;
     private String depUtc;
     private String arrUtc;
     private String capacity;
@@ -22,7 +22,7 @@ public class Flight implements FactExtractor{
 
     }
 
-    public Flight(String arrUtc, String capacity, String depUtc, String dest, String equipment, String id, String number, String origin) {
+    public Flight(String arrUtc, String capacity, String depUtc, Airport dest, String equipment, String id, String number, Airport origin) {
         this.arrUtc = arrUtc;
         this.capacity = capacity;
         this.depUtc = depUtc;
@@ -50,19 +50,19 @@ public class Flight implements FactExtractor{
         this.number = number;
     }
 
-    public String getOrigin() {
+    public Airport getOrigin() {
         return origin;
     }
 
-    public void setOrigin(String origin) {
+    public void setOrigin(Airport origin) {
         this.origin = origin;
     }
 
-    public String getDest() {
+    public Airport getDest() {
         return dest;
     }
 
-    public void setDest(String dest) {
+    public void setDest(Airport dest) {
         this.dest = dest;
     }
 
