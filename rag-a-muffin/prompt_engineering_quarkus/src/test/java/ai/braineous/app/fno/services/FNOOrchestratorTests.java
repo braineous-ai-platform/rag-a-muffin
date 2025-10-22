@@ -3,6 +3,7 @@ package ai.braineous.app.fno.services;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import ai.braineous.rag.prompt.utils.Resources;
@@ -19,7 +20,10 @@ public class FNOOrchestratorTests {
         //flight_events
         String flightEventsStr = Resources.getResource("models/fno/flight_events.json");
         JsonArray flightsArray = JsonParser.parseString(flightEventsStr).getAsJsonArray();
+
+        String eventFactsStr = Resources.getResource("models/fno/facts_fno.json");
+        JsonObject eventsJson = JsonParser.parseString(eventFactsStr).getAsJsonObject();
         
-        this.fnoOrchestrator.orchestrate(flightsArray);
+        this.fnoOrchestrator.orchestrate(flightsArray, eventsJson);
     }
 }
