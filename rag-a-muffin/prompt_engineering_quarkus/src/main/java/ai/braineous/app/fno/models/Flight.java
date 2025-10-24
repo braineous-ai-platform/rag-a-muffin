@@ -1,5 +1,6 @@
 package ai.braineous.app.fno.models;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import com.google.gson.JsonArray;
@@ -115,8 +116,31 @@ public class Flight implements FactExtractor{
     }
 
     @Override
-    public List<Fact> extract(String prompt, JsonArray facts) {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public List<Fact> extract(String prompt, JsonArray factsArray) {
+        List<Fact> facts = new ArrayList<>();
+
+        String originStr = this.origin.getIata();
+        String destStr = this.dest.getIata();
+
+
+        //Airport Fact
+        Fact legFact = new Fact();
+        legFact.setText("Airport("+ originStr + " , '"+ destStr +"')");
+        legFact.setId("Flight: " + originStr + "->" + destStr);
+        //TODO: feats
+
+
+        //Flight Fact
+
+        
+        //Scheduled Arrival Fact
+
+
+        //Scheduled Departure Fact
+
+        //Flight Duration Fact (derived) (arrival - departure)
+
+        return facts;
     }
 
 }
