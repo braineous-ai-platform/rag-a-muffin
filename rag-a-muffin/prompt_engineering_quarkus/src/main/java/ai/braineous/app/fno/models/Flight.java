@@ -127,8 +127,10 @@ public class Flight implements FactExtractor{
         Fact legFact = new Fact();
         legFact.setText("Airport("+ originStr + " , '"+ destStr +"')");
         legFact.setId("Flight: " + originStr + "->" + destStr);
+        facts.add(legFact);
         //TODO: feats
 
+        //TODO: other facts
 
         //Flight Fact
 
