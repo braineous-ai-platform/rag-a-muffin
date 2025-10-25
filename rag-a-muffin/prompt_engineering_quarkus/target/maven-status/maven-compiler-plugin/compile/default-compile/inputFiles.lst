@@ -5,6 +5,7 @@
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/app/fno/models/DomainState.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/app/fno/models/Flight.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/app/fno/services/FNOOrchestrator.java
+/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/app/fno/services/FNORuleProducer.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/controllers/PromptController.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/Audience.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/models/Context.java
