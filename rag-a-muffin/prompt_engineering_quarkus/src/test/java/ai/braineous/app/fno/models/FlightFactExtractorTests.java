@@ -1,6 +1,8 @@
 package ai.braineous.app.fno.models;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
@@ -33,7 +35,7 @@ public class FlightFactExtractorTests {
         String jsonStr = Resources.getResource("models/fno/rules_fno.json");
         Console.log("jsonStr", jsonStr);
 
-        JsonArray rulesArray = new JsonArray();
+        Set<String> rules = new HashSet<>();
         for(Fact fact: facts){
             Console.log("debug", fact);
 
@@ -65,10 +67,10 @@ public class FlightFactExtractorTests {
             String weight = "0.8";
             ruleJson.addProperty("weight", weight);
 
-            rulesArray.add(ruleJson);
+            rules.add(ruleJson.toString());
         }
         
 
-        Console.log("generated_rules", rulesArray);
+        Console.log("generated_rules", rules);
     }
 }
