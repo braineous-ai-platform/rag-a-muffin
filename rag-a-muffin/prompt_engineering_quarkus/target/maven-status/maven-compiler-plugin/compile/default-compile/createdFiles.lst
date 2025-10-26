@@ -25,6 +25,7 @@ ai/braineous/rag/prompt/models/ReferenceData.class
 ai/braineous/rag/prompt/services/cgo/FactExtractor.class
 ai/braineous/rag/prompt/services/cgo/LLMBridge.class
 ai/braineous/rag/prompt/services/PromptService.class
+ai/braineous/app/fno/services/FNORuleProducer.class
 ai/braineous/rag/prompt/services/cgo/causal/CausalReasoningPathOrchestrator.class
 ai/braineous/app/fno/models/DomainState.class
 ai/braineous/app/fno/models/Disruption.class

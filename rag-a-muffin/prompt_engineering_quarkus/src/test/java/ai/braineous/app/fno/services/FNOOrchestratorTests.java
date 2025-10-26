@@ -24,6 +24,6 @@ public class FNOOrchestratorTests {
         String eventFactsStr = Resources.getResource("models/fno/facts_fno.json");
         JsonObject eventsJson = JsonParser.parseString(eventFactsStr).getAsJsonObject();
         
-        this.fnoOrchestrator.orchestrate(flightsArray, eventsJson);
+        this.fnoOrchestrator.orchestrate(flightsArray);
     }
 }
