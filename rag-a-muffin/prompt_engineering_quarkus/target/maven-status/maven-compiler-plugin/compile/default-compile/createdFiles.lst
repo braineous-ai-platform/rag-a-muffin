@@ -10,6 +10,7 @@ ai/braineous/rag/prompt/models/Tone.class
 ai/braineous/rag/prompt/models/PropertyOrchestrator.class
 ai/braineous/rag/prompt/models/Audience.class
 ai/braineous/rag/prompt/models/LLMPrompt.class
+ai/braineous/rag/prompt/services/cgo/causal/CausalLLMBridge.class
 ai/braineous/rag/prompt/models/cgo/Fact.class
 ai/braineous/rag/prompt/services/cgo/causal/CausalRuleExtractor.class
 ai/braineous/rag/prompt/services/cgo/causal/CausalFactExtractor.class

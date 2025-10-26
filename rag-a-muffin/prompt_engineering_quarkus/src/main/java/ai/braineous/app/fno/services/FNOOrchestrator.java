@@ -10,6 +10,8 @@ import com.google.gson.JsonObject;
 import ai.braineous.app.fno.models.Airport;
 import ai.braineous.app.fno.models.Flight;
 import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.services.cgo.LLMBridge;
+import ai.braineous.rag.prompt.services.cgo.causal.CausalLLMBridge;
 import ai.braineous.rag.prompt.utils.Console;
 
 public class FNOOrchestrator {
@@ -18,6 +20,11 @@ public class FNOOrchestrator {
     //For now no dependency_injection overhead
     //@Inject
     private FNORuleProducer ruleProducer = new FNORuleProducer();
+
+    //TODO: [eventually] : make_it_quarkus_containarized. 
+    //For now no dependency_injection overhead
+    //@Inject
+    private LLMBridge llmBridge = new CausalLLMBridge();
 
     public void orchestrate(JsonArray flightsArray){
         try{
@@ -36,6 +43,8 @@ public class FNOOrchestrator {
             Console.log("rules", rules);
 
             //TODO: bridge to CGO
+            this.llmBridge.submit(facts, rules);
+
         }catch(Exception e){
             throw new RuntimeException(e.getMessage());
         }
