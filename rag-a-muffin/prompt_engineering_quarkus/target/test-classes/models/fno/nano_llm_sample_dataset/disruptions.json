@@ -1,0 +1,10 @@
+{
+  "disruptions": [
+    {
+      "type": "cancelled",
+      "flight_id": "F100",
+      "start_utc": "2025-10-22T10:00:00Z",
+      "reason": "mx"
+    }
+  ]
+}
