@@ -21,5 +21,6 @@ public class CausalLLMBridge implements LLMBridge{
         Console.log("llm_bridge", rules);
 
         //COG-orchestrate
+        this.causalOrchestrator.orchestrate(facts, rules);
     }
 }

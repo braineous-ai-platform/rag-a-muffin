@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.services.FNOOrchestratorTests" time="0.036" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.services.FNOOrchestratorTests" time="0.038" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251026012406898_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-26T01-24-06_855-jvmRun1 surefire-20251026012406898_1tmp surefire_0-20251026012406898_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027082856922_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-27T08-28-56_881-jvmRun1 surefire-20251027082856922_1tmp surefire_0-20251027082856922_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -32,7 +32,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251026012406898_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027082856922_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -63,7 +63,7 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testOrchestrate" classname="ai.braineous.app.fno.services.FNOOrchestratorTests" time="0.025">
+  <testcase name="testOrchestrate" classname="ai.braineous.app.fno.services.FNOOrchestratorTests" time="0.027">
     <system-out><![CDATA[____flights_events____
 [{"flight_date":"2022-06-03","flight_status":"scheduled","departure":{"airport":"Tullamarine","timezone":"Australia/Melbourne","iata":"MEL","icao":"YMML","terminal":"1","gate":null,"delay":null,"scheduled":"2022-06-03T08:45:00+00:00","estimated":"2022-06-03T08:45:00+00:00","actual":null,"estimated_runway":null,"actual_runway":null},"arrival":{"airport":"Adelaide International Airport","timezone":"Australia/Adelaide","iata":"ADL","icao":"YPAD","terminal":"1","gate":"22","baggage":null,"delay":null,"scheduled":"2022-06-03T09:35:00+00:00","estimated":"2022-06-03T09:35:00+00:00","actual":null,"estimated_runway":null,"actual_runway":null},"airline":{"name":"Alaska Airlines","iata":"AS","icao":"ASA"},"flight":{"number":"5066","iata":"AS5066","icao":"ASA5066","codeshared":{"airline_name":"qantas","airline_iata":"qf","airline_icao":"qfa","flight_number":"675","flight_iata":"qf675","flight_icao":"qfa675"}},"aircraft":null,"live":null}]
 ____flights____
@@ -110,6 +110,8 @@ ____llm_bridge____
 [Fact [id=Flight: Tullamarine->Adelaide International Airport, text=Airport(Tullamarine , 'Adelaide International Airport'), feats={}]]
 ____llm_bridge____
 [{"id":"R_airport_node","note":"Create an airport graph node from Airport(code, name) facts.","when":"[\"Airport($code, $name)\"]","then":"[\n        {\n          \"emit\": \"GraphNode($code, 'airport', $name)\"\n        }\n      ]","weight":"0.8"}]
+____llm_bridge_orchestrate____
+ReasoningContext{facts=[Fact [id=Flight: Tullamarine->Adelaide International Airport, text=Airport(Tullamarine , 'Adelaide International Airport'), feats={}]], state={}}
 ]]></system-out>
   </testcase>
 </testsuite>
