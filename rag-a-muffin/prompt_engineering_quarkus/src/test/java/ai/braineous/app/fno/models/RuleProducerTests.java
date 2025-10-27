@@ -30,12 +30,15 @@ public class RuleProducerTests {
         flightJson.addProperty("arr_utc", "2025-10-22T11:10:00Z");
 
         Flight flight = new Flight(flightJson.toString());
-        Console.log("flight", flight);
+        //Console.log("flight", flight);
 
         List<Fact> facts = flight.extract("", new JsonArray());
-        Console.log("generated_facts", facts);
+        //Console.log("generated_facts", facts);
 
         Set<String> rules = this.ruleProducer.produce(facts);
-        Console.log("generated_rules", rules);
+        Console.log("____rules____", null);
+        for (String rule : rules) {
+            Console.log("rule", rule);
+        }
     }
 }

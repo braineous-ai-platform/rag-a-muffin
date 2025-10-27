@@ -1,62 +1,47 @@
 package ai.braineous.app.fno.services;
 
-import java.util.HashSet;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import com.google.gson.JsonObject;
-
 import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.utils.Console;
-import ai.braineous.rag.prompt.utils.Resources;
 
 public class FNORuleProducer {
 
-    //TODO: unstub...start_here
     public Set<String> produce(List<Fact> facts) throws Exception{
-        Console.log("flight_facts", facts);
+        Set<String> out = new LinkedHashSet<>();
+        Set<String> airports = new LinkedHashSet<>();
+        List<String> flights = new ArrayList<>();
 
-        String jsonStr = Resources.getResource("models/fno/rules_fno.json");
-        Console.log("jsonStr", jsonStr);
-
-        Set<String> rules = new HashSet<>();
-        for(Fact fact: facts){
-            Console.log("debug", fact);
-
-            JsonObject ruleJson = new JsonObject();
-
-            //id
-            String id = "R_airport_node";
-            ruleJson.addProperty("id", id);
-
-            //note
-            String note = "Create an airport graph node from Airport(code, name) facts.";
-            ruleJson.addProperty("note", note);
-
-            //when_then for Functional rendering
-
-            //when
-            String when = "[\"Airport($code, $name)\"]";
-            ruleJson.addProperty("when", when);
-
-            //then
-            String then = "[\n" + //
-                                "        {\n" + //
-                                "          \"emit\": \"GraphNode($code, 'airport', $name)\"\n" + //
-                                "        }\n" + //
-                                "      ]";
-            ruleJson.addProperty("then", then);
-
-            //weight
-            String weight = "0.8";
-            ruleJson.addProperty("weight", weight);
-
-            rules.add(ruleJson.toString());
+        for (Fact f : facts) {
+            String t = f.getText();
+            if (t.startsWith("Airport(")) {
+                // Airport(AUS, 'AUS') -> AUS
+                int p1 = t.indexOf('(')+1, p2 = t.indexOf(',', p1);
+                String code = t.substring(p1, p2).trim();
+                airports.add(code);
+            } else if (t.startsWith("Flight(")) {
+                flights.add(t);
+            }
         }
         
+        // Emit airport nodes
+        for (String code : airports) {
+        out.add(("{\"id\":\"R_airport_node_%s\",\"note\":\"Create airport node.\","
+            + "\"when\":[\"Airport($code, $name)\"],"
+            + "\"then\":[{\"emit\":\"GraphNode(%s, 'airport', $name)\"}],"
+            + "\"weight\":0.8}").formatted(code, code));
+        }
 
-        Console.log("generated_rules", rules);
-
-        return rules;
+        // Emit flight edges (generic pattern suffices; string-only)
+        if (!flights.isEmpty()) {
+        out.add("{\"id\":\"R_flight_edge\",\"note\":\"Create flight edge from Flight facts.\","
+            + "\"when\":[\"Flight(id:$fid, $src, $dst, $depUtc, $arrUtc)\"],"
+            + "\"then\":[{\"emit\":\"GraphEdge($src, $dst, $depUtc, $arrUtc, 'fly', id:$fid)\"}],"
+            + "\"weight\":1.0}");
+        }
+        
+        return out;
     }
 }
