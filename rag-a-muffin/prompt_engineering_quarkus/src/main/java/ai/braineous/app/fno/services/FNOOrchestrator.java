@@ -45,6 +45,7 @@ public class FNOOrchestrator {
             this.llmBridge.submit(facts, rules);
 
         }catch(Exception e){
+            e.printStackTrace();
             throw new RuntimeException(e.getMessage());
         }
     }

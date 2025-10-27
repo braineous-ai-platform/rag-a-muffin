@@ -18,11 +18,9 @@ public class FNOOrchestratorTests {
     @Test
     public void testOrchestrate() throws Exception {
         //flight_events
-        String flightEventsStr = Resources.getResource("models/fno/flight_events.json");
-        JsonArray flightsArray = JsonParser.parseString(flightEventsStr).getAsJsonArray();
-
-        String eventFactsStr = Resources.getResource("models/fno/facts_fno.json");
-        JsonObject eventsJson = JsonParser.parseString(eventFactsStr).getAsJsonObject();
+        String flightsStr = Resources.getResource("models/fno/nano_llm_sample_dataset/flights.json");
+        JsonObject flightsJson = JsonParser.parseString(flightsStr).getAsJsonObject();
+        JsonArray flightsArray = flightsJson.get("flights").getAsJsonArray();
         
         this.fnoOrchestrator.orchestrate(flightsArray);
     }

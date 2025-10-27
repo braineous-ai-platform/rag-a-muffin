@@ -1,12 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: ai.braineous.app.fno.services.FNOOrchestratorTests
 -------------------------------------------------------------------------------
-Tests run: 1, Failures: 0, Errors: 1, Skipped: 0, Time elapsed: 0.007 s <<< FAILURE! -- in ai.braineous.app.fno.services.FNOOrchestratorTests
-ai.braineous.app.fno.services.FNOOrchestratorTests.testOrchestrate -- Time elapsed: 0.005 s <<< ERROR!
-java.lang.RuntimeException: Cannot invoke "com.google.gson.JsonElement.getAsString()" because the return value of "com.google.gson.JsonObject.get(String)" is null
-	at ai.braineous.app.fno.services.FNOOrchestrator.orchestrate(FNOOrchestrator.java:48)
-	at ai.braineous.app.fno.services.FNOOrchestratorTests.testOrchestrate(FNOOrchestratorTests.java:27)
-	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
-
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 0.009 s -- in ai.braineous.app.fno.services.FNOOrchestratorTests
