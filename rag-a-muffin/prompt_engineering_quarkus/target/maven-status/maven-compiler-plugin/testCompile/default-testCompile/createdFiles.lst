@@ -1,7 +1,9 @@
-ai/braineous/app/fno/services/FNOOrchestratorTests.class
+ai/braineous/rag/prompt/services/NanoLLMProviderTests.class
 ai/braineous/rag/prompt/services/cgo/causal/CausalFactExtractorTests.class
-ai/braineous/rag/prompt/services/cgo/causal/CausalRuleEngineTests.class
-ai/braineous/rag/prompt/models/cgo/RuleTests.class
+ai/braineous/app/fno/models/FlightTests.class
 ai/braineous/app/fno/models/RuleProducerTests.class
 ai/braineous/rag/prompt/ReasoningIntegrationTests.class
+ai/braineous/app/fno/services/FNOOrchestratorTests.class
+ai/braineous/rag/prompt/services/cgo/causal/CausalRuleEngineTests.class
+ai/braineous/rag/prompt/models/cgo/RuleTests.class
 ai/braineous/rag/prompt/services/CausalOrchestratorTests.class

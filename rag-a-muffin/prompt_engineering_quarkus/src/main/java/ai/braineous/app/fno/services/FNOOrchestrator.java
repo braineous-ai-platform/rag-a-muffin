@@ -7,7 +7,6 @@ import java.util.Set;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-import ai.braineous.app.fno.models.Airport;
 import ai.braineous.app.fno.models.Flight;
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.services.cgo.LLMBridge;
@@ -56,23 +55,7 @@ public class FNOOrchestrator {
         for(int i=0; i<flightsArray.size(); i++){
             JsonObject flightJson = flightsArray.get(i).getAsJsonObject();
 
-            Flight flight = new Flight();
-
-            //id - flight.number
-            String id = flightJson.get("flight").
-            getAsJsonObject().get("number").getAsString();
-            flight.setId(id);
-            flight.setNumber(id);
-
-            //origin - departure.airport 
-            String origin = flightJson.get("departure").
-            getAsJsonObject().get("airport").getAsString();
-            flight.setOrigin(new Airport(origin, origin, ""));
-
-            //destination - arrival.airport
-            String dest = flightJson.get("arrival").
-            getAsJsonObject().get("airport").getAsString();
-            flight.setDest(new Airport(dest, dest, ""));
+            Flight flight = new Flight(flightJson.toString());
 
             flights.add(flight);
         }

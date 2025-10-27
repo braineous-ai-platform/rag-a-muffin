@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.models.RuleProducerTests" time="0.031" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.models.RuleProducerTests" time="0.005" tests="1" errors="1" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251026012344551_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-26T01-23-44_504-jvmRun1 surefire-20251026012344551_1tmp surefire_0-20251026012344551_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027134649236_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-27T13-46-49_191-jvmRun1 surefire-20251027134649236_1tmp surefire_0-20251027134649236_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -31,7 +31,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251026012344551_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027134649236_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -62,45 +62,18 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testFactExtraction" classname="ai.braineous.app.fno.models.RuleProducerTests" time="0.024">
+  <testcase name="testFactExtraction" classname="ai.braineous.app.fno.models.RuleProducerTests" time="0.004">
+    <error message="Cannot invoke &quot;String.length()&quot; because &quot;s&quot; is null" type="java.lang.NullPointerException"><![CDATA[java.lang.NullPointerException: Cannot invoke "String.length()" because "s" is null
+	at java.base/java.io.StringReader.<init>(StringReader.java:50)
+	at com.google.gson.JsonParser.parseString(JsonParser.java:92)
+	at ai.braineous.app.fno.models.Flight.extract(Flight.java:44)
+	at ai.braineous.app.fno.models.RuleProducerTests.testFactExtraction(RuleProducerTests.java:34)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:580)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+	at java.base/java.util.ArrayList.forEach(ArrayList.java:1596)
+]]></error>
     <system-out><![CDATA[____flight____
-Flight{id=AS5066, number=AS5066, origin=Airport{id=MEL, iata=MEL, tz=}, dest=Airport{id=ADL, iata=ADL, tz=}, depUtc=null, arrUtc=null, capacity=null, equipment=null}
-____flight_facts____
-[Fact [id=Flight: MEL->ADL, text=Airport(MEL , 'ADL'), feats={}]]
-____jsonStr____
-{
-  "rules": [
-    {
-      "id": "R_airport_node",
-      "note": "Create an airport graph node from Airport(code, name) facts.",
-      "when": ["Airport($code, $name)"],
-      "then": [
-        {
-          "emit": "GraphNode($code, 'airport', $name)"
-        }
-      ],
-      "weight": 0.8
-    },
-    {
-      "id": "R_flight_edge",
-      "note": "Create a flight edge from Flight(fid, src, dst).",
-      "when": ["Flight($fid, $src, $dst)"],
-      "then": [
-        {
-          "emit": "GraphEdge($fid, 'flight', $src, $dst)"
-        }
-      ],
-      "weight": 1.0
-    }
-  ]
-}
-
-____debug____
-Fact [id=Flight: MEL->ADL, text=Airport(MEL , 'ADL'), feats={}]
-____generated_rules____
-[{"id":"R_airport_node","note":"Create an airport graph node from Airport(code, name) facts.","when":"[\"Airport($code, $name)\"]","then":"[\n        {\n          \"emit\": \"GraphNode($code, 'airport', $name)\"\n        }\n      ]","weight":"0.8"}]
-____generated_rules____
-[{"id":"R_airport_node","note":"Create an airport graph node from Airport(code, name) facts.","when":"[\"Airport($code, $name)\"]","then":"[\n        {\n          \"emit\": \"GraphNode($code, 'airport', $name)\"\n        }\n      ]","weight":"0.8"}]
+Flight [json=null]
 ]]></system-out>
   </testcase>
 </testsuite>
