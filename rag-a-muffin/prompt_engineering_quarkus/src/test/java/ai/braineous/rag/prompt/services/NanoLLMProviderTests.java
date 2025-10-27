@@ -1,10 +1,14 @@
 package ai.braineous.rag.prompt.services;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
+import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.utils.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 
@@ -12,12 +16,11 @@ public class NanoLLMProviderTests {
 
     @Test
     public void testLLMFlow() throws Exception {
-        Console.log("llm_flow_dataset", null);
+        Console.log("llm_flow", null);
 
         //sample_dataset - flights
         String flightsJsonStr = Resources.getResource("models/fno/nano_llm_sample_dataset/flights.json");
         JsonObject flightsJson = JsonParser.parseString(flightsJsonStr).getAsJsonObject();
-        Console.log("filgts_json", flightsJson);
 
          //sample_dataset - disruptions
         String disruptionsJsonStr = Resources.getResource("models/fno/nano_llm_sample_dataset/disruptions.json");
@@ -25,6 +28,8 @@ public class NanoLLMProviderTests {
         Console.log("disruptions_json", disruptionsJson);
 
         //generate flight_facts
+        List<Fact> flightFacts = this.generateFlightFacts(flightsJson);
+        Console.log("flight_facts", flightFacts);
 
         //generate disruption_facts
 
@@ -37,6 +42,15 @@ public class NanoLLMProviderTests {
         //get candidate_itineraries from LLM invocation
 
         //scheme + validation -> final_result (flight_plan)
+    }
+
+
+    private List<Fact> generateFlightFacts(JsonObject flightsJson){
+        List<Fact> facts = new ArrayList<>();
+
+        Console.log("flights_json", flightsJson);
+
+        return facts;
     }
 
 }

@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.services.NanoLLMProviderTests" time="0.027" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.services.NanoLLMProviderTests" time="0.034" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027104731895_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-27T10-47-31_852-jvmRun1 surefire-20251027104731895_1tmp surefire_0-20251027104731895_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027110917781_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-27T11-09-17_741-jvmRun1 surefire-20251027110917781_1tmp surefire_0-20251027110917781_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -32,7 +32,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027104731895_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251027110917781_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -63,12 +63,14 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testLLMFlow" classname="ai.braineous.rag.prompt.services.NanoLLMProviderTests" time="0.02">
-    <system-out><![CDATA[____llm_flow_dataset____
-____filgts_json____
-{"flights":[{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"},{"id":"F102","number":"F102","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T11:30:00Z","arr_utc":"2025-10-22T12:40:00Z","capacity":150,"equipment":"320"},{"id":"F110","number":"F110","origin":"SAT","dest":"DFW","dep_utc":"2025-10-22T11:10:00Z","arr_utc":"2025-10-22T12:15:00Z","capacity":150,"equipment":"320"},{"id":"F120","number":"F120","origin":"IAH","dest":"DFW","dep_utc":"2025-10-22T11:20:00Z","arr_utc":"2025-10-22T12:25:00Z","capacity":150,"equipment":"319"},{"id":"F200","number":"F200","origin":"DFW","dest":"ORD","dep_utc":"2025-10-22T13:30:00Z","arr_utc":"2025-10-22T16:50:00Z","capacity":150,"equipment":"738"},{"id":"F210","number":"F210","origin":"DFW","dest":"JFK","dep_utc":"2025-10-22T13:20:00Z","arr_utc":"2025-10-22T17:10:00Z","capacity":150,"equipment":"321"},{"id":"F220","number":"F220","origin":"DFW","dest":"LAX","dep_utc":"2025-10-22T13:45:00Z","arr_utc":"2025-10-22T15:20:00Z","capacity":150,"equipment":"73G"}]}
+  <testcase name="testLLMFlow" classname="ai.braineous.rag.prompt.services.NanoLLMProviderTests" time="0.023">
+    <system-out><![CDATA[____llm_flow____
 ____disruptions_json____
 {"disruptions":[{"type":"cancelled","flight_id":"F100","start_utc":"2025-10-22T10:00:00Z","reason":"mx"}]}
+____flights_json____
+{"flights":[{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"},{"id":"F102","number":"F102","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T11:30:00Z","arr_utc":"2025-10-22T12:40:00Z","capacity":150,"equipment":"320"},{"id":"F110","number":"F110","origin":"SAT","dest":"DFW","dep_utc":"2025-10-22T11:10:00Z","arr_utc":"2025-10-22T12:15:00Z","capacity":150,"equipment":"320"},{"id":"F120","number":"F120","origin":"IAH","dest":"DFW","dep_utc":"2025-10-22T11:20:00Z","arr_utc":"2025-10-22T12:25:00Z","capacity":150,"equipment":"319"},{"id":"F200","number":"F200","origin":"DFW","dest":"ORD","dep_utc":"2025-10-22T13:30:00Z","arr_utc":"2025-10-22T16:50:00Z","capacity":150,"equipment":"738"},{"id":"F210","number":"F210","origin":"DFW","dest":"JFK","dep_utc":"2025-10-22T13:20:00Z","arr_utc":"2025-10-22T17:10:00Z","capacity":150,"equipment":"321"},{"id":"F220","number":"F220","origin":"DFW","dest":"LAX","dep_utc":"2025-10-22T13:45:00Z","arr_utc":"2025-10-22T15:20:00Z","capacity":150,"equipment":"73G"}]}
+____flight_facts____
+[]
 ]]></system-out>
   </testcase>
 </testsuite>
