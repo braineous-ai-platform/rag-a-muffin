@@ -12,6 +12,7 @@ import ai.braineous.rag.prompt.utils.Resources;
 
 public class FNORuleProducer {
 
+    //TODO: unstub...start_here
     public Set<String> produce(List<Fact> facts) throws Exception{
         Console.log("flight_facts", facts);
 

@@ -21,17 +21,20 @@ public class RuleProducerTests {
 
     @Test
     public void testFactExtraction() throws Exception {
-        Flight flight = new Flight();
-
         JsonObject flightJson = new JsonObject();
         flightJson.addProperty("id", "AS5066");
         flightJson.addProperty("number", "AS5066");
-        flightJson.addProperty("origin", "MEL");
-        flightJson.addProperty("dest", "ADL");
+        flightJson.addProperty("origin", "AUS");
+        flightJson.addProperty("dest", "DFW");
+        flightJson.addProperty("dep_utc", "2025-10-22T10:00:00Z");
+        flightJson.addProperty("arr_utc", "2025-10-22T11:10:00Z");
 
+        Flight flight = new Flight(flightJson.toString());
         Console.log("flight", flight);
 
         List<Fact> facts = flight.extract("", new JsonArray());
+        Console.log("generated_facts", facts);
+
         Set<String> rules = this.ruleProducer.produce(facts);
         Console.log("generated_rules", rules);
     }
