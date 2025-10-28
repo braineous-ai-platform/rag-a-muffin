@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractorTests" time="0.002" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.rag.prompt.services.cgo.LLMContextTests" time="0.003" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -62,11 +62,17 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testExtract" classname="ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractorTests" time="0.001">
-    <system-out><![CDATA[____facts____
-[{"id":"F_cricket_game","text":"Team says to each other. That's what it's all about. After winning the game of cricket","feats":{"venue":"gully_match","opponent_strength":0.6,"weather":"clear","crowd_support":0.7,"asof":"2025-10-15T18:30Z"}},{"id":"F_cricket_game","text":"Team says to each other. That's what it's all about. After winning the game of cricket","feats":{"venue":"gully_match","opponent_strength":0.6,"weather":"clear","crowd_support":0.7,"asof":"2025-10-15T18:30Z"}}]
+  <testcase name="testFactGeneration" classname="ai.braineous.rag.prompt.services.cgo.LLMContextTests" time="0.002">
+    <system-out><![CDATA[____llm_context____
+LLMContext{context={}}
+____debug____
+[{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"}]
+____debug____
+{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"}
 ____extracted_facts____
-[Fact [id=F_cricket_game:0, text=Team says to each other. That's what it's all about. After winning the game of cricket, feats={venue=gully_match, opponent_strength=0.6, weather=clear, crowd_support=0.7, asof=2025-10-15T18:30Z}], Fact [id=F_cricket_game:1, text=Team says to each other. That's what it's all about. After winning the game of cricket, feats={venue=gully_match, opponent_strength=0.6, weather=clear, crowd_support=0.7, asof=2025-10-15T18:30Z}]]
+[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F100, text=Flight(id:'F100', AUS, DFW, '2025-10-22T10:00:00Z', '2025-10-22T11:10:00Z'), feats=null]]
+____llm_context____
+LLMContext{context={flights=LLMFacts{json=[{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"}], facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F100, text=Flight(id:'F100', AUS, DFW, '2025-10-22T10:00:00Z', '2025-10-22T11:10:00Z'), feats=null]]}}}
 ]]></system-out>
   </testcase>
 </testsuite>

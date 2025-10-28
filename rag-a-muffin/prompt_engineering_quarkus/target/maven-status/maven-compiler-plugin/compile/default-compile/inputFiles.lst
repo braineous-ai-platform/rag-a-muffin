@@ -27,6 +27,7 @@
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/PromptService.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/FactExtractor.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/LLMBridge.java
+/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/LLMContext.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/ReasoningPathOrchestrator.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/RuleEngine.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/RuleExtractor.java
@@ -37,5 +38,6 @@
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/causal/CausalRuleEngine.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/causal/CausalRuleExtractor.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/causal/CausalSummarizer.java
+/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/services/cgo/causal/LLMFacts.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/utils/Console.java
 /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/src/main/java/ai/braineous/rag/prompt/utils/Resources.java
