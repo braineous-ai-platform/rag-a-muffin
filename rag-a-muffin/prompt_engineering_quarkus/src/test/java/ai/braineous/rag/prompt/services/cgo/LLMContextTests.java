@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonArray;
@@ -35,13 +36,11 @@ public class LLMContextTests {
 
     private Function<String, List<Fact>> getFlightFactExtractor(){
         Function<String, List<Fact>> flightExtractor = (jsonArrayStr) -> {
-             List<Fact> facts = new ArrayList<>();
+            List<Fact> facts = new ArrayList<>();
 
-            Console.log("debug", jsonArrayStr);
             JsonArray flightsArray = JsonParser.parseString(jsonArrayStr).getAsJsonArray();
             for(int i=0; i<flightsArray.size(); i++){
                 JsonObject o = flightsArray.get(i).getAsJsonObject();
-                Console.log("debug", o);
 
                 String id    = o.get("id").getAsString();        // "F102"
                 String src   = o.get("origin").getAsString();    // "AUS"
@@ -66,5 +65,26 @@ public class LLMContextTests {
             return facts;
         };
         return flightExtractor;
+    }
+
+    @Test
+    public void testInvalidData() throws Exception {
+        LLMContext context = new LLMContext();
+
+        Console.log("llm_context", context);
+
+        //sample_dataset - flights
+        boolean invalidFormat = false;
+        try{
+            String flightJsonStr = Resources.getResource("models/fno/models/flight.json");
+            JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
+            Function<String, List<Fact>> factExtractor = this.getFlightFactExtractor();
+            context.addFact("flights", flightJson.toString(), factExtractor);
+        }catch(Exception e){
+            Console.log("exception", e.getMessage());
+            invalidFormat = true;
+        }
+
+        assertTrue(invalidFormat, "invalid_data_format_check_failed");
     }
 }
