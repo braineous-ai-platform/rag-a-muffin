@@ -135,7 +135,10 @@ public void orchestrate(JsonArray flightsJsonArray){
 ### Testing
 
 ```
+cd <repo_root>/rag-a-muffin/prompt_engineering_quarkus
+
 mvn -q -Dtest=LLMContextTests test
+
 mvn -q -Dtest=FNOOrchestratorTests test
 ```
 
