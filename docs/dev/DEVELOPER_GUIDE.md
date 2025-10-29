@@ -13,7 +13,7 @@ The intent is to keep all developer-side logic **model-free, composable, and tes
 
 ---
 
-## 2️⃣ Core Architecture Overview
+## 2️⃣ Core Architecture Overview - (Still Evolving)
 
 | Layer                       | Description                                                                           | Developer Role                                  |
 | --------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------- |
