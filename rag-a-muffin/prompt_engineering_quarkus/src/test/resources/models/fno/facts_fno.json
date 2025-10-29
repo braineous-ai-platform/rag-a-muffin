@@ -1,0 +1,67 @@
+{
+  "nodes": [
+    {
+      "node_id": "MEL",
+      "type": "airport",
+      "name": "Tullamarine",
+      "timezone": "Australia/Melbourne",
+      "icao": "YMML"
+    },
+    {
+      "node_id": "ADL",
+      "type": "airport",
+      "name": "Adelaide International Airport",
+      "timezone": "Australia/Adelaide",
+      "icao": "YPAD"
+    }
+  ],
+  "edges": [
+    {
+      "edge_id": "AS5066",
+      "type": "flight",
+      "source": "MEL",
+      "target": "ADL",
+      "airline": "Alaska Airlines",
+      "airline_iata": "AS",
+      "airline_icao": "ASA",
+      "codeshare": {
+        "airline_name": "Qantas",
+        "airline_iata": "QF",
+        "airline_icao": "QFA",
+        "flight_iata": "QF675"
+      },
+      "flight_number": "5066",
+      "flight_date": "2022-06-03",
+      "status": "scheduled",
+      "departure_scheduled": "2022-06-03T08:45:00+00:00",
+      "arrival_scheduled": "2022-06-03T09:35:00+00:00",
+      "duration_estimated_min": 50
+    }
+  ],
+  "facts": [
+    {
+      "fact": "Airport(MEL, 'Tullamarine')"
+    },
+    {
+      "fact": "Airport(ADL, 'Adelaide International Airport')"
+    },
+    {
+      "fact": "Flight(AS5066, MEL, ADL)"
+    },
+    {
+      "fact": "OperatedBy(AS5066, 'Alaska Airlines')"
+    },
+    {
+      "fact": "CodesharedWith(AS5066, QF675, 'Qantas')"
+    },
+    {
+      "fact": "ScheduledDeparture(AS5066, '2022-06-03T08:45:00+00:00')"
+    },
+    {
+      "fact": "ScheduledArrival(AS5066, '2022-06-03T09:35:00+00:00')"
+    },
+    {
+      "fact": "FlightDuration(AS5066, 50)"
+    }
+  ]
+}

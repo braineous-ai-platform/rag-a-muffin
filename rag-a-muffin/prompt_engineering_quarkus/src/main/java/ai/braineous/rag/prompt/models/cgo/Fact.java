@@ -15,11 +15,24 @@ public class Fact {
         this.feats = new HashMap<>();
     }
 
+    
+
     public Fact(String id, String text, Map<String, Object> feats) {
         this.id = id;
         this.text = text;
         this.feats = feats;
     }
+
+    public Fact(String id, String text) {
+        this.id = id;
+        this.text = text;
+    }
+
+    public Fact(String text) {
+        this.text = text;
+    }
+
+
 
     public String getId() {
         return id;
