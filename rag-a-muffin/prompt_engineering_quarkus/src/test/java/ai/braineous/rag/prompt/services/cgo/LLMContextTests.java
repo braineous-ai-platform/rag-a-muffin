@@ -30,6 +30,7 @@ public class LLMContextTests {
         JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
         JsonArray flightsJsonArray = new JsonArray();
         flightsJsonArray.add(flightJson);
+        
         Function<String, List<Fact>> factExtractor = this.getFlightFactExtractor();
         Function<List<Fact>, Set<String>> ruleGen = this.getFlightFactRuleGen();
         context.build("flights", flightsJsonArray.toString(), factExtractor, ruleGen);

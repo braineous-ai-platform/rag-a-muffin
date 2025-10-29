@@ -2,7 +2,6 @@ package ai.braineous.rag.prompt.services;
 
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -11,6 +10,7 @@ import ai.braineous.rag.prompt.models.cgo.Edge;
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
 import ai.braineous.rag.prompt.models.cgo.Rule;
+import ai.braineous.rag.prompt.services.cgo.LLMContext;
 import ai.braineous.rag.prompt.services.cgo.RuleEngine;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractor;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
@@ -56,21 +56,21 @@ public class CausalOrchestrator {
       //TODO: start_here
     }
 
-    public void orchestrate(List<Fact> facts, Set<String> rules){
+    public void orchestrate(LLMContext llmContext){
+      List<Fact> allFacts = llmContext.getAllFacts();
+
       //generate_reasoning_context
       ReasoningContext reasoningContext = new ReasoningContext();
-      reasoningContext.setFacts(facts);
+      reasoningContext.setFacts(allFacts);
 
-      //integrate_rule_components
-      Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
+      //TODO: integrate_rule_components and generate the subgraph
+      //Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
 
       //TODO: rules inferred_at_app_level (?)
       //List<Rule> rules = this.ruleEngine.inferRules(facts, feats);
-
       //List<Edge> edges = this.ruleEngine.applyRules(reasoningContext, rules, feats);
 
       //TODO: integrate_summarizer_components
-      //TODO: start_here
 
       Console.log("llm_bridge_orchestrate", reasoningContext);
     }

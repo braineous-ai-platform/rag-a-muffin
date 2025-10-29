@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.services.cgo;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -32,6 +33,17 @@ public class LLMContext {
         }catch(Exception e){
             throw new RuntimeException("unkown_error: " + e.getMessage());
         }
+    }
+
+    public List<Fact> getAllFacts(){
+        List<Fact> facts = new ArrayList<>();
+
+        for(var entry: this.context.entrySet()){
+            LLMFacts llmFacts = entry.getValue();
+            facts.addAll(llmFacts.getFacts());
+        }
+
+        return facts;
     }
 
     private void validate(String jsonArrayStr){
