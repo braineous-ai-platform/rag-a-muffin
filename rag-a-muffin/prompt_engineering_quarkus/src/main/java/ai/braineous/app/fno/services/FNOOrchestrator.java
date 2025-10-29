@@ -36,7 +36,7 @@ public class FNOOrchestrator {
 
             context.build("flights", flightsJsonArray.toString(), factExtractor, ruleGen);
 
-            //TODO: bridge to CGO
+            //bridge to CGO
             this.llmBridge.submit(context);
 
         }catch(Exception e){
