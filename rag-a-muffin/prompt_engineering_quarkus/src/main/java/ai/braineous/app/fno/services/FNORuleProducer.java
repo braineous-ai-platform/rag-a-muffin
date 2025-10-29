@@ -17,7 +17,6 @@ public class FNORuleProducer {
         for (Fact f : facts) {
             String t = f.getText();
             if (t.startsWith("Airport(")) {
-                // Airport(AUS, 'AUS') -> AUS
                 int p1 = t.indexOf('(')+1, p2 = t.indexOf(',', p1);
                 String code = t.substring(p1, p2).trim();
                 airports.add(code);
@@ -28,18 +27,18 @@ public class FNORuleProducer {
         
         // Emit airport nodes
         for (String code : airports) {
-        out.add(("{\"id\":\"R_airport_node_%s\",\"note\":\"Create airport node.\","
-            + "\"when\":[\"Airport($code, $name)\"],"
-            + "\"then\":[{\"emit\":\"GraphNode(%s, 'airport', $name)\"}],"
-            + "\"weight\":0.8}").formatted(code, code));
+            out.add(("{\"id\":\"R_airport_node_%s\",\"note\":\"Create airport node.\","
+                + "\"when\":[\"Airport($code, $name)\"],"
+                + "\"then\":[{\"emit\":\"GraphNode(%s, 'airport', $name)\"}],"
+                + "\"weight\":0.8}").formatted(code, code));
         }
 
         // Emit flight edges (generic pattern suffices; string-only)
         if (!flights.isEmpty()) {
-        out.add("{\"id\":\"R_flight_edge\",\"note\":\"Create flight edge from Flight facts.\","
-            + "\"when\":[\"Flight(id:$fid, $src, $dst, $depUtc, $arrUtc)\"],"
-            + "\"then\":[{\"emit\":\"GraphEdge($src, $dst, $depUtc, $arrUtc, 'fly', id:$fid)\"}],"
-            + "\"weight\":1.0}");
+            out.add("{\"id\":\"R_flight_edge\",\"note\":\"Create flight edge from Flight facts.\","
+                + "\"when\":[\"Flight(id:$fid, $src, $dst, $depUtc, $arrUtc)\"],"
+                + "\"then\":[{\"emit\":\"GraphEdge($src, $dst, $depUtc, $arrUtc, 'fly', id:$fid)\"}],"
+                + "\"weight\":1.0}");
         }
         
         return out;

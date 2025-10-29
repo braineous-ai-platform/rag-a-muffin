@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
 import java.util.List;
+import java.util.Set;
 
 import ai.braineous.rag.prompt.models.cgo.Fact;
 
@@ -10,9 +11,16 @@ public class LLMFacts {
 
     private List<Fact> facts;
 
-    public LLMFacts(List<Fact> facts, String json) {
-        this.facts = facts;
+    private Set<String> rules;
+
+    public LLMFacts() {
+    }
+
+    
+    public LLMFacts(String json, List<Fact> facts,Set<String> rules) {
         this.json = json;
+        this.facts = facts;
+        this.rules = rules;
     }
 
     public String getJson() {
@@ -31,13 +39,23 @@ public class LLMFacts {
         this.facts = facts;
     }
 
+    public Set<String> getRules() {
+        return rules;
+    }
+
+    public void setRules(Set<String> rules) {
+        this.rules = rules;
+    }
+
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LLMFacts{");
         sb.append("json=").append(json);
         sb.append(", facts=").append(facts);
+        sb.append(", rules=").append(rules);
         sb.append('}');
         return sb.toString();
     }
+
 }

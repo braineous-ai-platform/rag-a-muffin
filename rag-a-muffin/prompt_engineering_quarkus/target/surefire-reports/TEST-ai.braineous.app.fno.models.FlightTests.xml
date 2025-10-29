@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.models.FlightTests" time="0.05" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="ai.braineous.app.fno.models.FlightTests" time="0.042" tests="1" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -13,7 +13,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/Users/babyboy/.sdkman/candidates/java/21.0.8-amzn/lib"/>
-    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251028153753118_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-28T15-37-53_079-jvmRun1 surefire-20251028153753118_1tmp surefire_0-20251028153753118_2tmp"/>
+    <property name="sun.java.command" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251028190152736_3.jar /Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire 2025-10-28T19-01-52_695-jvmRun1 surefire-20251028190152736_1tmp surefire_0-20251028190152736_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="maven.home" value="/usr/local/Cellar/maven/3.9.6/libexec"/>
@@ -31,7 +31,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251028153753118_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/babyboy/mumma/oss/rag-a-muffin/rag-a-muffin/prompt_engineering_quarkus/target/surefire/surefirebooter-20251028190152736_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="21.0.8+9-LTS"/>
@@ -62,7 +62,7 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="65.0"/>
   </properties>
-  <testcase name="testJsonSerialization" classname="ai.braineous.app.fno.models.FlightTests" time="0.04">
+  <testcase name="testJsonSerialization" classname="ai.braineous.app.fno.models.FlightTests" time="0.032">
     <system-out><![CDATA[____flight_json____
 {"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"}
 ____flight_str____

@@ -3,6 +3,7 @@ package ai.braineous.rag.prompt.services.cgo;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Function;
 
 import com.google.gson.JsonElement;
@@ -17,19 +18,28 @@ public class LLMContext {
     public LLMContext() {
     }
 
-    public void addFact(String type, String jsonArrayStr, Function<String, List<Fact>> factExtractor){
+    public void build(String type, String jsonArrayStr, 
+        Function<String, List<Fact>> factExtractor,
+        Function<List<Fact>, Set<String>> ruleProducer
+    ){
+        this.validate(jsonArrayStr);
+        try{
+            List<Fact> facts = factExtractor.apply(jsonArrayStr);
+            Set<String> rules = ruleProducer.apply(facts);
+
+            LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts, rules);
+            context.put(type, llmFacts);
+        }catch(Exception e){
+            throw new RuntimeException("unkown_error: " + e.getMessage());
+        }
+    }
+
+    private void validate(String jsonArrayStr){
         //validate_proper json. Has to be a json_array
         JsonElement jsonElement = JsonParser.parseString(jsonArrayStr);
         if(!jsonElement.isJsonArray()){
-            throw new RuntimeException("ivalid_inout_format: " + jsonArrayStr + " must be a valid JSON Array");
+            throw new RuntimeException("invalid_input_format: " + jsonArrayStr + " must be a valid JSON Array");
         }
-
-        List<Fact> facts = factExtractor.apply(jsonArrayStr);
-
-        LLMFacts llmFacts = new LLMFacts(facts, jsonArrayStr);
-
-        context.put(type, llmFacts);
-
     }
 
     @Override
