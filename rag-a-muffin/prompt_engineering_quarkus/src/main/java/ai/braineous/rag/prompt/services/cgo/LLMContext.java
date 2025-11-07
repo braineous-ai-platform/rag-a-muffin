@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.services.cgo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -44,6 +45,17 @@ public class LLMContext {
         }
 
         return facts;
+    }
+
+    public Set<String> getAllRules(){
+        Set<String> rules = new LinkedHashSet<>();
+
+        for(var entry: this.context.entrySet()){
+            LLMFacts llmFacts = entry.getValue();
+            rules.addAll(llmFacts.getRules());
+        }
+
+        return rules;
     }
 
     private void validate(String jsonArrayStr){
