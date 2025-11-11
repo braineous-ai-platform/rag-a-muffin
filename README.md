@@ -50,5 +50,12 @@ ReasoningContext{facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=nu
 
 ---
 
+### 📘 Documentation Highlights
+
+- [Architecture Overview](./docs/architecture.md)
+- [Validator Design](./docs/validator_design.md)
+- [Rulepack Template](./docs/rulepack_template.md)
+- [Versioned Release Notes](./docs/versioned/v0.2.0.md)
+
 **Maintainer:** Sohil Shah (@braineous-ai-platform)  
 **License:** Apache 2.0
