@@ -8,13 +8,13 @@ public class Rule {
 
     private String id;
 
-    //type of rules such as it's origination like a reference, some media post, etc
-    private String type; 
+    // type of rules such as it's origination like a reference, some media post, etc
+    private String type;
 
     private String name;
 
-    //Rule->(private double weight;) == Fact->(feats[associated_ids_weight])
-    //How strongly do these two facts causally co-activate in reasoning space?
+    // Rule->(private double weight;) == Fact->(feats[associated_ids_weight])
+    // How strongly do these two facts causally co-activate in reasoning space?
     private double weight;
 
     private String transformer;
@@ -25,12 +25,18 @@ public class Rule {
 
     private Function<ReasoningContext, Fact> derive;
 
-    public Rule(){
+    public Rule() {
         this.lhsFactIds = new ArrayList<>();
     }
 
+    public Rule(String id, String name, double weight) {
+        this.id = id;
+        this.name = name;
+        this.weight = weight;
+    }
+
     public Rule(String id, String name, String type, String transformer, String instructions,
-    double weight, List<String> lhsFactIds, Function<ReasoningContext, Fact> derive) {
+            double weight, List<String> lhsFactIds, Function<ReasoningContext, Fact> derive) {
         this.derive = derive;
         this.type = type;
         this.transformer = transformer;
@@ -80,7 +86,6 @@ public class Rule {
     public void setDerive(Function<ReasoningContext, Fact> derive) {
         this.derive = derive;
     }
-
 
     public String getType() {
         return type;

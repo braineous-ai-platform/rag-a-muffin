@@ -1,6 +1,11 @@
 package ai.braineous.rag.prompt.models.cgo;
 
-public class Edge {
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+
+public class Edge extends Fact {
 
     private String ruleId;
 
@@ -10,15 +15,22 @@ public class Edge {
 
     private double score;
 
-    public Edge(){
+    private Set<String> attributes;
 
+    public Edge() {
+        this.attributes = new HashSet<>();
     }
 
-    public Edge(String ruleId, String fromFactId, String toFactId, double score) {
-        this.fromFactId = fromFactId;
+    public Edge(Set<String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Edge(String ruleId, String fromFactId, String toFactId, double score, Set<String> attributes) {
         this.ruleId = ruleId;
-        this.score = score;
+        this.fromFactId = fromFactId;
         this.toFactId = toFactId;
+        this.score = score;
+        this.attributes = attributes;
     }
 
     public String getRuleId() {
@@ -53,9 +65,25 @@ public class Edge {
         this.score = score;
     }
 
+    public void addAttribute(String attribute) {
+        this.attributes.add(attribute);
+    }
+
+    public void removeAttribute(String attribute) {
+        this.attributes.remove(attribute);
+    }
+
+    public Set<String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Set<String> attributes) {
+        this.attributes = attributes;
+    }
+
     @Override
     public String toString() {
         return "Edge [ruleId=" + ruleId + ", fromFactId=" + fromFactId + ", toFactId=" + toFactId + ", score=" + score
-                + "]";
+                + ", attributes=" + attributes + "]";
     }
 }

@@ -1,7 +1,0 @@
-{
-  "id": "R1",
-  "type": "references",
-  "transformer": "F_transformer",
-  "source": "F_cricket_game",
-  "instructions": "Use the diagram as reasoning scaffold."
-}
