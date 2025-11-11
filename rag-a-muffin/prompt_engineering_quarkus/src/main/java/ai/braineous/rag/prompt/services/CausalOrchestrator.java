@@ -61,8 +61,8 @@ public class CausalOrchestrator {
     List<Fact> allFacts = llmContext.getAllFacts();
     Set<String> allRules = llmContext.getAllRules();
 
-    Console.log("causal_orchestrate_fact", allFacts);
-    Console.log("causal_orchestrate_rule", allRules);
+    CausalRuleEngine ruleEngine = new CausalRuleEngine();
+    ruleEngine.infer(allFacts, allRules);
 
     // generate_reasoning_context
     // ReasoningContext reasoningContext = new ReasoningContext();

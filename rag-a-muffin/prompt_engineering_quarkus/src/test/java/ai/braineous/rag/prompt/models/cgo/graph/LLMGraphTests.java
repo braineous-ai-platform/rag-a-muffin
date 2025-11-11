@@ -11,6 +11,9 @@ import java.util.Set;
 
 import org.junit.jupiter.api.Test;
 
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import ai.braineous.rag.prompt.models.cgo.Edge;
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.Rule;
@@ -110,5 +113,101 @@ public class LLMGraphTests {
 
         // Flight -> Airport (arrive)
         g.addEdge(flight, destAirport, new RuleEdge(flightRule, arriveAttrs));
+    }
+
+    @Test
+    public void testFactToGraphGeneration() throws Exception {
+        // -------------------- Ruleset --------------------
+        Map<String, Rule> rules = new HashMap<>();
+        rules.put("R_airport_node", new Rule("R_airport_node", "Create airport node.", 0.8));
+        rules.put("R_flight_edge", new Rule("R_flight_edge", "Create flight edge from Flight facts.", 1.0));
+
+        String ausJsonStr = "{\n" + //
+                "  \"id\": \"Airport:AUS\",\n" + //
+                "  \"kind\": \"Airport\",\n" + //
+                "  \"mode\": \"atomic\",\n" + //
+                "  \"feats\": {\n" + //
+                "    \"code\": \"AUS\",\n" + //
+                "    \"name\": \"Austin-Bergstrom International Airport\",\n" + //
+                "    \"city\": \"Austin\",\n" + //
+                "    \"state\": \"TX\",\n" + //
+                "    \"country\": \"USA\",\n" + //
+                "    \"tz\": \"America/Chicago\"\n" + //
+                "  },\n" + //
+                "  \"meta\": {\n" + //
+                "    \"source\": \"seed\",\n" + //
+                "    \"batchId\": \"b1\",\n" + //
+                "    \"observedAt\": \"2025-11-08T18:20:00Z\"\n" + //
+                "  }\n" + //
+                "}\n" + //
+                "";
+        JsonObject ausJson = JsonParser.parseString(ausJsonStr).getAsJsonObject();
+        Console.log("aus_json", ausJson);
+
+        String dfwJsonStr = "{\n" + //
+                "  \"id\": \"Airport:DFW\",\n" + //
+                "  \"kind\": \"Airport\",\n" + //
+                "  \"mode\": \"atomic\",\n" + //
+                "  \"feats\": {\n" + //
+                "    \"code\": \"DFW\",\n" + //
+                "    \"name\": \"Dallas/Fort Worth International Airport\",\n" + //
+                "    \"city\": \"Dallas\",\n" + //
+                "    \"state\": \"TX\",\n" + //
+                "    \"country\": \"USA\",\n" + //
+                "    \"tz\": \"America/Chicago\"\n" + //
+                "  },\n" + //
+                "  \"meta\": {\n" + //
+                "    \"source\": \"seed\",\n" + //
+                "    \"batchId\": \"b1\",\n" + //
+                "    \"observedAt\": \"2025-11-08T18:20:00Z\"\n" + //
+                "  }\n" + //
+                "}\n" + //
+                "";
+        JsonObject dfwJson = JsonParser.parseString(dfwJsonStr).getAsJsonObject();
+        Console.log("dfw_json", dfwJson);
+
+        String flightJsonStr = "{\n" + //
+                "  \"id\": \"Flight:F120\",\n" + //
+                "  \"kind\": \"Flight\",\n" + //
+                "  \"mode\": \"relational\",\n" + //
+                "  \"slots\": { \"origin\": \"Airport:AUS\", \"dest\": \"Airport:DFW\" },\n" + //
+                "  \"feats\": { \"depUtc\": \"2025-10-22T11:20:00Z\", \"arrUtc\": \"2025-10-22T12:25:00Z\" },\n" + //
+                "  \"meta\": { \"source\": \"ops\", \"batchId\": \"b1\", \"observedAt\": \"2025-10-22T10:00:00Z\" }\n" + //
+                "}\n" + //
+                "";
+        JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
+        Console.log("flight_json", flightJson);
+
+        // -------------------- Convert to Facts --------------------
+        Fact AUS = new Fact(ausJson.get("id").getAsString(), ausJson.toString(), null);
+        Fact DFW = new Fact(dfwJson.get("id").getAsString(), dfwJson.toString(), null);
+        Fact F120 = new Fact(flightJson.get("id").getAsString(), flightJson.toString(), null);
+
+        // -------------------- Build graph --------------------
+        LLMGraph g = new LLMGraph();
+        g.addFact(AUS);
+        g.addFact(DFW);
+        g.addFact(F120);
+
+        // -------------------- Wire edge from relational fact --------------------
+        Rule flightRule = rules.get("R_flight_edge");
+        Edge departAttrs = new Edge(Set.of("fly", "depart"));
+        Edge arriveAttrs = new Edge(Set.of("fly", "arrive"));
+
+        addLeg(g, AUS, F120, DFW, flightRule, departAttrs, arriveAttrs);
+
+        // -------------------- Assertions --------------------
+        assertEquals(3, g.network.nodes().size(), "2 airports + 1 flight");
+        assertEquals(2, g.network.edges().size(), "depart + arrive edges");
+
+        assertTrue(g.network.predecessors(F120).contains(AUS), "AUS → F120 (depart)");
+        assertTrue(g.network.successors(F120).contains(DFW), "F120 → DFW (arrive)");
+
+        assertTrue(g.edgeAttrs.containsKey("R_flight_edge"));
+        Set<String> attrs = g.edgeAttrs.get("R_flight_edge");
+        assertTrue(attrs.containsAll(Set.of("fly", "depart", "arrive")));
+
+        assertTrue(g.nodeAttrs.containsKey("Airport:AUS"));
+        assertTrue(g.nodeAttrs.containsKey("Flight:F120"));
     }
 }
