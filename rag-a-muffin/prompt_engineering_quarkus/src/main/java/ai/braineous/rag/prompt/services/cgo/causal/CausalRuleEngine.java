@@ -34,7 +34,7 @@ public class CausalRuleEngine implements RuleEngine {
         return new ArrayList<>();
     }
 
-    public void infer(List<Fact> facts, Set<String> rules) {
+    public void infer(List<Fact> facts) {
         Console.log("causal_rule_engine_facts", facts);
     }
 

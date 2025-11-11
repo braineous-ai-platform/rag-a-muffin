@@ -11,16 +11,12 @@ public class LLMFacts {
 
     private List<Fact> facts;
 
-    private Set<String> rules;
-
     public LLMFacts() {
     }
 
-    
-    public LLMFacts(String json, List<Fact> facts,Set<String> rules) {
+    public LLMFacts(String json, List<Fact> facts) {
         this.json = json;
         this.facts = facts;
-        this.rules = rules;
     }
 
     public String getJson() {
@@ -39,23 +35,8 @@ public class LLMFacts {
         this.facts = facts;
     }
 
-    public Set<String> getRules() {
-        return rules;
-    }
-
-    public void setRules(Set<String> rules) {
-        this.rules = rules;
-    }
-
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("LLMFacts{");
-        sb.append("json=").append(json);
-        sb.append(", facts=").append(facts);
-        sb.append(", rules=").append(rules);
-        sb.append('}');
-        return sb.toString();
+        return "LLMFacts [json=" + json + ", facts=" + facts + "]";
     }
-
 }

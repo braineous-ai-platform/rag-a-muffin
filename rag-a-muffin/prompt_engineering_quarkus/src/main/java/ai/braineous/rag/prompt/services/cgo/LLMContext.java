@@ -20,26 +20,23 @@ public class LLMContext {
     public LLMContext() {
     }
 
-    public void build(String type, String jsonArrayStr, 
-        Function<String, List<Fact>> factExtractor,
-        Function<List<Fact>, Set<String>> ruleProducer
-    ){
+    public void build(String type, String jsonArrayStr,
+            Function<String, List<Fact>> factExtractor) {
         this.validate(jsonArrayStr);
-        try{
+        try {
             List<Fact> facts = factExtractor.apply(jsonArrayStr);
-            Set<String> rules = ruleProducer.apply(facts);
 
-            LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts, rules);
+            LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts);
             context.put(type, llmFacts);
-        }catch(Exception e){
+        } catch (Exception e) {
             throw new RuntimeException("unkown_error: " + e.getMessage());
         }
     }
 
-    public List<Fact> getAllFacts(){
+    public List<Fact> getAllFacts() {
         List<Fact> facts = new ArrayList<>();
 
-        for(var entry: this.context.entrySet()){
+        for (var entry : this.context.entrySet()) {
             LLMFacts llmFacts = entry.getValue();
             facts.addAll(llmFacts.getFacts());
         }
@@ -47,21 +44,10 @@ public class LLMContext {
         return facts;
     }
 
-    public Set<String> getAllRules(){
-        Set<String> rules = new LinkedHashSet<>();
-
-        for(var entry: this.context.entrySet()){
-            LLMFacts llmFacts = entry.getValue();
-            rules.addAll(llmFacts.getRules());
-        }
-
-        return rules;
-    }
-
-    private void validate(String jsonArrayStr){
-        //validate_proper json. Has to be a json_array
+    private void validate(String jsonArrayStr) {
+        // validate_proper json. Has to be a json_array
         JsonElement jsonElement = JsonParser.parseString(jsonArrayStr);
-        if(!jsonElement.isJsonArray()){
+        if (!jsonElement.isJsonArray()) {
             throw new RuntimeException("invalid_input_format: " + jsonArrayStr + " must be a valid JSON Array");
         }
     }
