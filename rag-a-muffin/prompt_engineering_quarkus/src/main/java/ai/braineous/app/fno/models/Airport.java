@@ -7,7 +7,7 @@ import com.google.gson.JsonArray;
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.services.cgo.FactExtractor;
 
-public class Airport implements FactExtractor{
+public class Airport {
 
     private String id;
 
@@ -58,10 +58,5 @@ public class Airport implements FactExtractor{
         sb.append(", tz=").append(tz);
         sb.append('}');
         return sb.toString();
-    }
-
-    @Override
-    public List<Fact> extract(String prompt, JsonArray facts) {
-        throw new UnsupportedOperationException("Not supported yet.");
     }
 }

@@ -23,8 +23,5 @@ public class FlightTests {
         Flight flight = new Flight(flightsJsonStr);
 
         Console.log("flight_str", flight);
-
-        List<Fact> flightFacts = flight.extract(null, null);
-        Console.log("flight_facts", flightFacts);
     }
 }

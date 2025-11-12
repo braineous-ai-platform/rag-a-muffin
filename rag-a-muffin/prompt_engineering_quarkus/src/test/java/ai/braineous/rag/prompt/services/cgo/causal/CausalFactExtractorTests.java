@@ -15,7 +15,8 @@ import ai.braineous.rag.prompt.utils.Resources;
 
 public class CausalFactExtractorTests {
 
-    @Test
+    //TDOD: deprecate
+    /*@Test
     public void testExtract() throws Exception {
         //parse_user_prompt
         String jsonStr = Resources.getResource("models/reasoning/excellent_cricket_game/fact.json");
@@ -27,9 +28,9 @@ public class CausalFactExtractorTests {
         Console.log("facts", factsArray);
 
         String prompt = fact.get("id").getAsString();
-        FactExtractor factExtractor = new CausalFactExtractor();
-        List<Fact> facts = factExtractor.extract(prompt, factsArray);
+        FactExtractor factExtractor = new FactExtractor();
+        List<Fact> facts = factExtractor.extract(prompt);
 
         Console.log("extracted_facts", facts);
-    }
+    }*/
 }

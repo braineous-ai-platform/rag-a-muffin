@@ -1,22 +1,12 @@
 package ai.braineous.rag.prompt.services;
 
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-
-import ai.braineous.rag.prompt.models.cgo.Edge;
 import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
-import ai.braineous.rag.prompt.models.cgo.Rule;
 import ai.braineous.rag.prompt.services.cgo.LLMContext;
 import ai.braineous.rag.prompt.services.cgo.RuleEngine;
-import ai.braineous.rag.prompt.services.cgo.causal.CausalFactExtractor;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalSummarizer;
-import ai.braineous.rag.prompt.utils.Console;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped

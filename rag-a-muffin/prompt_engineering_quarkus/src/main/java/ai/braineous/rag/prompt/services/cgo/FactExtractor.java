@@ -6,6 +6,7 @@ import com.google.gson.JsonArray;
 
 import ai.braineous.rag.prompt.models.cgo.Fact;
 
+@FunctionalInterface
 public interface FactExtractor {
-    List<Fact> extract(String prompt, JsonArray facts);
+    List<Fact> extract(String jsonArrayStr);
 }
