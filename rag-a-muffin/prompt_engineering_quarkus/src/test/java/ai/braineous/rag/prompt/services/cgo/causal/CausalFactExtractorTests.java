@@ -1,18 +1,5 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
-import java.util.List;
-
-import org.junit.jupiter.api.Test;
-
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.services.cgo.FactExtractor;
-import ai.braineous.rag.prompt.utils.Console;
-import ai.braineous.rag.prompt.utils.Resources;
-
 public class CausalFactExtractorTests {
 
     //TDOD: deprecate

@@ -1,7 +1,6 @@
 package ai.braineous.app.fno.services;
 
 import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.services.cgo.FactExtractor;
 import ai.braineous.rag.prompt.utils.Console;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
