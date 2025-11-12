@@ -1,13 +1,13 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.rag.prompt.models.cgo.Fact;
+import com.google.common.graph.MutableNetwork;
+import com.google.common.graph.NetworkBuilder;
+
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-
-import com.google.common.graph.*;
-
-import ai.braineous.rag.prompt.models.cgo.Fact;
 
 public class LLMGraph {
     final MutableNetwork<Fact, RuleEdge> network = NetworkBuilder.directed()

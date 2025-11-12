@@ -1,8 +1,5 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import java.util.HashSet;
-import java.util.Set;
-
 import ai.braineous.rag.prompt.models.cgo.Edge;
 import ai.braineous.rag.prompt.models.cgo.Rule;
 
