@@ -41,5 +41,17 @@ public class LLMGraph {
                 });
     }
 
+    public BindResult bind(Input input){
+        //Validate
+        Validator validator = new Validator();
+        BindResult bindResult = validator.bind(input);
+
+        //update the Graph as in "addEdge" now private/internal
+
+        //perform VersionControl
+
+        return bindResult;
+    }
+
     // -----------------------------------------------------------------------
 }

@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.models.cgo;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 public class Fact {
 
@@ -10,6 +11,8 @@ public class Fact {
     private String text;
 
     private Map<String, Object> feats;
+
+    private String mode;
 
     public Fact(){
         this.feats = new HashMap<>();
@@ -58,9 +61,40 @@ public class Fact {
         this.feats = feats;
     }
 
-    @Override
-    public String toString() {
-        return "Fact [id=" + id + ", text=" + text + ", feats=" + feats + "]";
+    public String getMode() {
+        return mode;
     }
 
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    @Override
+    public String toString() {
+        return "Fact{" +
+                "id='" + id + '\'' +
+                ", text='" + text + '\'' +
+                ", feats=" + feats +
+                ", mode='" + mode + '\'' +
+                '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || !(o instanceof Fact)) {
+            return false;
+        }
+
+        Fact fact = (Fact) o;
+        return id.equals(fact.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
