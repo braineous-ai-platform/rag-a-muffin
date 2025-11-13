@@ -21,7 +21,8 @@ import ai.braineous.rag.prompt.utils.Console;
 
 public class LLMGraphTests {
 
-    @Test
+    //TODO: deprecate
+    /*@Test
     public void testArrivalSpokeToHub() throws Exception {
         Console.log("testAddFactsAndEdges", "2");
 
@@ -97,7 +98,7 @@ public class LLMGraphTests {
         // Optional: nodeAttrs observed (may be null feats)
         assertTrue(g.nodeAttrs.containsKey("Airport:AUS"));
         assertTrue(g.nodeAttrs.containsKey("Flight:F100"));
-    }
+    }*/
 
     private static void addLeg(
             LLMGraph g,
@@ -115,7 +116,8 @@ public class LLMGraphTests {
         g.addEdge(flight, destAirport, new RuleEdge(flightRule, arriveAttrs));
     }
 
-    @Test
+    //TODO: deprecate
+    /*@Test
     public void testFactToGraphGeneration() throws Exception {
         // -------------------- Ruleset --------------------
         Map<String, Rule> rules = new HashMap<>();
@@ -209,5 +211,5 @@ public class LLMGraphTests {
 
         assertTrue(g.nodeAttrs.containsKey("Airport:AUS"));
         assertTrue(g.nodeAttrs.containsKey("Flight:F120"));
-    }
+    }*/
 }

@@ -28,8 +28,8 @@ public class LLMGraph {
     public void addEdge(Fact nodeU, Fact nodeV, RuleEdge ruleEdge) {
         this.network.addEdge(nodeU, nodeV, ruleEdge);
 
-        this.nodeAttrs.put(nodeU.getId(), nodeU.getFeats());
-        this.nodeAttrs.put(nodeV.getId(), nodeV.getFeats());
+        //this.nodeAttrs.put(nodeU.getId(), nodeU.getFeats());
+        //this.nodeAttrs.put(nodeV.getId(), nodeV.getFeats());
 
         // merge instead of overwrite
         this.edgeAttrs.merge(
