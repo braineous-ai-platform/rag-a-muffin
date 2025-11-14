@@ -184,4 +184,49 @@ public class GraphBuilderTests {
         Console.log("graph_snapshot_bind_missing_airport_before", before);
         Console.log("graph_snapshot_bind_missing_airport_after", after);
     }
+
+    @Test
+    public void testBindIsIdempotentForSameFlight() {
+        Validator validator = new Validator();
+        GraphBuilder graphBuilder = new GraphBuilder(validator);
+
+        // given
+        Fact aus = new Fact("Airport:AUS", """
+        {"id":"Airport:AUS","kind":"Airport","name":"Austin"}
+        """);
+            Fact dfw = new Fact("Airport:DFW", """
+        {"id":"Airport:DFW","kind":"Airport","name":"Dallas"}
+        """);
+            Fact flight = new Fact("Flight:AUS-DFW:001", """
+        {"id":"Flight:AUS-DFW:001","kind":"Flight","from":"Airport:AUS","to":"Airport:DFW"}
+        """);
+
+        graphBuilder.addNode(aus);
+        graphBuilder.addNode(dfw);
+        graphBuilder.addNode(flight);
+
+        // when: first bind
+        Input input = new Input(aus, dfw, flight);
+        BindResult firstBind = graphBuilder.bind(input);
+        assertTrue(firstBind.isOk(), "first_bind_should_succeed");
+
+        GraphSnapshot afterFirst = graphBuilder.snapshot();
+        Console.log("graph_snapshot_after_first_bind", afterFirst);
+
+        assertNotNull(afterFirst);
+        assertEquals(3, afterFirst.nodes().size());
+        assertEquals(1, afterFirst.edges().size(), "expected_one_edge_after_first_bind");
+
+        // when: second bind with the same input (idempotency check)
+        BindResult secondBind = graphBuilder.bind(input);
+        assertTrue(secondBind.isOk(), "second_bind_should_also_succeed");
+
+        GraphSnapshot afterSecond = graphBuilder.snapshot();
+        Console.log("graph_snapshot_after_second_bind", afterSecond);
+
+        // then: graph structure must be unchanged (no duplicate edges)
+        assertNotNull(afterSecond);
+        assertEquals(3, afterSecond.nodes().size(), "node_count_should_remain_constant");
+        assertEquals(1, afterSecond.edges().size(), "edge_count_should_not_increase_for_same_flight");
+    }
 }
