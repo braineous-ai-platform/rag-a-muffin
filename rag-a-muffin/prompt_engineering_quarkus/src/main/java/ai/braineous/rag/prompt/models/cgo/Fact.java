@@ -10,7 +10,7 @@ public class Fact {
 
     private Set<String> attributes = new HashSet<>();
 
-    private String mode;
+    private String mode = "atomic";
 
     public Fact(){
 
