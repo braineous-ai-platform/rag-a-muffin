@@ -1,12 +1,11 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
 
 import java.util.function.Function;
 
-public class ValidatorRule {
+public class RelationshipValidatorRule {
 
     private String ruleId;
 
-    private Function<Fact, Boolean> rule;
+    private Function<Relationship, Boolean> rule;
 }

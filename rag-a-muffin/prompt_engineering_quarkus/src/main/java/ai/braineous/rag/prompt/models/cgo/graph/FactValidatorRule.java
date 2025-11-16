@@ -4,7 +4,7 @@ import ai.braineous.rag.prompt.models.cgo.Fact;
 
 import java.util.function.Function;
 
-public class ValidatorRule {
+public class FactValidatorRule {
 
     private String ruleId;
 

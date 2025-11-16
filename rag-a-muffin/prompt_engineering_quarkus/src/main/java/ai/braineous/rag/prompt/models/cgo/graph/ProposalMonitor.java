@@ -7,7 +7,8 @@ public class ProposalMonitor {
 
     public ProposalContext receive(ProposalContext context){
 
-        //processing
+        //execute business level validation
+
 
         return context;
     }
@@ -25,4 +26,10 @@ public class ProposalMonitor {
 
         return context;
     }
+
+    //----receive_phase-------------------------------------
+
+    //----accept_phase--------------------------------------
+
+    //---commit_phase---------------------------------------
 }
