@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo;
 
 import java.util.*;
+import java.util.function.Function;
 
 public class Fact {
 
@@ -11,6 +12,8 @@ public class Fact {
     private Set<String> attributes = new HashSet<>();
 
     private String mode = "atomic";
+
+    private Function<Fact, Boolean> validationRule = null;
 
     public Fact(){
 
@@ -75,6 +78,14 @@ public class Fact {
         this.attributes = attributes;
     }
 
+    public Function<Fact, Boolean> getValidationRule() {
+        return validationRule;
+    }
+
+    public void setValidationRule(Function<Fact, Boolean> validationRule) {
+        this.validationRule = validationRule;
+    }
+
     @Override
     public String toString() {
         return "Fact{" +
@@ -82,6 +93,7 @@ public class Fact {
                 ", text='" + text + '\'' +
                 ", attributes=" + attributes +
                 ", mode='" + mode + '\'' +
+                ", validationRule=" + validationRule +
                 '}';
     }
 

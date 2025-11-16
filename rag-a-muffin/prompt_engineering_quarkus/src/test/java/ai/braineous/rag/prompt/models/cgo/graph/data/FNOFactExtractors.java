@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.models.cgo.graph.data;
 
 import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.Input;
+import ai.braineous.rag.prompt.utils.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -188,5 +189,30 @@ public class FNOFactExtractors {
         Fact f = new Fact(id, json.toString());
         f.setMode(mode);
         return f;
+    }
+
+    //----------ValidationRuleGenerator------------------------
+    public static class SimpleValidationRuleGenerator implements Function<Fact, Boolean> {
+
+        /**
+         * Applies this function to the given argument.
+         *
+         * @param fact the function argument
+         * @return the function result
+         */
+        @Override
+        public Boolean apply(Fact fact) {
+            String id = fact.getId();
+            String text = fact.getText();
+
+            Console.log("id", id);
+            Console.log("text", text);
+
+            if(id == null || text == null){
+                return false;
+            }
+
+            return true;
+        }
     }
 }

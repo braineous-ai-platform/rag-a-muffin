@@ -11,12 +11,15 @@ import java.util.Set;
 public class GraphBuilder {
     private final Validator validator;
 
+    private final ProposalMonitor proposalMonitor;
+
     // internal mutable state
     private final Map<String, Fact> nodes = new HashMap<>(); // atomic
     private final Map<String, Edge> edges = new HashMap<>(); // relational
 
-    public GraphBuilder(Validator validator) {
+    public GraphBuilder(Validator validator, ProposalMonitor proposalMonitor) {
         this.validator = validator;
+        this.proposalMonitor = proposalMonitor;
     }
 
     /**
@@ -42,7 +45,37 @@ public class GraphBuilder {
         //make the edge relational
         edgeFact.setMode("relational");
 
-        BindResult result = validator.bind(input);
+        //substrate validation
+        BindResult result = this.validateSubstrate(input);
+        if (!result.isOk()) {
+            return result;
+        }
+
+        //execution_phase
+        Set<Proposal> proposals = this.execute(to, from, edgeFact);
+
+        //proposal_phase
+        BindResult proposalResult = this.validateStructure(proposals);
+        if(!proposalResult.isOk()){
+            return proposalResult;
+        }
+
+        //mutate
+        this.mutate(from, to, edgeFact);
+
+        return result;
+    }
+
+    //---mutation phases ----------------------------------------
+    private BindResult validateSubstrate(Input input){
+        Fact from = input.getFrom();   // atomic
+        Fact to   = input.getTo();     // atomic
+        Fact edgeFact = input.getEdge(); // relational-as-Fact
+
+        //make the edge relational
+        edgeFact.setMode("relational");
+
+        BindResult result = this.validator.bind(input);
         if (!result.isOk()) {
             return result;
         }
@@ -53,15 +86,45 @@ public class GraphBuilder {
             return result;
         }
 
+        return result;
+    }
+
+    private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact){
+        Set<Proposal> proposals = new HashSet<>();
+
+        //validate the data
+        /*boolean isFromStateOk = true;
+        if(from.getValidationRule() != null){
+            isFromStateOk = from.getValidationRule().apply(from);
+        }
+
+        /*boolean isToStateOk =
+                to.getValidationRule() != null && to.getValidationRule().apply(to);
+        boolean isEdgeStateOk =
+                edgeFact.getValidationRule() != null && edgeFact.getValidationRule().apply(edgeFact);*/
+
+        return proposals;
+    }
+
+    private BindResult validateStructure(Set<Proposal> proposals){
+        BindResult bindResult = new BindResult(true);
+
+        ProposalContext ctx = new ProposalContext();
+
+        //use the proposal_monitor for receive, accept, commit
+
+        return bindResult;
+    }
+
+    private void mutate(Fact from, Fact to, Fact edgeFact){
         // upsert nodes
         upsertNode(from);
         upsertNode(to);
 
         // upsert edge
         upsertEdge(from, to, edgeFact);
-
-        return result;
     }
+    //------------------------------------------------------------------
 
     /**
      * Build an immutable snapshot of the current graph state.

@@ -1,18 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.data.FNOFactExtractors;
-import ai.braineous.rag.prompt.utils.Console;
-import ai.braineous.rag.prompt.utils.Resources;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
-
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
