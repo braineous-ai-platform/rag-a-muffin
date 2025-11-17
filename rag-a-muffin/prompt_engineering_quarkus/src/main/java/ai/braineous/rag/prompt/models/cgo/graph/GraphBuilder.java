@@ -92,17 +92,6 @@ public class GraphBuilder {
     private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact){
         Set<Proposal> proposals = new HashSet<>();
 
-        //validate the data
-        /*boolean isFromStateOk = true;
-        if(from.getValidationRule() != null){
-            isFromStateOk = from.getValidationRule().apply(from);
-        }
-
-        /*boolean isToStateOk =
-                to.getValidationRule() != null && to.getValidationRule().apply(to);
-        boolean isEdgeStateOk =
-                edgeFact.getValidationRule() != null && edgeFact.getValidationRule().apply(edgeFact);*/
-
         return proposals;
     }
 
