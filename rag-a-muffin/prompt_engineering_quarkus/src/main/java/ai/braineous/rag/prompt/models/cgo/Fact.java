@@ -1,7 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+import java.util.function.Function;
 
 public class Fact {
 
@@ -9,18 +9,22 @@ public class Fact {
 
     private String text;
 
-    private Map<String, Object> feats;
+    private Set<String> attributes = new HashSet<>();
+
+    private String mode = "atomic";
+
+    private Function<Fact, Boolean> validationRule = null;
 
     public Fact(){
-        this.feats = new HashMap<>();
+
     }
 
-    
 
-    public Fact(String id, String text, Map<String, Object> feats) {
+    public Fact(String id, String text, Set<String> attributes, String mode) {
         this.id = id;
         this.text = text;
-        this.feats = feats;
+        this.attributes = attributes;
+        this.mode = mode;
     }
 
     public Fact(String id, String text) {
@@ -50,17 +54,65 @@ public class Fact {
         this.text = text;
     }
 
-    public Map<String, Object> getFeats() {
-        return feats;
+    public String getMode() {
+        return mode;
     }
 
-    public void setFeats(Map<String, Object> feats) {
-        this.feats = feats;
+    public void setMode(String mode) {
+        this.mode = mode;
+    }
+
+    public void addAttribute(String attribute) {
+        this.attributes.add(attribute);
+    }
+
+    public void removeAttribute(String attribute) {
+        this.attributes.remove(attribute);
+    }
+
+    public Set<String> getAttributes() {
+        return attributes;
+    }
+
+    public void setAttributes(Set<String> attributes) {
+        this.attributes = attributes;
+    }
+
+    public Function<Fact, Boolean> getValidationRule() {
+        return validationRule;
+    }
+
+    public void setValidationRule(Function<Fact, Boolean> validationRule) {
+        this.validationRule = validationRule;
     }
 
     @Override
     public String toString() {
-        return "Fact [id=" + id + ", text=" + text + ", feats=" + feats + "]";
+        return "Fact{" +
+                "id='" + id + '\'' +
+                ", text='" + text + '\'' +
+                ", attributes=" + attributes +
+                ", mode='" + mode + '\'' +
+                ", validationRule=" + validationRule +
+                '}';
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) {
+            return true;
+        }
+
+        if (o == null || !(o instanceof Fact)) {
+            return false;
+        }
+
+        Fact fact = (Fact) o;
+        return id.equals(fact.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
+    }
 }
