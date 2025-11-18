@@ -259,6 +259,7 @@ For the example provided:
 
 ```text
 Airport:AUS → Airport:DFW via Flight:AUS-DFW:001
+```
 
 ---
 
@@ -307,4 +308,3 @@ The validator is the **stability engine** of CGO:
 it guarantees that as rules grow in complexity, the graph remains consistent, deterministic, and safe.
 
 ---
-```
