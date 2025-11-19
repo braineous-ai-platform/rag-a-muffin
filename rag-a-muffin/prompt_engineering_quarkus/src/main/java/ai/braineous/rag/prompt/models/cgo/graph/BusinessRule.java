@@ -4,8 +4,7 @@ import ai.braineous.rag.prompt.models.cgo.Fact;
 
 import java.util.function.Function;
 
-public class BusinessRule {
-
-    private String ruleId;
-    private Function<Fact, Boolean> rule;
+@FunctionalInterface
+public interface BusinessRule {
+    Proposal execute(GraphView view);
 }

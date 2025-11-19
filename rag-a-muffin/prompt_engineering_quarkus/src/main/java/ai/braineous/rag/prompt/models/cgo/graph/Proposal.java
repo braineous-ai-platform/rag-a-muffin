@@ -35,6 +35,13 @@ public class Proposal {
     // getters, setters, builders...
 
 
+    public Proposal() {
+    }
+
+    public Proposal(String id) {
+        this.id = id;
+    }
+
     public Set<Fact> getInsert() {
         return insert;
     }
