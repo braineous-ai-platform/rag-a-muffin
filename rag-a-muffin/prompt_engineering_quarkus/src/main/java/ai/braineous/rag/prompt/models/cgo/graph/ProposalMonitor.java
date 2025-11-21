@@ -4,32 +4,12 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ProposalMonitor {
+    private ProposalValidator proposalValidator = new ProposalValidator();
 
-    public ProposalContext receive(ProposalContext context){
-
+    public ProposalContext receive(ProposalContext ctx){
         //execute business level validation
-
-
-        return context;
+        boolean validate = this.proposalValidator.validate(ctx);
+        ctx.setValidationSuccess(validate);
+        return ctx;
     }
-
-    public ProposalContext accept(ProposalContext context){
-
-        //processing
-
-        return context;
-    }
-
-    public ProposalContext commit(ProposalContext context){
-
-        //processing
-
-        return context;
-    }
-
-    //----receive_phase-------------------------------------
-
-    //----accept_phase--------------------------------------
-
-    //---commit_phase---------------------------------------
 }

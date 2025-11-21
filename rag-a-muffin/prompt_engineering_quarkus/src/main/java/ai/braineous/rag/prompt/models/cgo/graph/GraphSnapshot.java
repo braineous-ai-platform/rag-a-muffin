@@ -6,7 +6,7 @@ import ai.braineous.rag.prompt.models.cgo.Fact;
 import java.util.Collections;
 import java.util.Map;
 
-public class GraphSnapshot {
+public class GraphSnapshot implements GraphView{
 
     private String id;
 
@@ -39,5 +39,10 @@ public class GraphSnapshot {
                 "nodes=" + nodes +
                 ", edges=" + edges +
                 '}';
+    }
+
+    @Override
+    public Fact getFactById(String id) {
+        return this.nodes.get(id);
     }
 }

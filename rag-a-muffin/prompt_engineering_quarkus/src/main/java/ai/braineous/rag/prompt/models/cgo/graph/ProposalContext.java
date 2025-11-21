@@ -9,6 +9,8 @@ public class ProposalContext {
     private Set<FactValidatorRule> factValidatorRules = new HashSet<>();
     private Set<RelationshipValidatorRule> relationshipValidatorRules = new HashSet<>();
 
+    private boolean validationSuccess;
+
     public Set<Proposal> getProposals() {
         return proposals;
     }
@@ -31,5 +33,13 @@ public class ProposalContext {
 
     public void setRelationshipValidatorRules(Set<RelationshipValidatorRule> relationshipValidatorRules) {
         this.relationshipValidatorRules = relationshipValidatorRules;
+    }
+
+    public boolean isValidationSuccess() {
+        return validationSuccess;
+    }
+
+    public void setValidationSuccess(boolean validationSuccess) {
+        this.validationSuccess = validationSuccess;
     }
 }

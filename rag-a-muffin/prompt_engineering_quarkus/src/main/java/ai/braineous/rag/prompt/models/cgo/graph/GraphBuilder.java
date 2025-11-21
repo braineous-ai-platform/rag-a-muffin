@@ -37,7 +37,7 @@ public class GraphBuilder {
      * Validate and apply a single (from, to, edgeFact) triple.
      * On failure, graph state is unchanged.
      */
-    public BindResult bind(Input input) {
+    public BindResult bind(Input input, Rulepack rulepack) {
         Fact from = input.getFrom();   // atomic
         Fact to   = input.getTo();     // atomic
         Fact edgeFact = input.getEdge(); // relational-as-Fact
@@ -52,7 +52,7 @@ public class GraphBuilder {
         }
 
         //execution_phase
-        Set<Proposal> proposals = this.execute(to, from, edgeFact);
+        Set<Proposal> proposals = this.execute(to, from, edgeFact, rulepack);
 
         //proposal_phase
         BindResult proposalResult = this.validateStructure(proposals);
@@ -89,8 +89,13 @@ public class GraphBuilder {
         return result;
     }
 
-    private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact){
+    private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact, Rulepack rulepack){
         Set<Proposal> proposals = new HashSet<>();
+
+        GraphSnapshot snapshot = this.snapshot();
+
+
+        //TDOD: start_here
 
         return proposals;
     }
@@ -100,7 +105,10 @@ public class GraphBuilder {
 
         ProposalContext ctx = new ProposalContext();
 
-        //use the proposal_monitor for receive, accept, commit
+        //use the proposal_monitor to validate
+        ctx = this.proposalMonitor.receive(ctx);
+
+        bindResult.setOk(ctx.isValidationSuccess());
 
         return bindResult;
     }
