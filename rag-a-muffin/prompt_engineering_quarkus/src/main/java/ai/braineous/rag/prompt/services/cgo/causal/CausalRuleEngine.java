@@ -1,13 +1,11 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
-import ai.braineous.rag.prompt.models.cgo.Edge;
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Edge;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.ReasoningContext;
 import ai.braineous.rag.prompt.models.cgo.Rule;
 import ai.braineous.rag.prompt.services.cgo.RuleEngine;

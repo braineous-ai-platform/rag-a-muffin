@@ -1,5 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo;
 
+import ai.braineous.rag.prompt.cgo.api.Fact;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;

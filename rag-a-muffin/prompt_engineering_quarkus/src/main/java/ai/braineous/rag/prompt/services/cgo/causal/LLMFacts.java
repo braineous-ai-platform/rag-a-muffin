@@ -1,9 +1,8 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
-import java.util.List;
-import java.util.Set;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import java.util.List;
 
 public class LLMFacts {
 

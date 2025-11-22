@@ -1,9 +1,6 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-
-import java.util.List;
-import java.util.function.Function;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 
 public class Input {
     private Fact from;

@@ -1,9 +1,4 @@
-package ai.braineous.rag.prompt.models.cgo;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+package ai.braineous.rag.prompt.cgo.api;
 
 public class Edge extends Fact {
 

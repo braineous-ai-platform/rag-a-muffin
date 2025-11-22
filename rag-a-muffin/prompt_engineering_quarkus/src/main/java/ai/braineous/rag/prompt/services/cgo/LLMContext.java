@@ -2,16 +2,14 @@ package ai.braineous.rag.prompt.services.cgo;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.function.Function;
 
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.services.cgo.causal.LLMFacts;
 
 public class LLMContext {

@@ -1,7 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Edge;
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Edge;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 
 import java.util.HashMap;
 import java.util.HashSet;

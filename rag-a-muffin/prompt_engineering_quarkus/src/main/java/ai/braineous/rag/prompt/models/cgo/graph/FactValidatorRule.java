@@ -1,8 +1,6 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-
-import java.util.function.Function;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 
 @FunctionalInterface
 public interface FactValidatorRule {

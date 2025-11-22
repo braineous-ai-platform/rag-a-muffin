@@ -2,7 +2,7 @@ package ai.braineous.rag.prompt.services;
 
 import java.util.List;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.services.cgo.LLMContext;
 import ai.braineous.rag.prompt.services.cgo.RuleEngine;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;

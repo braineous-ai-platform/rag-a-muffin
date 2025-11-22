@@ -3,12 +3,12 @@ package ai.braineous.rag.prompt.services;
 import java.util.ArrayList;
 import java.util.List;
 
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.utils.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 

@@ -3,9 +3,9 @@ package ai.braineous.app.fno.services;
 import java.util.List;
 import java.util.function.Function;
 
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import com.google.gson.JsonArray;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
 import ai.braineous.rag.prompt.services.cgo.LLMBridge;
 import ai.braineous.rag.prompt.services.cgo.LLMContext;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalLLMBridge;

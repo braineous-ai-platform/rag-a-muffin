@@ -3,21 +3,9 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-
-import org.junit.jupiter.api.Test;
-
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import ai.braineous.rag.prompt.models.cgo.Edge;
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Edge;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.Rule;
-import ai.braineous.rag.prompt.utils.Console;
 
 public class LLMGraphTests {
 
