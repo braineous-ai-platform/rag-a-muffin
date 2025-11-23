@@ -1,5 +1,8 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.rag.prompt.cgo.api.BusinessRule;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.cgo.api.WorldMutation;
 import ai.braineous.rag.prompt.utils.Console;
 
 import java.util.ArrayList;
@@ -23,7 +26,15 @@ public class Rulepack {
 
         for(BusinessRule rule: rules){
             try {
-                Proposal proposal = rule.execute(view);
+                Proposal proposal = new Proposal();
+
+                WorldMutation mutation = rule.execute(view);
+
+                proposal.setInsert(mutation.getInsert());
+                proposal.setUpdate(mutation.getUpdate());
+                proposal.setDelete(mutation.getDelete());
+                proposal.setEdges(mutation.getEdges());
+
                 proposals.add(proposal);
             }catch(Exception e){
                 // TODO: route this to ObservabilityEngine (ruleId, exception, context snapshot)

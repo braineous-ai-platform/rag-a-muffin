@@ -2,11 +2,12 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
 
 import java.util.Collections;
 import java.util.Map;
 
-public class GraphSnapshot implements GraphView{
+public class GraphSnapshot implements GraphView {
 
     private String id;
 

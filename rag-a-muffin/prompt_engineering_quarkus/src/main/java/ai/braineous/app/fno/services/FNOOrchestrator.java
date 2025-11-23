@@ -1,13 +1,10 @@
 package ai.braineous.app.fno.services;
 
-import java.util.List;
-import java.util.function.Function;
-
-import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.FactExtractor;
 import com.google.gson.JsonArray;
 
-import ai.braineous.rag.prompt.services.cgo.LLMBridge;
-import ai.braineous.rag.prompt.services.cgo.LLMContext;
+import ai.braineous.rag.prompt.cgo.api.LLMBridge;
+import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalLLMBridge;
 
 public class FNOOrchestrator {
@@ -21,10 +18,11 @@ public class FNOOrchestrator {
         try {
             LLMContext context = new LLMContext();
 
-            Function<String, List<Fact>> factExtractor = new FNOFactExtractor();
+            FactExtractor factExtractor = new FNOFactExtractor();
 
             context.build("flights",
-                    flightsJsonArray.toString(), factExtractor);
+                    flightsJsonArray.toString(), factExtractor,
+            null, null, null, null);
 
             // bridge to CGO
             this.llmBridge.submit(context);

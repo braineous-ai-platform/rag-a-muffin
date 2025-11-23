@@ -1,5 +1,8 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.rag.prompt.cgo.api.FactValidatorRule;
+import ai.braineous.rag.prompt.cgo.api.RelationshipValidatorRule;
+
 import java.util.HashSet;
 import java.util.Set;
 

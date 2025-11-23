@@ -1,4 +1,4 @@
-package ai.braineous.rag.prompt.services.cgo;
+package ai.braineous.rag.prompt.cgo.api;
 
 public interface LLMBridge {
 

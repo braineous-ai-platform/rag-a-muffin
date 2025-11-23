@@ -1,6 +1,8 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.FactValidatorRule;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
 import ai.braineous.rag.prompt.utils.Console;
 import org.junit.jupiter.api.Test;
 
