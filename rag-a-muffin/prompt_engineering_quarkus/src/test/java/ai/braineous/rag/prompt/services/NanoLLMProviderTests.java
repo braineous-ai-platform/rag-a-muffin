@@ -9,7 +9,7 @@ import org.junit.jupiter.api.Test;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 
 public class NanoLLMProviderTests {

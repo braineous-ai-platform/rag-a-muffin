@@ -2,7 +2,7 @@ package ai.braineous.rag.prompt.models.cgo.graph.data;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.Input;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

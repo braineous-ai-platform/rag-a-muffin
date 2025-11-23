@@ -2,7 +2,7 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.data.FNOFactExtractors;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;

@@ -3,8 +3,7 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 import ai.braineous.rag.prompt.cgo.api.BusinessRule;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
 import ai.braineous.rag.prompt.cgo.api.WorldMutation;
-import ai.braineous.rag.prompt.utils.Console;
-import org.junit.jupiter.api.Test;
+import ai.braineous.rag.prompt.observe.Console;
 
 import java.util.ArrayList;
 import java.util.List;

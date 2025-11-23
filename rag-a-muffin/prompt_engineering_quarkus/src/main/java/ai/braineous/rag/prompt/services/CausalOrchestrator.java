@@ -8,10 +8,7 @@ import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
 import ai.braineous.rag.prompt.models.cgo.graph.ProposalMonitor;
 import ai.braineous.rag.prompt.models.cgo.graph.Validator;
-import ai.braineous.rag.prompt.services.cgo.RuleEngine;
-import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
-import ai.braineous.rag.prompt.services.cgo.causal.CausalSummarizer;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped

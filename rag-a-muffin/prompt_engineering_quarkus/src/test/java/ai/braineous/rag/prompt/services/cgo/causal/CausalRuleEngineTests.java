@@ -2,7 +2,7 @@ package ai.braineous.rag.prompt.services.cgo.causal;
 
 import org.junit.jupiter.api.Test;
 
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 
 public class CausalRuleEngineTests {
 
