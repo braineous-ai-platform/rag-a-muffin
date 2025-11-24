@@ -27,6 +27,7 @@ public class Rulepack {
         for(BusinessRule rule: rules){
             try {
                 Proposal proposal = new Proposal();
+                proposal.setRulepack(this);
 
                 WorldMutation mutation = rule.execute(view);
 

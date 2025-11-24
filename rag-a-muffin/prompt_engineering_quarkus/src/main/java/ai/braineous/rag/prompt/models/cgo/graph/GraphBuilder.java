@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -51,13 +52,15 @@ public class GraphBuilder {
             return result;
         }
 
-        //execution_phase
-        Set<Proposal> proposals = this.execute(to, from, edgeFact, rulepack);
+        if(rulepack != null) {
+            //execution_phase
+            Set<Proposal> proposals = this.execute(to, from, edgeFact, rulepack);
 
-        //proposal_phase
-        BindResult proposalResult = this.validateStructure(proposals);
-        if(!proposalResult.isOk()){
-            return proposalResult;
+            //proposal_phase
+            BindResult proposalResult = this.validateStructure(proposals);
+            if (!proposalResult.isOk()) {
+                return proposalResult;
+            }
         }
 
         //mutate
@@ -90,12 +93,9 @@ public class GraphBuilder {
     }
 
     private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact, Rulepack rulepack){
-        Set<Proposal> proposals = new HashSet<>();
+        GraphView view = this.snapshot();
 
-        GraphSnapshot snapshot = this.snapshot();
-
-
-        //TDOD: start_here
+        Set<Proposal> proposals = rulepack.execute(view);
 
         return proposals;
     }

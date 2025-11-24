@@ -15,6 +15,7 @@ public class Proposal {
     private String ruleId;         // which rule generated it (if any)
     private String rulepackId;     // which rulepack / pipeline
     private ProposalSource source; // RULE / LLM / USER / SYSTEM
+    private Rulepack rulepack;
 
     // ------------ Explainability / lifecycle ------------
 
@@ -73,5 +74,13 @@ public class Proposal {
 
     public void setEdges(Set<Relationship> edges) {
         this.edges = edges;
+    }
+
+    public Rulepack getRulepack() {
+        return rulepack;
+    }
+
+    public void setRulepack(Rulepack rulepack) {
+        this.rulepack = rulepack;
     }
 }
