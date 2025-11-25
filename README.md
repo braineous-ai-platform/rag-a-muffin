@@ -57,5 +57,43 @@ ReasoningContext{facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=nu
 - [Rulepack Template](./docs/rulepack_template.md)
 - [Versioned Release Notes](./docs/versioned/v0.2.0.md)
 
+# CGO – Causal Graph Orchestrator
+
+CGO is a lightweight reasoning substrate built on three core ideas:
+
+- **Facts & Edges** as the atomic graph state
+- **Rulepacks** as declarative reasoning bundles
+- **Proposals → Validation → Mutation → Scoring** as the execution cycle
+
+CGO does not require domain models. All domain data is treated as **opaque JSON**, keeping the integration surface simple and stable.
+
+---
+
+## Documentation
+
+The baseline architecture documentation is available:
+
+- **[A_API_Integration.md](docs/A_API_Integration.md)** — Application → CGO boundary
+- **[B_Rulepack.md](docs/B_Rulepack.md)** — Rulepack model & rule execution
+- **[C_Validation.md](docs/C_Validation.md)** — Proposal structure validation
+- **[D_Scoring.md](docs/D_Scoring.md)** — Scoring abstraction (LLM-optional)
+
+These documents define the **initial architecture** of CGO.  
+Future chapters and scoring prototypes will build on this foundation.
+
+---
+
+## Status
+
+- Active development
+- Alpha architecture in place
+- Scoring/LLM facade work begins next
+
+---
+
+## License
+
+Open source. Build on it, extend it, experiment with it.
+
 **Maintainer:** Sohil Shah (@braineous-ai-platform)  
 **License:** Apache 2.0
