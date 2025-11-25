@@ -41,22 +41,6 @@ ReasoningContext{facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=nu
 
 ```
 
----
-
-## Docs
-
-- [Developer Guide](./docs/dev/DEVELOPER_GUIDE.md)
-- [Changelog](./docs/dev/04_RELEASE_NOTES/CHANGELOG-alpha.2.md)
-
----
-
-### 📘 Documentation Highlights
-
-- [Architecture Overview](./docs/architecture.md)
-- [Validator Design](./docs/validator_design.md)
-- [Rulepack Template](./docs/rulepack_template.md)
-- [Versioned Release Notes](./docs/versioned/v0.2.0.md)
-
 # CGO – Causal Graph Orchestrator
 
 CGO is a lightweight reasoning substrate built on three core ideas:
