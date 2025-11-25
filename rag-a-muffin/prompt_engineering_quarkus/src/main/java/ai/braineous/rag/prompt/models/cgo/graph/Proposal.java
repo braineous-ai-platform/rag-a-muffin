@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.Relationship;
 
 import java.time.Instant;
 import java.util.Map;
@@ -14,6 +15,7 @@ public class Proposal {
     private String ruleId;         // which rule generated it (if any)
     private String rulepackId;     // which rulepack / pipeline
     private ProposalSource source; // RULE / LLM / USER / SYSTEM
+    private Rulepack rulepack;
 
     // ------------ Explainability / lifecycle ------------
 
@@ -34,6 +36,13 @@ public class Proposal {
 
     // getters, setters, builders...
 
+
+    public Proposal() {
+    }
+
+    public Proposal(String id) {
+        this.id = id;
+    }
 
     public Set<Fact> getInsert() {
         return insert;
@@ -65,5 +74,13 @@ public class Proposal {
 
     public void setEdges(Set<Relationship> edges) {
         this.edges = edges;
+    }
+
+    public Rulepack getRulepack() {
+        return rulepack;
+    }
+
+    public void setRulepack(Rulepack rulepack) {
+        this.rulepack = rulepack;
     }
 }

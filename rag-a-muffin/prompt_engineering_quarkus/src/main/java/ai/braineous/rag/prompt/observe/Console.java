@@ -1,4 +1,4 @@
-package ai.braineous.rag.prompt.utils;
+package ai.braineous.rag.prompt.observe;
 
 public class Console {
 

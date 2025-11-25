@@ -2,48 +2,38 @@ package ai.braineous.rag.prompt.services;
 
 import java.util.List;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.services.cgo.LLMContext;
-import ai.braineous.rag.prompt.services.cgo.RuleEngine;
-import ai.braineous.rag.prompt.services.cgo.causal.CausalRuleEngine;
-import ai.braineous.rag.prompt.services.cgo.causal.CausalSummarizer;
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.cgo.api.LLMContext;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
+import ai.braineous.rag.prompt.models.cgo.graph.ProposalMonitor;
+import ai.braineous.rag.prompt.models.cgo.graph.Validator;
+import ai.braineous.rag.prompt.observe.Console;
 import jakarta.enterprise.context.RequestScoped;
 
 @RequestScoped
 public class CausalOrchestrator {
 
-  // TODO: [eventually] : make_it_quarkus_containarized.
-  // For now no dependency_injection overhead
-  // @Inject
-  private RuleEngine ruleEngine = new CausalRuleEngine();
+  public CausalOrchestrator() {
 
-  // TODO: [eventually] : make_it_quarkus_containarized.
-  // For now no dependency_injection overhead
-  // @Inject
-  private CausalSummarizer summarizer = new CausalSummarizer();
+  }
 
   public void orchestrate(LLMContext llmContext) {
+    Validator validator = new Validator();
+    ProposalMonitor proposalMonitor = new ProposalMonitor();
+    GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+
     List<Fact> allFacts = llmContext.getAllFacts();
 
-    CausalRuleEngine ruleEngine = new CausalRuleEngine();
-    ruleEngine.infer(allFacts);
 
-    // generate_reasoning_context
-    // ReasoningContext reasoningContext = new ReasoningContext();
-    // reasoningContext.setFacts(allFacts);
+    for(Fact fact: allFacts){
+      graphBuilder.addNode(fact);
+    }
 
-    // TODO: integrate_rule_components and generate the subgraph
-    // Map<String, Object> feats = reasoningContext.getFacts().get(0).getFeats();
 
-    // TODO: rules inferred_at_app_level (?)
-    // Map<String, Object> feats = new HashMap<>();
-    // List<Rule> rules = this.ruleEngine.inferRules(allFacts, feats);
-    // List<Edge> edges = this.ruleEngine.applyRules(reasoningContext, rules,
-    // feats);
 
-    // TODO: integrate_summarizer_components
+    GraphView view = graphBuilder.snapshot();
 
-    // Console.log("llm_bridge_orchestrate", reasoningContext);
-    // Console.log("llm_bridge_orchestrate", rules);
+    Console.log("graph_view", view);
   }
 }

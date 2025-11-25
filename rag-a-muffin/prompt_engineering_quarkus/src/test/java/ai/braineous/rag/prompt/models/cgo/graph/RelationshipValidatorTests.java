@@ -1,7 +1,10 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.cgo.api.Relationship;
+import ai.braineous.rag.prompt.cgo.api.RelationshipValidatorRule;
+import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;

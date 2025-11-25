@@ -1,20 +1,20 @@
 package ai.braineous.rag.prompt.services.cgo;
 
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Set;
-import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.FactExtractor;
+import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 
 public class LLMContextTests {
@@ -31,8 +31,9 @@ public class LLMContextTests {
         JsonArray flightsJsonArray = new JsonArray();
         flightsJsonArray.add(flightJson);
 
-        Function<String, List<Fact>> factExtractor = this.getFlightFactExtractor();
-        context.build("flights", flightsJsonArray.toString(), factExtractor);
+        FactExtractor factExtractor = this.getFlightFactExtractor();
+        context.build("flights", flightsJsonArray.toString(), factExtractor,
+        null, null, null, null);
 
         Console.log("llm_context", context);
     }
@@ -48,8 +49,9 @@ public class LLMContextTests {
         try {
             String flightJsonStr = Resources.getResource("models/fno/models/flight.json");
             JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
-            Function<String, List<Fact>> factExtractor = this.getFlightFactExtractor();
-            context.build("flights", flightJson.toString(), factExtractor);
+            FactExtractor factExtractor = this.getFlightFactExtractor();
+            context.build("flights", flightJson.toString(), factExtractor,
+                    null, null, null, null);
         } catch (Exception e) {
             Console.log("exception", e.getMessage());
             invalidFormat = true;
@@ -58,8 +60,8 @@ public class LLMContextTests {
         assertTrue(invalidFormat, "invalid_data_format_check_failed");
     }
 
-    private Function<String, List<Fact>> getFlightFactExtractor() {
-        Function<String, List<Fact>> flightExtractor = (jsonArrayStr) -> {
+    private FactExtractor getFlightFactExtractor() {
+        FactExtractor flightExtractor = (jsonArrayStr) -> {
             List<Fact> facts = new ArrayList<>();
 
             JsonArray flightsArray = JsonParser.parseString(jsonArrayStr).getAsJsonArray();

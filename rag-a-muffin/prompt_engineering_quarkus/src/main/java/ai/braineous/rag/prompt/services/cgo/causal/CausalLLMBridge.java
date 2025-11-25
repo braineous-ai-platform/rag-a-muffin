@@ -1,8 +1,8 @@
 package ai.braineous.rag.prompt.services.cgo.causal;
 
 import ai.braineous.rag.prompt.services.CausalOrchestrator;
-import ai.braineous.rag.prompt.services.cgo.LLMBridge;
-import ai.braineous.rag.prompt.services.cgo.LLMContext;
+import ai.braineous.rag.prompt.cgo.api.LLMBridge;
+import ai.braineous.rag.prompt.cgo.api.LLMContext;
 
 public class CausalLLMBridge implements LLMBridge{
 

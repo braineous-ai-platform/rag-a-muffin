@@ -1,6 +1,8 @@
-package ai.braineous.rag.prompt.models.cgo;
+package ai.braineous.rag.prompt.cgo.api;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Objects;
+import java.util.Set;
 import java.util.function.Function;
 
 public class Fact {

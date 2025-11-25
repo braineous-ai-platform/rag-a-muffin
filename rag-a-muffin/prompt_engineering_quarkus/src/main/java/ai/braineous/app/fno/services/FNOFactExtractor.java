@@ -1,14 +1,14 @@
 package ai.braineous.app.fno.services;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.FactExtractor;
+import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * FNOFactExtractor
@@ -23,7 +23,7 @@ import java.util.function.Function;
  *                   features:{from:"Airport:AUS", to:"Airport:DFW",
  *                             depTime:"...", arrTime:"...", carrier?}
  */
-public class FNOFactExtractor implements Function<String, List<Fact>> {
+public class FNOFactExtractor implements FactExtractor {
 
     /**
      * Applies this function to the given argument.
@@ -32,7 +32,7 @@ public class FNOFactExtractor implements Function<String, List<Fact>> {
      * @return the function result
      */
     @Override
-    public List<Fact> apply(String jsonArrayStr) {
+    public List<Fact> extract(String jsonArrayStr) {
         List<Fact> facts = new ArrayList<>();
 
         JsonArray flightsArray = JsonParser.parseString(jsonArrayStr).getAsJsonArray();

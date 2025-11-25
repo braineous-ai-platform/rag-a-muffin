@@ -1,12 +1,10 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.models.cgo.Fact;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.data.FNOFactExtractors;
-import ai.braineous.rag.prompt.utils.Console;
+import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.Test;
 
-import java.util.Collection;
-import java.util.List;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -16,7 +14,8 @@ public class GraphBuilderTests {
     @Test
     public void testSnapshot_SimpleAirportGraph() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -56,7 +55,8 @@ public class GraphBuilderTests {
     @Test
     public void testBindSucceedsForValidFlightBetweenTwoAirports() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -85,7 +85,7 @@ public class GraphBuilderTests {
 
 
         Input input = new Input(aus, dfw, flight);
-        BindResult bindResult = graphBuilder.bind(input);
+        BindResult bindResult = graphBuilder.bind(input, null);
         assertTrue(bindResult.isOk(), "flight_node_must_be_relational");
 
         snapshot = graphBuilder.snapshot(); // should have an edge
@@ -112,7 +112,8 @@ public class GraphBuilderTests {
     @Test
     public void testBindFailsWhenFlightReferencesMissingAirportTo() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 
         // given: AUS + Flight added, DFW NOT added to the graph
         Fact aus = new Fact("Airport:AUS", """
@@ -135,7 +136,7 @@ public class GraphBuilderTests {
 
         // when
         Input input = new Input(aus, dfw, flight);
-        BindResult bindResult = graphBuilder.bind(input);
+        BindResult bindResult = graphBuilder.bind(input, null);
 
         // then: should fail, and graph stays unchanged
         assertFalse(bindResult.isOk(), "bind_should_fail_when_airport_missing");
@@ -151,7 +152,8 @@ public class GraphBuilderTests {
     @Test
     public void testBindFailsWhenFlightReferencesMissingAirportFrom() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 
         // given: AUS + Flight added, DFW NOT added to the graph
         Fact aus = new Fact("Airport:AUS", """
@@ -174,7 +176,7 @@ public class GraphBuilderTests {
 
         // when
         Input input = new Input(aus, dfw, flight);
-        BindResult bindResult = graphBuilder.bind(input);
+        BindResult bindResult = graphBuilder.bind(input, null);
 
         // then: should fail, and graph stays unchanged
         assertFalse(bindResult.isOk(), "bind_should_fail_when_airport_missing");
@@ -190,7 +192,8 @@ public class GraphBuilderTests {
     @Test
     public void testBindIsIdempotentForSameFlight() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -209,7 +212,7 @@ public class GraphBuilderTests {
 
         // when: first bind
         Input input = new Input(aus, dfw, flight);
-        BindResult firstBind = graphBuilder.bind(input);
+        BindResult firstBind = graphBuilder.bind(input, null);
         assertTrue(firstBind.isOk(), "first_bind_should_succeed");
 
         GraphSnapshot afterFirst = graphBuilder.snapshot();
@@ -220,7 +223,7 @@ public class GraphBuilderTests {
         assertEquals(1, afterFirst.edges().size(), "expected_one_edge_after_first_bind");
 
         // when: second bind with the same input (idempotency check)
-        BindResult secondBind = graphBuilder.bind(input);
+        BindResult secondBind = graphBuilder.bind(input, null);
         assertTrue(secondBind.isOk(), "second_bind_should_also_succeed");
 
         GraphSnapshot afterSecond = graphBuilder.snapshot();
@@ -236,7 +239,8 @@ public class GraphBuilderTests {
     @Test
     public void testBindSucceedsForValidFlightBetweenTwoAirportsWithValidation() {
         Validator validator = new Validator();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, null);
+        ProposalMonitor proposalMonitor = new ProposalMonitor();
+        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
         Function<Fact, Boolean> validationRule = new FNOFactExtractors.SimpleValidationRuleGenerator();
 
         // given
@@ -270,7 +274,7 @@ public class GraphBuilderTests {
 
 
         Input input = new Input(aus, dfw, flight);
-        BindResult bindResult = graphBuilder.bind(input);
+        BindResult bindResult = graphBuilder.bind(input, null);
         assertTrue(bindResult.isOk(), "flight_node_must_be_relational");
 
         snapshot = graphBuilder.snapshot(); // should have an edge
