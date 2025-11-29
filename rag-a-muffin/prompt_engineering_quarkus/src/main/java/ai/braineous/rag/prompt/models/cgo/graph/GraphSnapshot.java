@@ -3,6 +3,8 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
 
 import java.util.Collections;
 import java.util.Map;
@@ -40,6 +42,14 @@ public class GraphSnapshot implements GraphView {
                 "nodes=" + nodes +
                 ", edges=" + edges +
                 '}';
+    }
+
+    public JsonObject toJson(){
+        Gson gson = new Gson();
+
+        JsonObject jsonObject = gson.toJsonTree(this.nodes).getAsJsonObject();
+
+        return jsonObject;
     }
 
     @Override

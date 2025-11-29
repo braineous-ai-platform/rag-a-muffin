@@ -1,6 +1,7 @@
 package ai.braineous.app.fno.services;
 
 import ai.braineous.rag.prompt.cgo.api.FactExtractor;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
 import com.google.gson.JsonArray;
 
 import ai.braineous.rag.prompt.cgo.api.LLMBridge;
@@ -14,7 +15,7 @@ public class FNOOrchestrator {
     // @Inject
     private LLMBridge llmBridge = new CausalLLMBridge();
 
-    public void orchestrate(JsonArray flightsJsonArray) {
+    public GraphView orchestrate(JsonArray flightsJsonArray) {
         try {
             LLMContext context = new LLMContext();
 
@@ -25,7 +26,7 @@ public class FNOOrchestrator {
             null, null, null, null);
 
             // bridge to CGO
-            this.llmBridge.submit(context);
+            return this.llmBridge.submit(context);
 
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage());

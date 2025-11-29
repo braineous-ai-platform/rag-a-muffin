@@ -18,7 +18,7 @@ public class CausalOrchestrator {
 
   }
 
-  public void orchestrate(LLMContext llmContext) {
+  public GraphView orchestrate(LLMContext llmContext) {
     Validator validator = new Validator();
     ProposalMonitor proposalMonitor = new ProposalMonitor();
     GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
@@ -30,10 +30,11 @@ public class CausalOrchestrator {
       graphBuilder.addNode(fact);
     }
 
+    //todo: relationship_binding
 
 
     GraphView view = graphBuilder.snapshot();
 
-    Console.log("graph_view", view);
+    return view;
   }
 }
