@@ -9,16 +9,17 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class QueryRequestsTests {
+class QueryPipelineTests {
+
     @Test
-    void validateTask_shouldBuildQueryRequestWithGivenMetaContextAndTask() {
+    void execute_shouldPassThroughRequestAndWrapInQueryExecution() {
         // arrange
         String factId = "Flight:F100";
 
         Meta meta = new Meta(
                 "v1",
                 "validate_flight_airports",
-                "Validate that the selected flight has valid departure and arrival airport codes using graph context."
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
         );
 
         ValidateTask task = new ValidateTask(
@@ -38,26 +39,26 @@ public class QueryRequestsTests {
                 Map.of(factId, node)
         );
 
-        // act
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
 
+        FakeQueryPipeline pipeline = new FakeQueryPipeline();
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
         // assert
-        assertNotNull(request, "QueryRequest should not be null");
+        assertNotNull(execution, "QueryExecution should not be null");
+        assertNotNull(execution.getRequest(), "Execution should contain the original request");
 
-        // meta should be the same instance we passed in
-        assertSame(meta, request.getMeta(), "Meta should be preserved as-is");
+        // Same instance should be passed through
+        assertSame(request, execution.getRequest(), "Execution should wrap the exact same QueryRequest instance");
+        assertSame(request, pipeline.getLastRequest(), "Pipeline should capture the last request");
 
-        // context should be the same instance we passed in
-        assertSame(context, request.getContext(), "GraphContext should be preserved as-is");
-        assertEquals(1, request.getContext().getNodes().size(), "Context should contain one node");
-        assertTrue(request.getContext().getNodes().containsKey(factId),
-                "Context should contain the node for the given factId");
-
-        // task should be the same instance we passed in
-        assertSame(task, request.getTask(), "Task should be preserved as-is");
-        assertEquals(factId, request.getTask().getFactId(), "Task should keep the correct factId");
-        assertNotNull(request.getTask().getDescription(), "Task description should not be null");
-        assertFalse(request.getTask().getDescription().isBlank(), "Task description should not be blank");
+        // And the request internals should be intact
+        assertSame(meta, execution.getRequest().getMeta(), "Meta should be preserved");
+        assertSame(context, execution.getRequest().getContext(), "Context should be preserved");
+        assertSame(task, execution.getRequest().getTask(), "Task should be preserved");
+        assertEquals(factId, execution.getRequest().getTask().getFactId(), "Task should still reference the same factId");
     }
 }
