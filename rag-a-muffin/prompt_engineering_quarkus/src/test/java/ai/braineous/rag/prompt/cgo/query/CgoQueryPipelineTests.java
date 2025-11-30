@@ -250,5 +250,77 @@ class CgoQueryPipelineTests {
         }
     }
 
+    @Test
+    void execute_withGsonValidator_andValidJson_shouldAttachOkValidationResult() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate minimal shape for LLM validation via pipeline integration.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // Fake but valid ValidationResult JSON
+        String llmJson = """
+            {
+              "result": {
+                "ok": true,
+                "code": "response.contract.ok",
+                "message": "All good",
+                "stage": "llm_response_validation",
+                "anchorId": "Fact:123",
+                "metadata": {
+                  "raw_length": 100
+                }
+              }
+            }
+            """;
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        FakeLlmClient llmClient = new FakeLlmClient(llmJson);
+
+        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        Console.log("Pipeline LLM Prompt", llmClient.getLastPrompt());
+        Console.log("Pipeline ValidationResult", execution.getValidationResult());
+
+        // assert: ValidationResult comes through pipeline
+        ValidationResult vr = execution.getValidationResult();
+        assertNotNull(vr, "ValidationResult should be attached to QueryExecution");
+
+        assertTrue(vr.isOk(), "ValidationResult should be ok=true");
+        assertEquals("response.contract.ok", vr.getCode());
+        assertEquals("All good", vr.getMessage());
+        assertEquals("llm_response_validation", vr.getStage());
+        assertEquals("Fact:123", vr.getAnchorId());
+
+        Map<String, Object> metadata = vr.getMetadata();
+        assertNotNull(metadata);
+        assertEquals(1, metadata.size());
+        assertEquals(100.0, metadata.get("raw_length"));  // Gson → Double
+    }
 }
 
