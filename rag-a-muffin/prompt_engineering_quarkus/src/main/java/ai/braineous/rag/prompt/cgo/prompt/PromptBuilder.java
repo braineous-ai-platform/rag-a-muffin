@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.cgo.prompt;
 
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -12,9 +13,15 @@ import java.util.List;
 public class PromptBuilder {
 
     private final ResponseContractRegistry registry;
+    private final PhaseResultValidator validator;
 
     public PromptBuilder(ResponseContractRegistry registry) {
+        this(registry, null);
+    }
+
+    public PromptBuilder(ResponseContractRegistry registry, PhaseResultValidator validator) {
         this.registry = registry;
+        this.validator = validator;
     }
 
     public PromptRequestOutput generateRequestPrompt(QueryRequest<?> request) {
@@ -65,10 +72,16 @@ public class PromptBuilder {
         root.add("llm_instructions",
                 toJsonArray(registry.llmInstructionsFor(request.getMeta().getQueryKind())));
 
-        return new PromptRequestOutput(root);
+        //validation phase
+        ValidationResult result = this.validatePromptOutput(root);
+
+        return new PromptRequestOutput(root, result);
     }
 
     private ValidationResult validatePromptOutput(JsonObject root){
+        if(this.validator != null){
+            return this.validator.validate(root.toString());
+        }
         return null;
     }
 
