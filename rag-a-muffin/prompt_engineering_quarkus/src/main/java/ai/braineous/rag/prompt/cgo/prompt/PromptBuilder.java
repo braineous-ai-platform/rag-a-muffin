@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.cgo.prompt;
 
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
+import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
@@ -65,6 +66,10 @@ public class PromptBuilder {
                 toJsonArray(registry.llmInstructionsFor(request.getMeta().getQueryKind())));
 
         return new PromptRequestOutput(root);
+    }
+
+    private ValidationResult validatePromptOutput(JsonObject root){
+        return null;
     }
 
     private JsonElement toJsonArray(List<String> items) {

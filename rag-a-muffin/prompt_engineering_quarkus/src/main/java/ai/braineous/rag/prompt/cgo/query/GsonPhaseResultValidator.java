@@ -42,17 +42,17 @@ import java.util.Objects;
  *  - code is a generic, domain-agnostic error code
  *  - message is safe for logs / observability
  */
-public final class GsonValidationResultValidator implements ValidationResultValidator {
+public final class GsonPhaseResultValidator implements PhaseResultValidator {
 
     private static final String DEFAULT_STAGE = "llm_response_validation";
 
     private final Gson gson;
 
-    public GsonValidationResultValidator() {
+    public GsonPhaseResultValidator() {
         this(new Gson());
     }
 
-    public GsonValidationResultValidator(Gson gson) {
+    public GsonPhaseResultValidator(Gson gson) {
         this.gson = Objects.requireNonNull(gson, "gson must not be null");
     }
 

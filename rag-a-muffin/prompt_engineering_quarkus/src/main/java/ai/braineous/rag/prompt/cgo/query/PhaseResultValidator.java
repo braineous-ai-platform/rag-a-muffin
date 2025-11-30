@@ -2,7 +2,7 @@ package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 
-public interface ValidationResultValidator {
+public interface PhaseResultValidator {
 
     /**
      * Validate the raw LLM response against the expected ValidationResult contract.

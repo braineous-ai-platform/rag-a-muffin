@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class NoOpValidationResultValidatorTests {
+class NoOpPhaseResultValidatorTests {
 
     @Test
     void validate_shouldAlwaysReturnOkWithDefaultStageAndEmptyMetadata() {
@@ -16,7 +16,7 @@ class NoOpValidationResultValidatorTests {
 
         Console.log("TEST: validate_shouldAlwaysReturnOkWithDefaultStageAndEmptyMetadata - RAW", raw);
 
-        NoOpValidationResultValidator validator = new NoOpValidationResultValidator();
+        NoOpPhaseResultValidator validator = new NoOpPhaseResultValidator();
 
         ValidationResult result = validator.validate(raw);
 

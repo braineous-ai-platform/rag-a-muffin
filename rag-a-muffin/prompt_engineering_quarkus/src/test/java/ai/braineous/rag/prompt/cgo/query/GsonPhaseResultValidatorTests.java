@@ -8,7 +8,7 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class GsonValidationResultValidatorTests {
+public class GsonPhaseResultValidatorTests {
 
     @Test
     void validate_wrappedOkResult_shouldReturnOkValidationResult() {
@@ -30,7 +30,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_wrappedOkResult_shouldReturnOkValidationResult - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -68,7 +68,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_flatOkResult_shouldReturnOkValidationResult - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -94,7 +94,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_nullRawResponse_shouldReturnEmptyContractError - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -120,7 +120,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_invalidJson_shouldReturnInvalidJsonError - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -157,7 +157,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_nonObjectRoot_shouldReturnRootNotObjectError - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -187,7 +187,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_resultFieldNotObject_shouldReturnGenericContractError - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -218,7 +218,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_flatMissingFields_shouldApplyDefaults - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -262,7 +262,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_metadataEmptyObject_shouldReturnEmptyMetadata - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -295,7 +295,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_metadataNotObject_shouldReturnEmptyMetadata - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 
@@ -325,7 +325,7 @@ public class GsonValidationResultValidatorTests {
 
         Console.log("TEST: validate_minimalFlatOkResult_shouldUseDefaultsAndReturnOk - RAW_JSON", rawJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         ValidationResult result = validator.validate(rawJson);
 

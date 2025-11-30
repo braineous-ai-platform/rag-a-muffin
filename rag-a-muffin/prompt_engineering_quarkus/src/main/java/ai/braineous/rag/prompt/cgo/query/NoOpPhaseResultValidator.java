@@ -19,15 +19,15 @@ import java.util.Collections;
  *  - anchorId = null
  *  - metadata = empty map
  */
-public final class NoOpValidationResultValidator implements ValidationResultValidator {
+public final class NoOpPhaseResultValidator implements PhaseResultValidator {
 
     private final String stage;
 
-    public NoOpValidationResultValidator() {
+    public NoOpPhaseResultValidator() {
         this("llm_response_validation");
     }
 
-    public NoOpValidationResultValidator(String stage) {
+    public NoOpPhaseResultValidator(String stage) {
         this.stage = stage;
     }
 

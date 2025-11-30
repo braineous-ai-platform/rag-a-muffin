@@ -2,13 +2,13 @@ package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 
-class FakeValidationResultValidator implements ValidationResultValidator {
+class FakePhaseResultValidator implements PhaseResultValidator {
 
     private final ValidationResult toReturn;
     private boolean called = false;
     private String lastRawResponse;
 
-    FakeValidationResultValidator(ValidationResult toReturn) {
+    FakePhaseResultValidator(ValidationResult toReturn) {
         this.toReturn = toReturn;
     }
 

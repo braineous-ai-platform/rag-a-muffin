@@ -28,12 +28,12 @@ public final class CgoQueryPipeline implements QueryPipeline {
     private final PromptBuilder promptBuilder;
     private final LlmClient llmClient;
 
-    private final ValidationResultValidator validationResultValidator;
+    private final PhaseResultValidator phaseResultValidator;
 
-    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient, ValidationResultValidator validationResultValidator) {
+    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient, PhaseResultValidator phaseResultValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = Objects.requireNonNull(llmClient, "llmClient must not be null");
-        this.validationResultValidator = validationResultValidator;
+        this.phaseResultValidator = phaseResultValidator;
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
@@ -52,10 +52,10 @@ public final class CgoQueryPipeline implements QueryPipeline {
         String rawResponse = llmClient.executePrompt(prompt);
 
         ValidationResult responseValidation = null;
-        if(this.validationResultValidator != null) {
+        if(this.phaseResultValidator != null) {
             // 2b) Validate LLM response shape/contract into a generic ValidationResult
             //     (for now this is internal-only; we are not yet wiring it into QueryExecution)
-            responseValidation = validationResultValidator.validate(rawResponse);
+            responseValidation = phaseResultValidator.validate(rawResponse);
             // TODO (next step): decide how to surface responseValidation
             // e.g., attach to QueryExecution, or fail-fast on !responseValidation.isOk()
         }

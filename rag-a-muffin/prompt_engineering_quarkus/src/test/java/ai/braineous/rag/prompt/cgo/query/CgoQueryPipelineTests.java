@@ -105,8 +105,8 @@ class CgoQueryPipelineTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());/* real or fake, as long as JSON comes out */;
         FakeLlmClient llmClient = new FakeLlmClient("{\"some\":\"response\"}");
 
-        FakeValidationResultValidator validator =
-                new FakeValidationResultValidator(ValidationResult.ok("LLM_RESPONSE_VALIDATION"));
+        FakePhaseResultValidator validator =
+                new FakePhaseResultValidator(ValidationResult.ok("LLM_RESPONSE_VALIDATION"));
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
 
@@ -162,8 +162,8 @@ class CgoQueryPipelineTests {
                 null
         );
 
-        FakeValidationResultValidator validator =
-                new FakeValidationResultValidator(errorResult);
+        FakePhaseResultValidator validator =
+                new FakePhaseResultValidator(errorResult);
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
 
@@ -224,13 +224,13 @@ class CgoQueryPipelineTests {
         assertNull(execution.getValidationResult(), "ValidationResult should be null when no validator is configured");
     }
 
-    class FakeValidationResultValidator implements ValidationResultValidator {
+    class FakePhaseResultValidator implements PhaseResultValidator {
 
         private final ValidationResult toReturn;
         private boolean called = false;
         private String lastRawResponse;
 
-        FakeValidationResultValidator(ValidationResult toReturn) {
+        FakePhaseResultValidator(ValidationResult toReturn) {
             this.toReturn = toReturn;
         }
 
@@ -297,7 +297,7 @@ class CgoQueryPipelineTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
         FakeLlmClient llmClient = new FakeLlmClient(llmJson);
 
-        GsonValidationResultValidator validator = new GsonValidationResultValidator();
+        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
 
