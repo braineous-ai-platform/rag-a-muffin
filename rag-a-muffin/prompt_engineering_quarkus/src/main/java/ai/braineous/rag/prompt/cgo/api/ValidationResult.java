@@ -99,6 +99,31 @@ public final class ValidationResult {
         return new ValidationResult(true, "OK", "OK", stage, anchorId, metadata);
     }
 
+    public static ValidationResult ok(
+            String code,
+            String message,
+            String stage,
+            String anchorId,
+            Map<String, Object> metadata
+    ) {
+        return new ValidationResult(true, "OK", "OK", stage, anchorId, metadata);
+    }
+
+    public static ValidationResult ok(
+            String code,
+            String message
+    ) {
+        // preserve the caller-provided code and message
+        return createInternal(
+                true,
+                code,
+                message,
+                null,   // no stage in simple factory
+                null,   // no anchorId in simple factory
+                null    // no metadata in simple factory
+        );
+    }
+
     public static ValidationResult error(
             String code,
             String message
@@ -124,6 +149,25 @@ public final class ValidationResult {
     ) {
         return new ValidationResult(false, code, message, stage, anchorId, metadata);
     }
+
+    public static ValidationResult createInternal(
+            boolean ok,
+            String code,
+            String message,
+            String stage,
+            String anchorId,
+            Map<String, Object> metadata
+    ) {
+        return new ValidationResult(
+                ok,
+                code,
+                message,
+                stage,
+                anchorId,
+                metadata
+        );
+    }
+
 
     // ---------- Getters ----------
 
