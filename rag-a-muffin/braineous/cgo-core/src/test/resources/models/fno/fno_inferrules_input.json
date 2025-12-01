@@ -1,0 +1,132 @@
+{
+  "graph": {
+    "version": "cog-0.1",
+    "domain": "fno",
+    "context": {
+      "as_of_utc": "2025-10-22T00:00:00Z"
+    },
+    "nodes": [
+      { "id": "AUS", "kind": "airport", "attrs": { "code": "AUS" } },
+      { "id": "DFW", "kind": "airport", "attrs": { "code": "DFW" } },
+      { "id": "SAT", "kind": "airport", "attrs": { "code": "SAT" } },
+      { "id": "IAH", "kind": "airport", "attrs": { "code": "IAH" } },
+      { "id": "ORD", "kind": "airport", "attrs": { "code": "ORD" } },
+      { "id": "JFK", "kind": "airport", "attrs": { "code": "JFK" } },
+      { "id": "LAX", "kind": "airport", "attrs": { "code": "LAX" } }
+    ],
+    "edges": [
+      {
+        "id": "F100",
+        "kind": "flight",
+        "from": "AUS",
+        "to": "DFW",
+        "attrs": {
+          "number": "F100",
+          "dep_utc": "2025-10-22T10:00:00Z",
+          "arr_utc": "2025-10-22T11:10:00Z",
+          "duration_min": 70,
+          "capacity": 150,
+          "equipment": "320"
+        }
+      },
+      {
+        "id": "F102",
+        "kind": "flight",
+        "from": "AUS",
+        "to": "DFW",
+        "attrs": {
+          "number": "F102",
+          "dep_utc": "2025-10-22T11:30:00Z",
+          "arr_utc": "2025-10-22T12:40:00Z",
+          "duration_min": 70,
+          "capacity": 150,
+          "equipment": "320"
+        }
+      },
+      {
+        "id": "F110",
+        "kind": "flight",
+        "from": "SAT",
+        "to": "DFW",
+        "attrs": {
+          "number": "F110",
+          "dep_utc": "2025-10-22T11:10:00Z",
+          "arr_utc": "2025-10-22T12:15:00Z",
+          "duration_min": 65,
+          "capacity": 150,
+          "equipment": "320"
+        }
+      },
+      {
+        "id": "F120",
+        "kind": "flight",
+        "from": "IAH",
+        "to": "DFW",
+        "attrs": {
+          "number": "F120",
+          "dep_utc": "2025-10-22T11:20:00Z",
+          "arr_utc": "2025-10-22T12:25:00Z",
+          "duration_min": 65,
+          "capacity": 150,
+          "equipment": "319"
+        }
+      },
+      {
+        "id": "F200",
+        "kind": "flight",
+        "from": "DFW",
+        "to": "ORD",
+        "attrs": {
+          "number": "F200",
+          "dep_utc": "2025-10-22T13:30:00Z",
+          "arr_utc": "2025-10-22T16:50:00Z",
+          "duration_min": 200,
+          "capacity": 150,
+          "equipment": "738"
+        }
+      },
+      {
+        "id": "F210",
+        "kind": "flight",
+        "from": "DFW",
+        "to": "JFK",
+        "attrs": {
+          "number": "F210",
+          "dep_utc": "2025-10-22T13:20:00Z",
+          "arr_utc": "2025-10-22T17:10:00Z",
+          "duration_min": 230,
+          "capacity": 150,
+          "equipment": "321"
+        }
+      },
+      {
+        "id": "F220",
+        "kind": "flight",
+        "from": "DFW",
+        "to": "LAX",
+        "attrs": {
+          "number": "F220",
+          "dep_utc": "2025-10-22T13:45:00Z",
+          "arr_utc": "2025-10-22T15:20:00Z",
+          "duration_min": 95,
+          "capacity": 150,
+          "equipment": "73G"
+        }
+      }
+    ],
+    "indexes": {
+      "by_airport": {
+        "AUS": { "out": ["F100", "F102"], "in": [] },
+        "SAT": { "out": ["F110"], "in": [] },
+        "IAH": { "out": ["F120"], "in": [] },
+        "DFW": {
+          "out": ["F200", "F210", "F220"],
+          "in": ["F100", "F102", "F110", "F120"]
+        },
+        "ORD": { "out": [], "in": ["F200"] },
+        "JFK": { "out": [], "in": ["F210"] },
+        "LAX": { "out": [], "in": ["F220"] }
+      }
+    }
+  }
+}
