@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.FakeLlmClient;
+import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.observe.Console;
@@ -321,6 +322,143 @@ class CgoQueryPipelineTests {
         assertNotNull(metadata);
         assertEquals(1, metadata.size());
         assertEquals(100.0, metadata.get("raw_length"));  // Gson → Double
+    }
+
+    @Test
+    void execute_withoutValidators_shouldReturnRawResponseAndNoValidationResult() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // PromptBuilder with NO prompt validator
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LlmClient stub
+        LlmClient llmClient = prompt -> {
+            Console.log("LLM Prompt (no validation)", prompt);
+            return "{\"ok\":true,\"code\":\"dummy\",\"message\":\"hello\"}";
+        };
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // console inspect
+        Console.log("QueryExecution.rawResponse", execution.getRawResponse());
+        Console.log("QueryExecution.validationResult", execution.getValidationResult());
+
+        // assert
+        assertNotNull(execution, "QueryExecution should not be null");
+        assertEquals(request, execution.getRequest());
+        assertEquals("{\"ok\":true,\"code\":\"dummy\",\"message\":\"hello\"}", execution.getRawResponse());
+        assertFalse(execution.hasValidationResult(), "Expected no ValidationResult in no-validation mode");
+        assertNull(execution.getValidationResult(), "ValidationResult should be null in no-validation mode");
+    }
+
+    @Test
+    void execute_withPromptValidationError_shouldNotCallLlmAndShouldReturnPromptValidation() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // Fake prompt validator that ALWAYS returns an error
+        PhaseResultValidator failingPromptValidator = raw ->
+                ValidationResult.createInternal(
+                        false,
+                        "prompt.contract.error",
+                        "Prompt contract invalid (fake error)",
+                        "prompt_contract_validation",
+                        null,
+                        Map.of("phase", "prompt_builder_prompt_validation")
+                );
+
+        // PromptBuilder in validation mode
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry(), failingPromptValidator);
+
+        // LlmClient that we expect NOT to be called
+        class CountingLlmClient implements LlmClient {
+            int callCount = 0;
+            JsonObject lastPrompt;
+
+            @Override
+            public String executePrompt(JsonObject prompt) {
+                callCount++;
+                lastPrompt = prompt;
+                Console.log("LLM Prompt (should NOT be called)", prompt);
+                return "{\"ok\":true}";
+            }
+        }
+
+        CountingLlmClient llmClient = new CountingLlmClient();
+
+        // No response validator – we are testing prompt validation gate
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // console inspect
+        Console.log("QueryExecution.rawResponse (prompt error)", execution.getRawResponse());
+        Console.log("QueryExecution.validationResult (prompt error)", execution.getValidationResult());
+        Console.log("LLM callCount", llmClient.callCount);
+
+        // assert
+        assertNotNull(execution, "QueryExecution should not be null");
+        assertEquals(request, execution.getRequest());
+
+        // LLM should NOT have been called
+        assertEquals(0, llmClient.callCount, "LLM should not be called when prompt validation fails");
+        assertNull(execution.getRawResponse(), "Raw response should be null when prompt validation fails");
+
+        // ValidationResult should be the prompt validation error
+        assertFalse(execution.hasValidationResult(), "fail-fast if prompt validation fails");
     }
 }
 

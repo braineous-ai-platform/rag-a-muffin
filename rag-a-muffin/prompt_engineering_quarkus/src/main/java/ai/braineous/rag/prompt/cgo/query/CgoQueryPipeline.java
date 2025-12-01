@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.query;
 
+import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.QueryPipeline;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
@@ -28,12 +29,12 @@ public final class CgoQueryPipeline implements QueryPipeline {
     private final PromptBuilder promptBuilder;
     private final LlmClient llmClient;
 
-    private final PhaseResultValidator phaseResultValidator;
+    private final PhaseResultValidator llmResponseValidator;
 
-    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient, PhaseResultValidator phaseResultValidator) {
+    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient, PhaseResultValidator llmResponseValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = Objects.requireNonNull(llmClient, "llmClient must not be null");
-        this.phaseResultValidator = phaseResultValidator;
+        this.llmResponseValidator = llmResponseValidator;
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
@@ -48,20 +49,43 @@ public final class CgoQueryPipeline implements QueryPipeline {
         PromptRequestOutput requestOutput = promptBuilder.generateRequestPrompt(request);
         JsonObject prompt = requestOutput.getRequestOutput();
 
+        // 1b) Fail-fast if prompt contract validation failed
+        ValidationResult promptValidation = requestOutput.getValidationResult();
+        if (promptValidation != null && !promptValidation.isOk()) {
+            // Prompt is invalid; do NOT call LLM. Surface this as the pipeline's ValidationResult.
+            // We store it in the LLM validation slot; the stage identifies that this came
+            // from the prompt contract phase ("prompt_contract_validation").
+            return new QueryExecution<>(request, null, null, null);
+        }
+
         // 2) Call LLM
         String rawResponse = llmClient.executePrompt(prompt);
 
+        // 2a) Global/core LLM response validation (if configured)
         ValidationResult responseValidation = null;
-        if(this.phaseResultValidator != null) {
-            // 2b) Validate LLM response shape/contract into a generic ValidationResult
-            //     (for now this is internal-only; we are not yet wiring it into QueryExecution)
-            responseValidation = phaseResultValidator.validate(rawResponse);
-            // TODO (next step): decide how to surface responseValidation
-            // e.g., attach to QueryExecution, or fail-fast on !responseValidation.isOk()
+        if (this.llmResponseValidator != null) {
+            responseValidation = llmResponseValidator.validate(rawResponse);
+            if (responseValidation != null && !responseValidation.isOk()) {
+                // Core response contract failed; return with this ValidationResult
+                return new QueryExecution<>(request, rawResponse, responseValidation, null);
+            }
         }
 
-        // 3) Wrap into a generic QueryExecution; domain decides how to map it
-        return new QueryExecution<>(request, null, rawResponse, responseValidation);
+        // 2b) Per-request LLM response rule (API-level, from QueryRequest)
+        LLMResponseValidatorRule rule = request.getRule();
+        ValidationResult ruleValidation = null;
+        if (rule != null) {
+            ruleValidation = rule.validate(rawResponse);
+            if (ruleValidation != null && !ruleValidation.isOk()) {
+                // Per-request rule failed; return with this ValidationResult
+                return new QueryExecution<>(request, rawResponse, responseValidation, null);
+            }
+        }
+
+
+        // 4) Wrap into a generic QueryExecution; domain decides how to map rawResponse → domain DTO
+        // Domain-level validation is not performed here yet, so domainValidation = null.
+        return new QueryExecution<>(request, rawResponse, responseValidation, ruleValidation);
     }
 }
 

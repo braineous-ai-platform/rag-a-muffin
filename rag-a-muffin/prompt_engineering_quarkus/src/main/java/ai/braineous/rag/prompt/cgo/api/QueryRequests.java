@@ -15,5 +15,15 @@ public final class QueryRequests {
     ) {
         return new QueryRequest<>(meta, context, task);
     }
+
+    public static QueryRequest<ValidateTask> validateTask(
+            Meta meta,
+            ValidateTask task,
+            GraphContext context,
+            String factId,
+            LLMResponseValidatorRule rule
+    ) {
+        return new QueryRequest<>(meta, context, task, rule);
+    }
 }
 

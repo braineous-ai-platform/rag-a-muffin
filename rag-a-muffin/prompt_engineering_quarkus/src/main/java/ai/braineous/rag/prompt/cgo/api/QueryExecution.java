@@ -8,110 +8,120 @@ import ai.braineous.rag.prompt.cgo.query.QueryTask;
  *
  * v1: wraps the original request.
  * v2: also carries the raw LLM response and a typed result object.
- * v3: additionally carries a generic, domain-agnostic ValidationResult
- *     produced by the LLM response validator (if configured).
+ * v3: additionally carries generic, domain-agnostic ValidationResult objects
+ *     produced by different phases:
+ *       - LLM response validation (pipeline-level)
+ *       - Domain-level validation (app-layer)
+ *
+ * The pipeline is responsible for setting the LLM response validation, while
+ * domain adapters/services may set the domain validation.
  */
 public final class QueryExecution<T extends QueryTask> {
 
-    private final QueryRequest<T> request;
-    private final String rawResponse;
-    private final Object result;
+    private QueryRequest<T> request;
+    private String rawResponse;
 
     /**
      * Optional domain-agnostic validation outcome for the LLM response,
-     * produced by ValidationResultValidator inside the pipeline.
+     * produced by a response validator inside the pipeline (e.g. PhaseResultValidator,
+     * per-request LLMResponseValidatorRule).
      *
      * May be null if:
-     *  - no ValidationResultValidator was configured, or
+     *  - no LLM response validator was configured, or
      *  - this query type does not use that validator.
      */
-    private final ValidationResult validationResult;
+    private ValidationResult llmResponseValidation;
+
+    /**
+     * Optional domain-level validation outcome, produced outside the core
+     * pipeline (e.g. domain services checking semantic correctness of the
+     * mapped result against business rules / graph context).
+     *
+     * May be null if no domain validation has been performed.
+     */
+    private ValidationResult domainValidation;
 
     // ---- Constructors --------------------------------------------------------
 
     public QueryExecution(QueryRequest<T> request) {
-        this(request, null, null, null);
+        this.request = request;
     }
 
     /**
-     * Original v2-style constructor: request + result + rawResponse.
-     * Kept for compatibility; delegates to the full constructor.
-     */
-    public QueryExecution(QueryRequest<T> request, Object result, String rawResponse) {
-        this(request, result, rawResponse, null);
-    }
-
-    /**
-     * Convenience: request + rawResponse only (no typed result, no validation).
-     */
-    public QueryExecution(QueryRequest<T> request, String rawResponse) {
-        this(request, null, rawResponse, null);
-    }
-
-    /**
-     * New: request + rawResponse + ValidationResult, no typed result.
-     * Useful when the pipeline sets only the validator output.
-     */
-    public QueryExecution(QueryRequest<T> request, String rawResponse, ValidationResult validationResult) {
-        this(request, null, rawResponse, validationResult);
-    }
-
-    /**
-     * Full constructor.
+     * Full constructor, used by the pipeline and domain adapters.
+     *
+     * @param request               original query request
+     * @param rawResponse           raw LLM response (may be null if fail-fast)
+     * @param llmResponseValidation validation outcome for the LLM response
+     * @param domainValidation      validation outcome for domain-level checks
      */
     public QueryExecution(
             QueryRequest<T> request,
-            Object result,
             String rawResponse,
-            ValidationResult validationResult
+            ValidationResult llmResponseValidation,
+            ValidationResult domainValidation
     ) {
         this.request = request;
-        this.result = result;
         this.rawResponse = rawResponse;
-        this.validationResult = validationResult;
+        this.llmResponseValidation = llmResponseValidation;
+        this.domainValidation = domainValidation;
     }
-
     // ---- Accessors -----------------------------------------------------------
 
+    /**
+     * Original QueryRequest for this execution.
+     */
     public QueryRequest<T> getRequest() {
         return request;
     }
 
     /**
      * Raw LLM response payload as a String.
+     *
+     * May be null if the execution failed fast before calling LLM
+     * (e.g., prompt contract validation failed).
      */
     public String getRawResponse() {
         return rawResponse;
     }
 
     /**
-     * Untyped result object.
-     * For domain-specific queries this may be a DTO; the pipeline itself
-     * does not interpret it.
+     * LLM response ValidationResult, if available.
+     * This reflects pipeline-level checks on the raw LLM output.
      */
-    public Object getResult() {
-        return result;
+    public ValidationResult getLlmResponseValidation() {
+        return llmResponseValidation;
+    }
+
+    public boolean hasLlmResponseValidation() {
+        return llmResponseValidation != null;
     }
 
     /**
-     * Helper to retrieve the result in a type-safe way.
+     * Domain-level ValidationResult, if available.
+     * This reflects semantic/business checks performed outside the core pipeline.
      */
-    public <R> R getResultAs(Class<R> type) {
-        if (result == null) {
-            return null;
-        }
-        return type.cast(result);
+    public ValidationResult getDomainValidation() {
+        return domainValidation;
+    }
+
+    public boolean hasDomainValidation() {
+        return domainValidation != null;
     }
 
     /**
-     * Domain-agnostic LLM response ValidationResult, if available.
+     * Backwards-compatible alias for LLM response validation.
+     * Prefer getLlmResponseValidation() going forward.
      */
+    @Deprecated
     public ValidationResult getValidationResult() {
-        return validationResult;
+        return llmResponseValidation;
     }
 
+    @Deprecated
     public boolean hasValidationResult() {
-        return validationResult != null;
+        return hasLlmResponseValidation();
     }
 }
+
 
