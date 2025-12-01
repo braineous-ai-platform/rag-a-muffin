@@ -17,315 +17,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class CgoQueryPipelineTests {
 
     @Test
-    void execute_shouldBuildPromptCallLlmAndReturnExecutionWithOriginalRequest() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        FakeLlmClient llmClient = new FakeLlmClient("{\"result\":{\"status\":\"VALID\"}}");
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
-
-        // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        // assert: execution basics
-        assertNotNull(execution, "QueryExecution should not be null");
-        assertNotNull(execution.getRequest(), "Execution should contain the original request");
-        assertSame(request, execution.getRequest(), "Execution should wrap the exact same QueryRequest instance");
-
-        // assert: LLM was called with a prompt
-        JsonObject lastPrompt = llmClient.getLastPrompt();
-        assertNotNull(lastPrompt, "LlmClient should have received a prompt");
-
-        // Console inspect the prompt used by the pipeline
-        Console.log("Pipeline LLM Prompt", lastPrompt);
-
-        // lightweight structure checks (PromptBuilderTests already test full shape)
-        assertTrue(lastPrompt.has("meta"), "Prompt should contain 'meta'");
-        assertTrue(lastPrompt.has("context"), "Prompt should contain 'context'");
-        assertTrue(lastPrompt.has("task"), "Prompt should contain 'task'");
-        assertTrue(lastPrompt.has("response_contract"), "Prompt should contain 'response_contract'");
-        assertTrue(lastPrompt.has("instructions"), "Prompt should contain 'instructions'");
-        assertTrue(lastPrompt.has("llm_instructions"), "Prompt should contain 'llm_instructions'");
-    }
-
-    @Test
-    void execute_withValidator_shouldAttachOkValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());/* real or fake, as long as JSON comes out */;
-        FakeLlmClient llmClient = new FakeLlmClient("{\"some\":\"response\"}");
-
-        FakePhaseResultValidator validator =
-                new FakePhaseResultValidator(ValidationResult.ok("LLM_RESPONSE_VALIDATION"));
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
-
-        // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        // assert
-        assertTrue(validator.wasCalled());
-        assertEquals("{\"some\":\"response\"}", validator.getLastRawResponse());
-
-        ValidationResult vr = execution.getValidationResult();
-        assertNotNull(vr);
-        assertTrue(vr.isOk());
-        assertEquals("LLM_RESPONSE_VALIDATION", vr.getStage());
-    }
-
-    @Test
-    void execute_withValidator_errorShouldBeExposedOnExecution() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        FakeLlmClient llmClient = new FakeLlmClient("malformed-or-contract-violating-response");
-
-        ValidationResult errorResult = ValidationResult.error(
-                "CONTRACT_VIOLATION",
-                "Response did not match ValidationResult schema",
-                "LLM_RESPONSE_VALIDATION",
-                null
-        );
-
-        FakePhaseResultValidator validator =
-                new FakePhaseResultValidator(errorResult);
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
-
-        // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        // assert
-        assertTrue(validator.wasCalled(), "Validator should be called when configured");
-        assertEquals("malformed-or-contract-violating-response", validator.getLastRawResponse());
-
-        ValidationResult vr = execution.getValidationResult();
-        assertNotNull(vr, "ValidationResult should be attached to execution");
-        assertFalse(vr.isOk(), "ValidationResult should indicate failure");
-        assertEquals("CONTRACT_VIOLATION", vr.getCode());
-        assertEquals("LLM_RESPONSE_VALIDATION", vr.getStage());
-    }
-
-    @Test
-    void execute_withoutValidator_shouldNotAttachValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        FakeLlmClient llmClient = new FakeLlmClient("{\"some\":\"response\"}");
-
-        // use the constructor without a ValidationResultValidator
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
-
-        // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        // assert
-        assertEquals("{\"some\":\"response\"}", execution.getRawResponse());
-        assertNull(execution.getValidationResult(), "ValidationResult should be null when no validator is configured");
-    }
-
-    class FakePhaseResultValidator implements PhaseResultValidator {
-
-        private final ValidationResult toReturn;
-        private boolean called = false;
-        private String lastRawResponse;
-
-        FakePhaseResultValidator(ValidationResult toReturn) {
-            this.toReturn = toReturn;
-        }
-
-        @Override
-        public ValidationResult validate(String rawResponse) {
-            this.called = true;
-            this.lastRawResponse = rawResponse;
-            return toReturn;
-        }
-
-        boolean wasCalled() {
-            return called;
-        }
-
-        String getLastRawResponse() {
-            return lastRawResponse;
-        }
-    }
-
-    @Test
-    void execute_withGsonValidator_andValidJson_shouldAttachOkValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate minimal shape for LLM validation via pipeline integration.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        // Fake but valid ValidationResult JSON
-        String llmJson = """
-            {
-              "result": {
-                "ok": true,
-                "code": "response.contract.ok",
-                "message": "All good",
-                "stage": "llm_response_validation",
-                "anchorId": "Fact:123",
-                "metadata": {
-                  "raw_length": 100
-                }
-              }
-            }
-            """;
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        FakeLlmClient llmClient = new FakeLlmClient(llmJson);
-
-        GsonPhaseResultValidator validator = new GsonPhaseResultValidator();
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, validator);
-
-        // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        Console.log("Pipeline LLM Prompt", llmClient.getLastPrompt());
-        Console.log("Pipeline ValidationResult", execution.getValidationResult());
-
-        // assert: ValidationResult comes through pipeline
-        ValidationResult vr = execution.getValidationResult();
-        assertNotNull(vr, "ValidationResult should be attached to QueryExecution");
-
-        assertTrue(vr.isOk(), "ValidationResult should be ok=true");
-        assertEquals("response.contract.ok", vr.getCode());
-        assertEquals("All good", vr.getMessage());
-        assertEquals("llm_response_validation", vr.getStage());
-        assertEquals("Fact:123", vr.getAnchorId());
-
-        Map<String, Object> metadata = vr.getMetadata();
-        assertNotNull(metadata);
-        assertEquals(1, metadata.size());
-        assertEquals(100.0, metadata.get("raw_length"));  // Gson → Double
-    }
-
-    @Test
-    void execute_withoutValidators_shouldReturnRawResponseAndNoValidationResult() {
+    void execute_withoutValidators_shouldReturnRawResponse_andNoValidations() {
         // arrange
         String factId = "Flight:F100";
 
@@ -356,11 +48,8 @@ class CgoQueryPipelineTests {
         // PromptBuilder with NO prompt validator
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
 
-        // LlmClient stub
-        LlmClient llmClient = prompt -> {
-            Console.log("LLM Prompt (no validation)", prompt);
-            return "{\"ok\":true,\"code\":\"dummy\",\"message\":\"hello\"}";
-        };
+        // LlmClient stub: no validators configured anywhere
+        FakeLlmClient llmClient = new FakeLlmClient("{\"result\":{\"status\":\"VALID\"}}");
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
 
@@ -368,19 +57,27 @@ class CgoQueryPipelineTests {
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
         // console inspect
-        Console.log("QueryExecution.rawResponse", execution.getRawResponse());
-        Console.log("QueryExecution.validationResult", execution.getValidationResult());
+        Console.log("happy.prompt", llmClient.getLastPrompt());
+        Console.log("happy.rawResponse", execution.getRawResponse());
+        Console.log("happy.promptValidation", execution.getPromptValidation());
+        Console.log("happy.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("happy.domainValidation", execution.getDomainValidation());
 
         // assert
         assertNotNull(execution, "QueryExecution should not be null");
-        assertEquals(request, execution.getRequest());
-        assertEquals("{\"ok\":true,\"code\":\"dummy\",\"message\":\"hello\"}", execution.getRawResponse());
-        assertFalse(execution.hasValidationResult(), "Expected no ValidationResult in no-validation mode");
-        assertNull(execution.getValidationResult(), "ValidationResult should be null in no-validation mode");
+        assertSame(request, execution.getRequest(), "Execution should wrap the same QueryRequest instance");
+
+        // rawResponse should be whatever FakeLlmClient returned
+        assertEquals("{\"result\":{\"status\":\"VALID\"}}", execution.getRawResponse());
+
+        // with no validators configured:
+        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
+        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
+        assertNull(execution.getDomainValidation(), "domainValidation should be null when no per-request rule is configured");
     }
 
     @Test
-    void execute_withPromptValidationError_shouldNotCallLlmAndShouldReturnPromptValidation() {
+    void execute_withPromptValidationError_shouldFailFast_beforeCallingLlm() {
         // arrange
         String factId = "Flight:F100";
 
@@ -408,57 +105,479 @@ class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
 
-        // Fake prompt validator that ALWAYS returns an error
+        // Prompt validator that ALWAYS returns an error
         PhaseResultValidator failingPromptValidator = raw ->
-                ValidationResult.createInternal(
-                        false,
-                        "prompt.contract.error",
-                        "Prompt contract invalid (fake error)",
+                ValidationResult.error(
+                        "PROMPT_ERROR",
+                        "Prompt contract invalid",
                         "prompt_contract_validation",
-                        null,
-                        Map.of("phase", "prompt_builder_prompt_validation")
+                        null
                 );
 
-        // PromptBuilder in validation mode
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry(), failingPromptValidator);
+        // PromptBuilder wired with failing prompt validator
+        PromptBuilder promptBuilder = new PromptBuilder(
+                new SimpleResponseContractRegistry(),
+                failingPromptValidator
+        );
 
-        // LlmClient that we expect NOT to be called
-        class CountingLlmClient implements LlmClient {
-            int callCount = 0;
-            JsonObject lastPrompt;
-
-            @Override
-            public String executePrompt(JsonObject prompt) {
-                callCount++;
-                lastPrompt = prompt;
-                Console.log("LLM Prompt (should NOT be called)", prompt);
-                return "{\"ok\":true}";
-            }
-        }
-
+        // LLM client that we expect NOT to be called
         CountingLlmClient llmClient = new CountingLlmClient();
 
-        // No response validator – we are testing prompt validation gate
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
-        // console inspect
-        Console.log("QueryExecution.rawResponse (prompt error)", execution.getRawResponse());
-        Console.log("QueryExecution.validationResult (prompt error)", execution.getValidationResult());
-        Console.log("LLM callCount", llmClient.callCount);
+        // observe
+        Console.log("promptFail.rawResponse", execution.getRawResponse());
+        Console.log("promptFail.promptValidation", execution.getPromptValidation());
+        Console.log("promptFail.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("promptFail.domainValidation", execution.getDomainValidation());
+        Console.log("promptFail.llmCallCount", llmClient.callCount);
 
         // assert
-        assertNotNull(execution, "QueryExecution should not be null");
-        assertEquals(request, execution.getRequest());
 
-        // LLM should NOT have been called
+        // 1) LLM must NOT be called
         assertEquals(0, llmClient.callCount, "LLM should not be called when prompt validation fails");
-        assertNull(execution.getRawResponse(), "Raw response should be null when prompt validation fails");
 
-        // ValidationResult should be the prompt validation error
-        assertFalse(execution.hasValidationResult(), "fail-fast if prompt validation fails");
+        // 2) rawResponse must be null
+        assertNull(execution.getRawResponse(), "rawResponse should be null on prompt fail-fast");
+
+        // 3) promptValidation must be set and failing
+        assertNotNull(execution.getPromptValidation(), "promptValidation must be set");
+        assertFalse(execution.getPromptValidation().isOk(), "promptValidation must indicate failure");
+        assertEquals("PROMPT_ERROR", execution.getPromptValidation().getCode());
+        assertEquals("prompt_contract_validation", execution.getPromptValidation().getStage());
+
+        // 4) later-phase validations must be null
+        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation must be null after prompt fail-fast");
+        assertNull(execution.getDomainValidation(), "domainValidation must be null when domain rule never ran");
+    }
+
+    @Test
+    void execute_withCoreValidator_ok_shouldAttachLlmResponseValidation_andLeaveDomainNull() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // PromptBuilder with NO prompt-validation in this scenario
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LLM returns some JSON
+        String raw = "{\"some\":\"response\"}";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // Core validator returns OK
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        Console.log("coreOk.rawResponse", execution.getRawResponse());
+        Console.log("coreOk.promptValidation", execution.getPromptValidation());
+        Console.log("coreOk.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("coreOk.domainValidation", execution.getDomainValidation());
+        Console.log("coreOk.validator.lastRawResponse", coreValidator.getLastRawResponse());
+
+        // assert
+        // 1) validator must have been called with the raw LLM response
+        assertTrue(coreValidator.wasCalled(), "Core validator should be called");
+        assertEquals(raw, coreValidator.getLastRawResponse(), "Validator should see the same raw response as in QueryExecution");
+
+        // 2) promptValidation should be null (no prompt validation wired)
+        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
+
+        // 3) llmResponseValidation should be present and OK
+        assertNotNull(execution.getLlmResponseValidation(), "llmResponseValidation should be attached");
+        assertTrue(execution.getLlmResponseValidation().isOk(), "llmResponseValidation should be ok");
+        // optional: same instance
+        assertSame(okCoreValidation, execution.getLlmResponseValidation(),
+                "llmResponseValidation should be the same instance returned by the core validator");
+
+        // 4) domainValidation should still be null (no rule configured)
+        assertNull(execution.getDomainValidation(), "domainValidation should be null when no per-request rule is configured");
+    }
+
+    @Test
+    void execute_withCoreValidator_error_shouldExposeFailureOnLlmResponseValidation() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // PromptBuilder with NO prompt-validation in this scenario
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LLM returns malformed / contract-violating response
+        String raw = "malformed-or-contract-violating-response";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // Core validator returns an error
+        ValidationResult errorResult = ValidationResult.error(
+                "CONTRACT_VIOLATION",
+                "Response did not match expected schema",
+                "LLM_RESPONSE_VALIDATION",
+                null
+        );
+
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(errorResult);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        Console.log("coreErr.rawResponse", execution.getRawResponse());
+        Console.log("coreErr.promptValidation", execution.getPromptValidation());
+        Console.log("coreErr.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("coreErr.domainValidation", execution.getDomainValidation());
+        Console.log("coreErr.validator.lastRawResponse", coreValidator.getLastRawResponse());
+
+        // assert
+
+        // 1) validator must have been called with the raw LLM response
+        assertTrue(coreValidator.wasCalled(), "Core validator should be called");
+        assertEquals(raw, coreValidator.getLastRawResponse(),
+                "Validator should see the same raw response as in QueryExecution");
+
+        // 2) promptValidation should be null (no prompt validation wired)
+        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
+
+        // 3) llmResponseValidation should be present and failing
+        assertNotNull(execution.getLlmResponseValidation(), "llmResponseValidation should be attached");
+        assertFalse(execution.getLlmResponseValidation().isOk(), "llmResponseValidation should indicate failure");
+        assertEquals("CONTRACT_VIOLATION", execution.getLlmResponseValidation().getCode());
+        assertEquals("LLM_RESPONSE_VALIDATION", execution.getLlmResponseValidation().getStage());
+
+        // 4) domainValidation should still be null (no rule configured)
+        assertNull(execution.getDomainValidation(), "domainValidation should be null when no per-request rule is configured");
+    }
+
+    @Test
+    void execute_withDomainRule_ok_shouldAttachDomainValidation() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        // rule = domain validation for this query
+        // it always returns OK in this scenario
+        LLMResponseValidatorRule rule = raw ->
+                ValidationResult.ok("domain_rule_validation");
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+
+        // no prompt validator
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LLM returns some JSON
+        String raw = "{\"result\":\"anything\"}";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // no core PhaseResultValidator
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        Console.log("domainOk.rawResponse", execution.getRawResponse());
+        Console.log("domainOk.promptValidation", execution.getPromptValidation());
+        Console.log("domainOk.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("domainOk.domainValidation", execution.getDomainValidation());
+
+        // assert
+
+        // 1) basic wiring
+        assertNotNull(execution, "QueryExecution should not be null");
+        assertSame(request, execution.getRequest(), "Execution should wrap the same QueryRequest instance");
+        assertEquals(raw, execution.getRawResponse(), "rawResponse should be whatever LLM returned");
+
+        // 2) no prompt/core validations configured in this scenario
+        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
+        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
+
+        // 3) domainValidation should be present and OK
+        assertNotNull(execution.getDomainValidation(), "domainValidation should be attached when a rule is configured");
+        assertTrue(execution.getDomainValidation().isOk(), "domainValidation should be ok for passing rule");
+        assertEquals("domain_rule_validation", execution.getDomainValidation().getStage(),
+                "domainValidation.stage should match the rule's stage");
+    }
+
+    @Test
+    void execute_withDomainRule_error_shouldAttachDomainValidationError() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        // Domain rule that always FAILS
+        ValidationResult domainError = ValidationResult.error(
+                "DOMAIN_RULE_ERROR",
+                "Domain rule failed",
+                "domain_rule_validation",
+                null
+        );
+
+        LLMResponseValidatorRule rule = raw -> domainError;
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+
+        // no prompt validator
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LLM returns some JSON
+        String raw = "{\"result\":\"anything\"}";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // no core PhaseResultValidator
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        Console.log("domainErr.rawResponse", execution.getRawResponse());
+        Console.log("domainErr.promptValidation", execution.getPromptValidation());
+        Console.log("domainErr.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("domainErr.domainValidation", execution.getDomainValidation());
+
+        // assert
+
+        // 1) rawResponse should still be the LLM output
+        assertEquals(raw, execution.getRawResponse(), "rawResponse should be whatever LLM returned");
+
+        // 2) earlier phases have no validators in this scenario
+        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
+        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
+
+        // 3) domainValidation should be present and failing
+        assertNotNull(execution.getDomainValidation(), "domainValidation should be attached when rule is configured");
+        assertFalse(execution.getDomainValidation().isOk(), "domainValidation should indicate failure");
+        assertEquals("DOMAIN_RULE_ERROR", execution.getDomainValidation().getCode());
+        assertEquals("domain_rule_validation", execution.getDomainValidation().getStage());
+    }
+
+    @Test
+    void execute_withPromptCoreAndDomainAllOk_shouldAttachAllValidationPhases() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        );
+
+        String taskDescription =
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
+                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+
+        ValidateTask task = new ValidateTask(taskDescription, factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        // Domain rule (RuleValidation) – domainValidation slot
+        LLMResponseValidatorRule rule = raw ->
+                ValidationResult.ok("domain_rule_validation");
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+
+        // Prompt validator – promptValidation slot
+        PhaseResultValidator okPromptValidator = raw ->
+                ValidationResult.ok("prompt_contract_validation");
+
+        PromptBuilder promptBuilder = new PromptBuilder(
+                new SimpleResponseContractRegistry(),
+                okPromptValidator
+        );
+
+        // LLM returns some JSON
+        String rawResponse = "{\"result\":{\"status\":\"VALID\"}}";
+        FakeLlmClient llmClient = new FakeLlmClient(rawResponse);
+
+        // Core LLM validator – llmResponseValidation slot
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        Console.log("allOk.rawResponse", execution.getRawResponse());
+        Console.log("allOk.promptValidation", execution.getPromptValidation());
+        Console.log("allOk.llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("allOk.domainValidation", execution.getDomainValidation());
+
+        // assert: rawResponse
+        assertEquals(rawResponse, execution.getRawResponse(), "rawResponse should be whatever LLM returned");
+
+        // promptValidation – present & OK
+        assertNotNull(execution.getPromptValidation(), "promptValidation should be attached when prompt validator is configured");
+        assertTrue(execution.getPromptValidation().isOk(), "promptValidation should be ok");
+        assertEquals("prompt_contract_validation", execution.getPromptValidation().getStage());
+
+        // llmResponseValidation – present & OK
+        assertNotNull(execution.getLlmResponseValidation(), "llmResponseValidation should be attached when core validator is configured");
+        assertTrue(execution.getLlmResponseValidation().isOk(), "llmResponseValidation should be ok");
+        assertEquals("LLM_RESPONSE_VALIDATION", execution.getLlmResponseValidation().getStage());
+
+        // domainValidation – present & OK
+        assertNotNull(execution.getDomainValidation(), "domainValidation should be attached when rule is configured");
+        assertTrue(execution.getDomainValidation().isOk(), "domainValidation should be ok");
+        assertEquals("domain_rule_validation", execution.getDomainValidation().getStage());
+    }
+
+    @Test
+    void execute_withNullRequest_shouldThrowNullPointerException() {
+        // arrange
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        FakeLlmClient llmClient = new FakeLlmClient("{\"ignored\":true}");
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        // act + assert
+        assertThrows(NullPointerException.class,
+                () -> pipeline.execute(null),
+                "execute(null) should fail fast with NullPointerException due to Objects.requireNonNull");
+    }
+    ////--------------------------------------------------------------------------
+    private static final class CountingLlmClient implements LlmClient {
+        int callCount = 0;
+        JsonObject lastPrompt;
+
+        @Override
+        public String executePrompt(JsonObject prompt) {
+            callCount++;
+            lastPrompt = prompt;
+            Console.log("LLM Prompt (CountingLlmClient)", prompt);
+            return "{\"ignored\":true}";
+        }
+    }
+
+    private static final class FakePhaseResultValidator implements PhaseResultValidator {
+
+        private final ValidationResult toReturn;
+        private boolean called = false;
+        private String lastRawResponse;
+
+        private FakePhaseResultValidator(ValidationResult toReturn) {
+            this.toReturn = toReturn;
+        }
+
+        @Override
+        public ValidationResult validate(String rawResponse) {
+            this.called = true;
+            this.lastRawResponse = rawResponse;
+            return toReturn;
+        }
+
+        boolean wasCalled() {
+            return called;
+        }
+
+        String getLastRawResponse() {
+            return lastRawResponse;
+        }
     }
 }
 

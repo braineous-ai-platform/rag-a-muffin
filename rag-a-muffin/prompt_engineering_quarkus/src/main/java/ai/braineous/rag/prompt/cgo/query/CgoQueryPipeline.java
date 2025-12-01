@@ -55,7 +55,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
             // Prompt is invalid; do NOT call LLM. Surface this as the pipeline's ValidationResult.
             // We store it in the LLM validation slot; the stage identifies that this came
             // from the prompt contract phase ("prompt_contract_validation").
-            return new QueryExecution<>(request, null, null, null);
+            return new QueryExecution<>(request, null, promptValidation, null, null);
         }
 
         // 2) Call LLM
@@ -67,25 +67,25 @@ public final class CgoQueryPipeline implements QueryPipeline {
             responseValidation = llmResponseValidator.validate(rawResponse);
             if (responseValidation != null && !responseValidation.isOk()) {
                 // Core response contract failed; return with this ValidationResult
-                return new QueryExecution<>(request, rawResponse, responseValidation, null);
+                return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, null);
             }
         }
 
         // 2b) Per-request LLM response rule (API-level, from QueryRequest)
         LLMResponseValidatorRule rule = request.getRule();
-        ValidationResult ruleValidation = null;
+        ValidationResult domainValidation = null;
         if (rule != null) {
-            ruleValidation = rule.validate(rawResponse);
-            if (ruleValidation != null && !ruleValidation.isOk()) {
+            domainValidation = rule.validate(rawResponse);
+            if (domainValidation != null && !domainValidation.isOk()) {
                 // Per-request rule failed; return with this ValidationResult
-                return new QueryExecution<>(request, rawResponse, responseValidation, null);
+                return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
             }
         }
 
 
         // 4) Wrap into a generic QueryExecution; domain decides how to map rawResponse → domain DTO
         // Domain-level validation is not performed here yet, so domainValidation = null.
-        return new QueryExecution<>(request, rawResponse, responseValidation, ruleValidation);
+        return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
     }
 }
 

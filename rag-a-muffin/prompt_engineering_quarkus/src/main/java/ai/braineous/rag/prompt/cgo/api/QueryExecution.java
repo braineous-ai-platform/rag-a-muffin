@@ -21,6 +21,8 @@ public final class QueryExecution<T extends QueryTask> {
     private QueryRequest<T> request;
     private String rawResponse;
 
+    private ValidationResult promptValidation;
+
     /**
      * Optional domain-agnostic validation outcome for the LLM response,
      * produced by a response validator inside the pipeline (e.g. PhaseResultValidator,
@@ -47,25 +49,18 @@ public final class QueryExecution<T extends QueryTask> {
         this.request = request;
     }
 
-    /**
-     * Full constructor, used by the pipeline and domain adapters.
-     *
-     * @param request               original query request
-     * @param rawResponse           raw LLM response (may be null if fail-fast)
-     * @param llmResponseValidation validation outcome for the LLM response
-     * @param domainValidation      validation outcome for domain-level checks
-     */
-    public QueryExecution(
-            QueryRequest<T> request,
-            String rawResponse,
-            ValidationResult llmResponseValidation,
-            ValidationResult domainValidation
-    ) {
+    public QueryExecution(QueryRequest<T> request,
+                          String rawResponse,
+                          ValidationResult promptValidation,
+                          ValidationResult llmResponseValidation,
+                          ValidationResult domainValidation) {
         this.request = request;
         this.rawResponse = rawResponse;
+        this.promptValidation = promptValidation;
         this.llmResponseValidation = llmResponseValidation;
         this.domainValidation = domainValidation;
     }
+
     // ---- Accessors -----------------------------------------------------------
 
     /**
@@ -83,6 +78,14 @@ public final class QueryExecution<T extends QueryTask> {
      */
     public String getRawResponse() {
         return rawResponse;
+    }
+
+    public ValidationResult getPromptValidation() {
+        return promptValidation;
+    }
+
+    public boolean hasPromptValidation() {
+        return promptValidation != null;
     }
 
     /**
