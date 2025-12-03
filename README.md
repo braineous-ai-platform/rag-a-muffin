@@ -1,83 +1,103 @@
 # rag-a-muffin
 
-⭐️ If you found this through the CGO post — welcome!  
-The reasoning cycle docs live under `/docs/cgo/`.
+### Retrieval-Augmented Generation with the CGO reasoning engine
 
 ![This is an image](parallax-image.jpg)
 
-Retrieval-Augmented Generation (RAG) made powerful and simple
+CGO (Causal Graph Orchestrator) is a deterministic reasoning engine that sits inside modern RAG pipelines.  
+Instead of relying only on LLMs for reasoning, CGO uses a graph substrate, rulepacks, and a validation pipeline  
+to produce reliable, safe, and explainable decisions.
 
-## Description
+### Why CGO?
 
-Retrieval-Augmented Generation (RAG) made powerful and simple. This project lets you connect a large language model to your own knowledge sources — documents, databases, APIs — so it can retrieve relevant facts before generating an answer. By separating retrieval (finding the right context) from generation (crafting the response), it produces more accurate, up-to-date, and transparent outputs than standalone LLMs. Built to be fast, modular, and easy to extend, it’s perfect for building chatbots, Q&A systems, research assistants, and any AI app that needs to “know what it’s talking about.”
+- RAG retrieves facts, but cannot reason over them safely
+- LLMs are non-deterministic and hard to validate
+- Business logic scattered across microservices becomes brittle
 
-## Current Status
+CGO unifies this into a deterministic, rule-driven reasoning substrate.
 
-### BraineousAI — Developer Edition (`rag-a-muffin`)
+### Where CGO Fits in RAG
 
-> **Version:** `1.0.0-alpha.2`  
-> **Pipeline:** `JSON → Fact → Rule → Subgraph → CGO`
+RAG retrieves relevant context.  
+CGO takes that context, applies rules, validates changes, and produces deterministic decisions.
 
-BraineousAI Developer Edition demonstrates a **no-model**, lambda-driven reasoning pipeline.  
-Developers provide extractors and rules as functions; the platform turns them into executable graphs.
+Retriever → Documents/DB/API
+↓
+Retrieved Facts
+↓
+CGO (graph + rules + validation)
+↓
+Deterministic, safe, explainable results
 
----
+### Quickstart — Try CGO locally
 
-### Quickstart
+Clone the repo and run the tests:
 
 ```bash
-cd <repo_root>/rag-a-muffin/prompt_engineering_quarkus
+cd rag-a-muffin
+cd braineous
+
+# Run the core CGO tests
+mvn -q test
+```
+
+To see a concrete flight-network demo (FNO) using CGO:
+
+```bash
+cd rag-a-muffin
+cd braineous
+cd agentic-apps
+cd fno-app
 
 mvn -q -Dtest=FNOOrchestratorTests test
 ```
 
-Expected output:
+This demo:
 
-```
-____llm_context____
-LLMContext{context={flights=LLMFacts{json=[{"id":"F100","number":"F100","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T10:00:00Z","arr_utc":"2025-10-22T11:10:00Z","capacity":150,"equipment":"320"},{"id":"F102","number":"F102","origin":"AUS","dest":"DFW","dep_utc":"2025-10-22T11:30:00Z","arr_utc":"2025-10-22T12:40:00Z","capacity":150,"equipment":"320"},{"id":"F110","number":"F110","origin":"SAT","dest":"DFW","dep_utc":"2025-10-22T11:10:00Z","arr_utc":"2025-10-22T12:15:00Z","capacity":150,"equipment":"320"},{"id":"F120","number":"F120","origin":"IAH","dest":"DFW","dep_utc":"2025-10-22T11:20:00Z","arr_utc":"2025-10-22T12:25:00Z","capacity":150,"equipment":"319"},{"id":"F200","number":"F200","origin":"DFW","dest":"ORD","dep_utc":"2025-10-22T13:30:00Z","arr_utc":"2025-10-22T16:50:00Z","capacity":150,"equipment":"738"},{"id":"F210","number":"F210","origin":"DFW","dest":"JFK","dep_utc":"2025-10-22T13:20:00Z","arr_utc":"2025-10-22T17:10:00Z","capacity":150,"equipment":"321"},{"id":"F220","number":"F220","origin":"DFW","dest":"LAX","dep_utc":"2025-10-22T13:45:00Z","arr_utc":"2025-10-22T15:20:00Z","capacity":150,"equipment":"73G"}], facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F100, text=Flight(id:'F100', AUS, DFW, '2025-10-22T10:00:00Z', '2025-10-22T11:10:00Z'), feats=null], Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F102, text=Flight(id:'F102', AUS, DFW, '2025-10-22T11:30:00Z', '2025-10-22T12:40:00Z'), feats=null], Fact [id=Airport:SAT, text=Airport(SAT, 'SAT'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F110, text=Flight(id:'F110', SAT, DFW, '2025-10-22T11:10:00Z', '2025-10-22T12:15:00Z'), feats=null], Fact [id=Airport:IAH, text=Airport(IAH, 'IAH'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F120, text=Flight(id:'F120', IAH, DFW, '2025-10-22T11:20:00Z', '2025-10-22T12:25:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:ORD, text=Airport(ORD, 'ORD'), feats=null], Fact [id=Flight:F200, text=Flight(id:'F200', DFW, ORD, '2025-10-22T13:30:00Z', '2025-10-22T16:50:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:JFK, text=Airport(JFK, 'JFK'), feats=null], Fact [id=Flight:F210, text=Flight(id:'F210', DFW, JFK, '2025-10-22T13:20:00Z', '2025-10-22T17:10:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:LAX, text=Airport(LAX, 'LAX'), feats=null], Fact [id=Flight:F220, text=Flight(id:'F220', DFW, LAX, '2025-10-22T13:45:00Z', '2025-10-22T15:20:00Z'), feats=null]], rules=[{"id":"R_airport_node_AUS","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(AUS, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_DFW","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(DFW, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_SAT","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(SAT, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_IAH","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(IAH, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_ORD","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(ORD, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_JFK","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(JFK, 'airport', $name)"}],"weight":0.8}, {"id":"R_airport_node_LAX","note":"Create airport node.","when":["Airport($code, $name)"],"then":[{"emit":"GraphNode(LAX, 'airport', $name)"}],"weight":0.8}, {"id":"R_flight_edge","note":"Create flight edge from Flight facts.","when":["Flight(id:$fid, $src, $dst, $depUtc, $arrUtc)"],"then":[{"emit":"GraphEdge($src, $dst, $depUtc, $arrUtc, 'fly', id:$fid)"}],"weight":1.0}]}}}
-____llm_bridge_orchestrate____
-ReasoningContext{facts=[Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F100, text=Flight(id:'F100', AUS, DFW, '2025-10-22T10:00:00Z', '2025-10-22T11:10:00Z'), feats=null], Fact [id=Airport:AUS, text=Airport(AUS, 'AUS'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F102, text=Flight(id:'F102', AUS, DFW, '2025-10-22T11:30:00Z', '2025-10-22T12:40:00Z'), feats=null], Fact [id=Airport:SAT, text=Airport(SAT, 'SAT'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F110, text=Flight(id:'F110', SAT, DFW, '2025-10-22T11:10:00Z', '2025-10-22T12:15:00Z'), feats=null], Fact [id=Airport:IAH, text=Airport(IAH, 'IAH'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Flight:F120, text=Flight(id:'F120', IAH, DFW, '2025-10-22T11:20:00Z', '2025-10-22T12:25:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:ORD, text=Airport(ORD, 'ORD'), feats=null], Fact [id=Flight:F200, text=Flight(id:'F200', DFW, ORD, '2025-10-22T13:30:00Z', '2025-10-22T16:50:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:JFK, text=Airport(JFK, 'JFK'), feats=null], Fact [id=Flight:F210, text=Flight(id:'F210', DFW, JFK, '2025-10-22T13:20:00Z', '2025-10-22T17:10:00Z'), feats=null], Fact [id=Airport:DFW, text=Airport(DFW, 'DFW'), feats=null], Fact [id=Airport:LAX, text=Airport(LAX, 'LAX'), feats=null], Fact [id=Flight:F220, text=Flight(id:'F220', DFW, LAX, '2025-10-22T13:45:00Z', '2025-10-22T15:20:00Z'), feats=null]], state={}}
+- builds a small flight network as a graph
+- applies a Rulepack over Facts (flights + airports)
+- runs through the CGO reasoning cycle (Facts → Rulepacks → Validation → Graph snapshot)
+- prints the final reasoning context and graph snapshot to the console.
 
-```
+### CGO Architecture at a Glance
 
-# CGO – Causal Graph Orchestrator
+CGO’s core is built around four pillars:
 
-CGO is a lightweight reasoning substrate built on three core ideas:
+- **Integration (A_API_Integration.md)**  
+  How your service talks to CGO: Facts, Inputs, GraphBuilder, and BindResult.
 
-- **Facts & Edges** as the atomic graph state
-- **Rulepacks** as declarative reasoning bundles
-- **Proposals → Validation → Mutation → Scoring** as the execution cycle
+- **Rulepacks (B_Rulepack.md)**  
+  How you express domain reasoning as pure BusinessRule functions over a GraphView.
 
-CGO does not require domain models. All domain data is treated as **opaque JSON**, keeping the integration surface simple and stable.
+- **Validation (C_Validation.md)**  
+  How CGO protects the graph with multi-phase validation (substrate, proposals, domain, query/LLM).
 
----
+- **Scoring (D_Scoring.md)** _(architectural preview)_  
+  Planned future layer for resolving multiple valid proposals into a single winning decision.
 
-## Documentation
+You can find these docs under `docs/`:
 
-The baseline architecture documentation is available:
+- `docs/A_API_Integration.md`
+- `docs/B_Rulepack.md`
+- `docs/C_Validation.md`
+- `docs/D_Scoring.md`
 
-- **[A_API_Integration.md](docs/A_API_Integration.md)** — Application → CGO boundary
-- **[B_Rulepack.md](docs/B_Rulepack.md)** — Rulepack model & rule execution
-- **[C_Validation.md](docs/C_Validation.md)** — Proposal structure validation
-- **[D_Scoring.md](docs/D_Scoring.md)** — Scoring abstraction (LLM-optional)
+### Project Status
 
-These documents define the **initial architecture** of CGO.  
-Future chapters and scoring prototypes will build on this foundation.
+CGO’s core (Integration, Rulepacks, Validation) is stable and active in development.  
+The Scoring layer is a planned module and not implemented yet.
 
----
+**Current release:** `1.0.0-alpha.2`  
+**Next milestones:**
 
-## Status
+- Query pipeline refinements
+- LLM output validation
+- Deterministic scoring
+- Microservice runtime wrapper
 
-- Active development
-- Alpha architecture in place
-- Scoring/LLM facade work begins next
+### License & Contributions
 
----
+Apache 2.0  
+Maintainer: Sohil Shah (@braineous-ai-platform)
 
-## License
-
-Open source. Build on it, extend it, experiment with it.
-
-**Maintainer:** Sohil Shah (@braineous-ai-platform)  
-**License:** Apache 2.0
+Contributions, issues, and discussions are welcome.
