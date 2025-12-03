@@ -1,0 +1,26 @@
+{
+  "rules": [
+    {
+      "id": "R_airport_node",
+      "note": "Create an airport graph node from Airport(code, name) facts.",
+      "when": ["Airport($code, $name)"],
+      "then": [
+        {
+          "emit": "GraphNode($code, 'airport', $name)"
+        }
+      ],
+      "weight": 0.8
+    },
+    {
+      "id": "R_flight_edge",
+      "note": "Create a flight edge from Flight(fid, src, dst).",
+      "when": ["Flight($fid, $src, $dst)"],
+      "then": [
+        {
+          "emit": "GraphEdge($fid, 'flight', $src, $dst)"
+        }
+      ],
+      "weight": 1.0
+    }
+  ]
+}

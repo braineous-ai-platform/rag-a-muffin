@@ -1,338 +1,436 @@
-# A. CGO API Integration Guide
+# A. CGO API Integration Guide (Refined – 2025 Architecture)
 
-> **Audience:** Java developers integrating their application with CGO
-> **Goal:** Convert domain-level JSON → CGO graph inputs → get deterministic reasoning → receive deltas/results
+> **Audience:** Java developers integrating their application with CGO  
+> **Goal:** Take domain JSON → map to CGO Facts/Input → let CGO build/validate/mutate the graph → interpret results
 
 ---
 
 ## 1. Overview
 
-This document explains **how an external application integrates with CGO** using a **thin, JSON-first API**.
-Your application never needs to understand CGO internals; it only needs to:
+This guide explains **how an external service talks to CGO** using a **thin, JSON‑first integration style**.
 
-1. Prepare **Facts** and **Edges** (simple JSON containers)
-2. Provide a **GraphView** for reasoning
-3. Choose a **Rulepack**
-4. Let CGO run:
-   **rules → proposals → validation → mutation**
+Your application does **not** need to understand CGO internals. It only needs to:
 
-Everything else stays encapsulated within CGO.
+1. Create **Facts** for your domain objects (as JSON strings)
+2. Group those into **Input** triples (`from`, `to`, `edgeFact`)
+3. Hand those inputs to the **GraphBuilder**
+4. (Optionally) attach a **Rulepack** for domain reasoning
+5. Read the **BindResult** and, if needed, the resulting **GraphView**
 
----
-
-## 2. The Integration Boundary (The Only Things the App Touches)
-
-Your application interacts with only **five** CGO concepts:
-
-### 2.1 Fact
-
-- Represents an **atomic piece of domain state**
-- Stores **id** + **payload** (opaque JSON string)
-
-### 2.2 Edge
-
-- Represents a **relationship between two Facts**
-- Stores **id**, **fromId**, **toId**, and **payload** (opaque JSON string)
-
-### 2.3 GraphView
-
-- Read-only snapshot that rules see
-- Usually implemented via `GraphSnapshot(Map<String,Fact>, Map<String,Edge>)`
-
-### 2.4 Rulepack
-
-- A container of **BusinessRule** functions
-- Each rule takes a `GraphView` and produces a `Proposal`
-
-### 2.5 Pipeline Monitor (Entry Point)
-
-- Executes the complete flow:
-
-  1. Run rules
-  2. Validate proposals
-  3. Mutate graph
-  4. Return `BindResult`
-
-Everything else (validators, mutation, scoring, history) stays internal.
+Everything else (validation, proposals, mutation, history) stays inside CGO.
 
 ---
 
-## 3. Data Flow (App → CGO → App)
+## 2. Integration Boundary (What Your App Actually Touches)
 
-```
-               +---------------------------+
-               |       Your Service        |
-               |  (Domain Events / JSON)   |
-               +-------------+-------------+
-                             |
-                             | FactExtractor
-                             v
-                 +-----------+------------+
-                 |      GraphInput        |
-                 | (Facts & Edges)        |
-                 +-----------+------------+
-                             |
-                             | GraphRepository / Snapshot
-                             v
-                +------------+-------------+
-                |          CGO             |
-                |    GraphView (Snapshot)  |
-                |    Rulepack              |
-                |    Pipeline Monitor       |
-                +------------+-------------+
-                             |
-                             | BindResult / Deltas
-                             v
-                 +-----------+------------+
-                 |     Your Service       |
-                 |   (Interpret Result)   |
-                 +------------------------+
-```
+Your application only needs a small surface area of CGO:
+
+### 2.1 `Fact`
+
+From `ai.braineous.rag.prompt.cgo.api.Fact`
+
+- Represents an **atomic piece of state** in the graph  
+- Carries:
+  - `id` – stable key (e.g., `Flight:F100`, `Airport:AUS`)
+  - `text` – opaque JSON string (your domain payload)
+  - optional attributes / mode flags
+
+CGO does **not** care about the JSON schema; your rules do.
 
 ---
 
-## 4. Fact Extraction (Your Only Required Mapping)
+### 2.2 `Edge` (Relational Facts)
 
-You write **one function per domain event** that knows how to convert domain JSON → Fact/Edge JSON.
+From `ai.braineous.rag.prompt.cgo.api.Edge`
 
-### 4.1 Interface
+- Models relationships between facts (e.g., *Flight connects Airport → Airport*)  
+- Internally managed by `GraphBuilder` from the **relational Fact** you pass as `edgeFact` (see `Input` below).
+
+Most integrations don’t need to construct `Edge` directly; they only care about:
+
+- Atomic facts (nodes)
+- Relational facts (e.g., a Flight fact that links `from` and `to`)
+
+---
+
+### 2.3 `Input`
+
+From `ai.braineous.rag.prompt.models.cgo.graph.Input`
+
+Represents one logical triple:
+
+- `from` – atomic `Fact` (e.g., origin airport)  
+- `to` – atomic `Fact` (e.g., destination airport)  
+- `edge` – relational `Fact` (e.g., the flight itself)
 
 ```java
-@FunctionalInterface
-public interface FactExtractor<D> {
-    GraphInput extract(D domainEvent);
-}
+Input input = new Input(fromAirportFact, toAirportFact, flightFact);
 ```
 
-### 4.2 Example
+This is the **unit of ingestion** for `GraphBuilder.bind(...)`.
+
+---
+
+### 2.4 `GraphBuilder`
+
+From `ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder`
+
+- Owns the **mutable graph under construction**
+- Validates each `Input` against graph rules
+- Executes Rulepacks (if provided)
+- Applies mutations when everything is valid
+
+Entry point:
 
 ```java
-public class FlightRerouteFactExtractor
-        implements FactExtractor<FlightRerouteEvent> {
+Validator validator = new Validator();
+ProposalMonitor proposalMonitor = new ProposalMonitor();
+GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+```
 
-    @Override
-    public GraphInput extract(FlightRerouteEvent event) {
+Then, per input:
 
-        Fact flight = new Fact(
-            "FLIGHT:" + event.flight().id(),
-            toJson(event.flight())
-        );
+```java
+BindResult result = graphBuilder.bind(input, rulepack);
+```
 
-        Fact fromAirport = new Fact(
-            "AIRPORT:" + event.from().code(),
-            toJson(event.from())
-        );
+---
 
-        Fact toAirport = new Fact(
-            "AIRPORT:" + event.to().code(),
-            toJson(event.to())
-        );
+### 2.5 `Rulepack`
 
-        Edge reroute = new Edge(
-            "ROUTE:" + event.flight().id(),
-            fromAirport.id(),
-            toAirport.id(),
-            toJson(event.routeChange())
-        );
+From `ai.braineous.rag.prompt.models.cgo.graph.Rulepack`
 
-        return new GraphInput(
-            Set.of(flight, fromAirport, toAirport),
-            Set.of(reroute)
-        );
+- Container of **BusinessRule** functions
+- Each rule reads from a `GraphView` and produces a `WorldMutation`
+- `GraphBuilder` converts those into `Proposal`s and validates them
+
+Rulepacks control **what reasoning** CGO does for a given call.  
+(See the separate **Rulepack Guide** for details.)
+
+---
+
+### 2.6 `GraphView` / `GraphSnapshot`
+
+From:
+
+- `ai.braineous.rag.prompt.cgo.api.GraphView`
+- `ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot`
+
+`GraphSnapshot` implements `GraphView` and gives rules a **read‑only view** of the current graph:
+
+```java
+GraphView view = graphBuilder.snapshot();   // returns GraphSnapshot
+```
+
+You typically don’t construct `GraphSnapshot` directly; `GraphBuilder` owns it.
+
+---
+
+### 2.7 `BindResult`
+
+From `ai.braineous.rag.prompt.models.cgo.graph.BindResult`
+
+Represents the outcome of a `bind(...)` call:
+
+- `ok` / `isOk()` – did the bind succeed?
+- `errors` – list of structural / rule / integrity failures
+- `context` / `why` – explainability hooks
+
+Your service only needs to interpret:
+
+- success vs failure  
+- optional error details (for logging or user feedback)
+
+---
+
+## 3. Data Flow (Service ↔ CGO)
+
+```text
+               +----------------------------+
+               |        Your Service        |
+               | (Domain Events / JSON)     |
+               +--------------+-------------+
+                              |
+                              |  build Facts (atomic + relational)
+                              v
+                    +---------+---------+
+                    |       Input(s)    |
+                    | (from, to, edge)  |
+                    +---------+---------+
+                              |
+                              | graphBuilder.bind(input, rulepack)
+                              v
+                 +------------+-------------+
+                 |            CGO           |
+                 |   GraphBuilder           |
+                 |   Validator              |
+                 |   ProposalMonitor        |
+                 |   Rulepack (optional)    |
+                 +------------+-------------+
+                              |
+                              | BindResult + snapshot (GraphView)
+                              v
+                 +------------+-------------+
+                 |       Your Service       |
+                 |  (Interpret result)      |
+                 +--------------------------+
+```
+
+---
+
+## 4. Domain → Facts → Input (Your Only Mapping Responsibility)
+
+Your service decides **how to turn domain events into Facts**.
+
+### 4.1 Example Domain Event
+
+```java
+public record FlightRerouteEvent(
+    Flight flight,
+    Airport from,
+    Airport to
+) {}
+```
+
+### 4.2 Mapping to Facts
+
+```java
+public class FlightRerouteMapper {
+
+    public Input toInput(FlightRerouteEvent event) {
+
+        Fact fromAirport = new Fact();
+        fromAirport.setId("Airport:" + event.from().code());
+        fromAirport.setText(toJson(event.from())); // JSON string
+
+        Fact toAirport = new Fact();
+        toAirport.setId("Airport:" + event.to().code());
+        toAirport.setText(toJson(event.to()));
+
+        Fact flight = new Fact();
+        flight.setId("Flight:" + event.flight().id());
+        flight.setText(toJson(event.flight()));
+
+        // from = origin airport (atomic)
+        // to   = destination airport (atomic)
+        // edge = flight fact (relational-as-fact)
+        return new Input(fromAirport, toAirport, flight);
     }
 }
 ```
 
-Your app is **done** after producing this.
+You can create **multiple Inputs** per request if needed (e.g., multiple flights in one batch).
 
 ---
 
-## 5. Building the GraphView (Thin Snapshot)
+## 5. Building and Evolving the Graph
 
-The app typically maintains a **GraphRepository** or simply builds per-request snapshots.
+You typically keep one `GraphBuilder` per logical graph (e.g., “today’s flight network”):
 
 ```java
-GraphView view = new GraphSnapshot(
-    input.facts(),
-    input.edges()
-);
+Validator validator = new Validator();
+ProposalMonitor proposalMonitor = new ProposalMonitor();
+GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
 ```
 
-CGO internally treats `GraphSnapshot` as immutable.
+For each domain event:
+
+```java
+Input input = mapper.toInput(event);
+BindResult result = graphBuilder.bind(input, rulepack);
+
+if (!result.isOk()) {
+    // handle validation / rule failure
+    logErrors(result);
+}
+```
+
+Behind the scenes, `GraphBuilder`:
+
+1. Validates the substrate (facts + relationship)  
+2. Executes the Rulepack (if non‑null) on a `GraphView` snapshot  
+3. Validates the resulting `Proposal`s  
+4. Applies graph mutations if everything passes
+
+At any point you can obtain a read‑only view:
+
+```java
+GraphView currentView = graphBuilder.snapshot();  // GraphSnapshot
+```
 
 ---
 
 ## 6. Choosing a Rulepack
 
-Rulepacks are your “business logic bundles”.
-
 Examples:
 
-- `REROUTE_RULEPACK`
-- `ASSIGN_GATE_RULEPACK`
-- `DELAY_PREDICTION_RULEPACK`
+- `REROUTE`
+- `VALIDATE_FLIGHT`
+- `ASSIGN_GATE`
+- `DELAY_PROPAGATION`
 
-You pick one per API call:
+You can select a Rulepack based on:
+
+- API endpoint  
+- Event type  
+- Tenant / customer  
+- Scenario flags
+
+Example selector:
 
 ```java
 Rulepack rulepack = rulepackSelector.forContext("REROUTE");
+BindResult result = graphBuilder.bind(input, rulepack);
 ```
 
-Rules inside the pack all fire independently and return **Proposals**.
+If you pass `null` as the Rulepack:
+
+- Only **substrate validation + mutation** run  
+- No higher‑level reasoning is executed
 
 ---
 
-## 7. Executing CGO
+## 7. Executing CGO (End‑to‑End)
 
-This is the entire integration call:
+For most services, the integration boils down to:
 
 ```java
-BindResult result = pipeline.process(view, rulepack);
+Validator validator = new Validator();
+ProposalMonitor proposalMonitor = new ProposalMonitor();
+GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+
+// inside your use-case method:
+Input input = mapper.toInput(event);
+Rulepack rulepack = rulepackSelector.forContext("REROUTE");
+
+BindResult result = graphBuilder.bind(input, rulepack);
+
+if (!result.isOk()) {
+    // map errors to your domain error model
+    return RoutingResult.failed(result.toString());
+}
+
+// optionally inspect final snapshot
+GraphView view = graphBuilder.snapshot();
+return RoutingResult.success(view /* or derived deltas */);
 ```
-
-Under the hood, CGO does:
-
-1. **Execution Phase**
-   Business rules run on the GraphView and produce `Set<Proposal>`
-
-2. **Validation Phase**
-   ProposalValidator checks structure of all proposals
-
-   - If invalid → `BindResult.notOk(...)`
-
-3. **Mutation Phase**
-   Graph mutates (app may persist it)
-
-4. **Result**
-   Return `BindResult` (OK or not OK) + any deltas you want to expose
 
 ---
 
-## 8. Mapping Results Back to Your App
+## 8. Mapping Results Back to Your Service
 
-Your service converts the pipeline output into your application response.
+You decide how to surface CGO outcomes.
 
 Example:
 
 ```java
-public RoutingResult toRoutingResult(BindResult result) {
+public RoutingResult toRoutingResult(BindResult result, GraphView snapshot) {
+
     if (!result.isOk()) {
-        return RoutingResult.failed(result.message());
+        return RoutingResult.failed("Validation failed: " + result.toString());
     }
-    return RoutingResult.success(result.deltas());
+
+    // In a real integration, you might:
+    //  - read back specific Facts from snapshot
+    //  - compute a diff vs previous state
+    //  - or simply trust the graph as source-of-truth
+
+    return RoutingResult.success(/* whatever your API needs */);
 }
 ```
 
-This is **fully decoupled** from CGO internals.
+This keeps CGO as an **internal reasoning engine**, with your service defining the external contract.
 
 ---
 
 ## 9. JSON Contract (Opaque to CGO)
 
-CGO treats all domain data as **opaque JSON strings**.
-Your rules parse what they need.
+CGO treats `Fact.text` as an **opaque JSON string**.
 
-### 9.1 Fact JSON
+Your domain rules parse only what they need:
 
 ```json
 {
-  "id": "FLIGHT:AA123",
+  "id": "Flight:F100",
   "payload": {
-    "flightNumber": "AA123",
+    "flightNumber": "F100",
     "from": "AUS",
-    "to": "DFW"
+    "to": "DFW",
+    "status": "ON_TIME"
   }
 }
 ```
 
-### 9.2 Edge JSON
-
-```json
-{
-  "id": "ROUTE:AA123",
-  "fromId": "AIRPORT:AUS",
-  "toId": "AIRPORT:DFW",
-  "payload": {
-    "reason": "WEATHER",
-    "newRoute": ["AUS", "IAH", "DFW"]
-  }
-}
-```
-
-Rules determine how these fields matter.
+Relational facts (like flights connecting airports) can carry whatever fields your rules require.
 
 ---
 
 ## 10. Minimal Integration Checklist
 
-### ✔ Step 1 — Define your domain event
+### ✔ Step 1 — Define your domain events  
+E.g., `FlightRerouteEvent`, `GateChangeEvent`.
 
-(e.g., `FlightRerouteEvent`)
+### ✔ Step 2 — Implement a mapper  
+Domain event → `Input` (from, to, edge `Fact`).
 
-### ✔ Step 2 — Implement a `FactExtractor`
+### ✔ Step 3 — Create a `GraphBuilder`  
+With `Validator` and `ProposalMonitor`.
 
-Domain → Facts + Edges
+### ✔ Step 4 — Pick a `Rulepack`  
+Decide which behavior to run for each call.
 
-### ✔ Step 3 — Create a snapshot (`GraphView`)
+### ✔ Step 5 — Call `graphBuilder.bind(input, rulepack)`  
+Let CGO validate + reason + mutate.
 
-Use `GraphSnapshot`
-
-### ✔ Step 4 — Select the right `Rulepack`
-
-Rules your app wants to run
-
-### ✔ Step 5 — Call the pipeline
-
-`pipeline.process(view, rulepack)`
-
-### ✔ Step 6 — Interpret `BindResult`
-
-Map to your API response
-
-That’s it.
-
-Your integration remains **thin, JSON-only, stable, and controllable**.
+### ✔ Step 6 — Interpret `BindResult` (+ optional `GraphView`)  
+Map into your own response type / side-effects.
 
 ---
 
-## 11. Why This API Works
+## 11. Why This Integration Style Works
 
-- **Zero model coupling**
-  Domain models stay in your service, not in CGO.
+- **JSON‑first**  
+  Your domain models stay in your service; CGO only sees strings.
 
-- **Reasoning decoupled from CRUD**
-  CGO evaluates structure, relationships, and rules through its own graph.
+- **Narrow surface area**  
+  Facts, Input, GraphBuilder, Rulepack, BindResult, GraphView.
 
-- **Replaceable Rulepacks**
-  Behavior changes without changing your service code.
+- **Replaceable business logic**  
+  Swap Rulepacks without changing service code.
 
-- **Deterministic phases**
-  Execution → Validation → Mutation is consistent no matter the rule logic.
+- **Deterministic phases**  
+  Substrate validation → Rulepack execution → Proposal validation → Mutation.
+
+- **Future‑proof**  
+  The same graph + Rulepack layer can later be driven by:
+  - events
+  - batch loaders
+  - LLM‑generated Facts
+  - or other upstream systems.
 
 ---
 
-## 12. Appendix: Typical Service-Level Code
+## 12. Appendix: Canonical Service Method
 
 ```java
 public RoutingResult reroute(FlightRerouteEvent event) {
 
-    // 1. Domain → Facts + Edges
-    GraphInput input = factExtractor.extract(event);
+    // 1) Domain → Input
+    Input input = mapper.toInput(event);
 
-    // 2. Build GraphView
-    GraphView view = new GraphSnapshot(input.facts(), input.edges());
-
-    // 3. Select Rulepack
+    // 2) Rulepack selection
     Rulepack rulepack = rulepackSelector.forContext("REROUTE");
 
-    // 4. Execute
-    BindResult result = pipeline.process(view, rulepack);
+    // 3) Execute CGO bind
+    BindResult result = graphBuilder.bind(input, rulepack);
 
-    // 5. Result → API response
-    return toRoutingResult(result);
+    // 4) Snapshot (optional)
+    GraphView snapshot = graphBuilder.snapshot();
+
+    // 5) Map to your response
+    return toRoutingResult(result, snapshot);
 }
 ```
 
-This is the **canonical integration pattern**.
-
----
+This is the **canonical CGO integration pattern**:
+your service owns domain, CGO owns reasoning.

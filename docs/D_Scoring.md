@@ -1,66 +1,85 @@
-# D. CGO Scoring & LLM Integration Guide
+# D. CGO Scoring Layer — Architectural Preview (Refined – 2025 Roadmap)
 
-> **Audience:** Developers extending CGO with advanced reasoning using scoring, historical weights, or LLMs
-> **Goal:** Understand how CGO evaluates competing proposals, integrates with scoring models (including LLMs), and preserves determinism
-
----
-
-## 1. Overview
-
-The **Scoring Layer** is responsible for deciding **which proposals should be preferred** when multiple valid reasoning paths exist.
-
-CGO supports:
-
-- **Rulepack-level scoring** (ranking competing proposals)
-- **Historical scoring** (weights across snapshots)
-- **LLM-driven scoring** (optional, pluggable)
-
-This layer is **not required** for all Rulepacks.
-
-- If a Rulepack produces **0 or 1** proposal, scoring is not invoked.
-- If a Rulepack produces **multiple competing proposals**, CGO resolves them using the Scorer.
-
-The Scoring Layer becomes essential for:
-
-- Ambiguous domains (e.g., route optimization)
-- Preference-sensitive behaviors (e.g., airline priorities)
-- LLM-augmented reasoning
+> **Status: Not Yet Implemented (Future CGO Module)**  
+> **Audience:** Developers preparing for advanced CGO reasoning features  
+> **Goal:** Understand the *planned* Scoring Layer architecture that will sit above Proposal Validation and below Mutation  
+>  
+> This document describes the **future** Scoring Layer for CGO.  
+> No scoring logic is currently active in Alpha‑2.  
+> fileciteturn2file0
 
 ---
 
-## 2. Position of Scoring in the CGO Pipeline
+# 1. Overview — What Scoring Will Become
 
-The full CGO pipeline becomes:
+Today (Alpha‑2), CGO executes:
 
 ```
-Rules → Proposals → Validation → (Scoring) → Mutation
+Rules → Proposals → Validation → Mutation
 ```
 
-Scoring executes **after** structural validation and **before** mutation.
+In future releases, CGO will optionally support an advanced **Scoring Layer**:
+
+```
+Rules → Proposals → Validation → Scoring (future) → Mutation
+```
+
+The Scoring Layer will activate **only when multiple valid proposals exist** and CGO must choose the optimal one.
+
+Examples of future use cases:
+
+- Choosing best reroute among alternatives  
+- Selecting optimal gate assignment  
+- Deciding between alternate crew pairings  
+- Weighing soft constraints (weather tolerance, operational cost)  
+- LLM‑backed tradeoff reasoning (optional)
+
+Scoring will remain **deterministic, pluggable, and optional**.
 
 ---
 
-## 3. When Scoring Applies
+# 2. Position of Scoring in the Future CGO Pipeline
 
-### Scoring is used when:
+Planned future pipeline:
 
-- The Rulepack returns **multiple proposals** that represent alternative deltas
-- Proposals are **mutually exclusive** (cannot be applied simultaneously)
-- Domain rules require **prioritization** or **optimality**
+```
+Rulepack Execution  →  Set<Proposal>
+                 ↓
+      Structural Validation (existing)
+                 ↓
+   Domain Validation (existing optional)
+                 ↓
+         SCORING LAYER (future)
+                 ↓
+            Mutation (existing)
+```
 
-### Scoring is **NOT** used when:
-
-- There is only one proposal
-- All proposals are compatible and can be merged
-- Rulepack semantics define no competition
-
-This keeps scoring lightweight and avoids unnecessary complexity.
+If scoring is not configured or only one proposal exists →  
+**CGO skips scoring entirely.**
 
 ---
 
-## 4. The Scorer Interface
+# 3. Why Scoring Is Not Implemented Yet
 
-The Scorer is a pluggable component:
+CGO Alpha‑2 focuses on:
+
+- Substrate stability  
+- Deterministic rule execution  
+- Proposal validation  
+- Query pipeline integration  
+
+Scoring depends on:
+
+- Proposal competition semantics  
+- Stable Proposal shapes  
+- Deterministic sorting rules  
+- Optional LLM integration schema  
+
+Once these are fully frozen, scoring will be implemented safely.
+
+---
+
+# 4. Planned Scoring Interface (Preview)
 
 ```java
 @FunctionalInterface
@@ -69,21 +88,18 @@ public interface Scorer {
 }
 ```
 
-Where:
+This interface is **not active in Alpha‑2**,  
+but reflects the expected shape of the final implementation.
 
-- `proposals` = the set of validated proposals
-- `view` = the current graph snapshot
+A Scorer will:
 
-The Scorer returns a `ScoringResult`, typically:
-
-- a single **winning** proposal, or
-- a **ranked list** of proposals
+- Receive the **validated** proposals  
+- Inspect **GraphView**  
+- Return the **winning proposal** (or ranked list)
 
 ---
 
-## 5. ScoringResult
-
-A simple representation may look like:
+# 5. Planned `ScoringResult` (Preview)
 
 ```java
 public class ScoringResult {
@@ -94,87 +110,75 @@ public class ScoringResult {
 }
 ```
 
-CGO only needs the **winner**, but ranked lists are helpful for analytics.
+Only the **winner** will be applied.  
+Ranked lists enable future analytics.
 
 ---
 
-## 6. Types of Scoring
+# 6. Planned Types of Scoring
 
-CGO supports three levels of scoring:
+## 6.1 Deterministic Rule-Based Scoring (Primary)
 
-### 6.1 Deterministic Rule-Based Scoring
+Future scorers may compute numeric weights:
 
-Rules may express preference weights:
-
-- lower fuel usage preferred
-- shorter route preferred
-- fewer hops preferred
-
-The Scorer computes a numeric score per proposal:
-
-```java
-proposalScore = distanceWeight + fuelCostWeight + delayPenalty;
+```
+score = delayPenalty + fuelCost + distancePenalty;
 ```
 
-Lowest score wins.
+Lowest (or highest) score wins.
+
+This mode will be:
+
+- fully deterministic  
+- safe  
+- reproducible  
+- aligned with CGO’s core principles  
 
 ---
 
-### 6.2 Historical Scoring (Snapshot Memory)
+## 6.2 Historical / Temporal Scoring (Optional Future)
 
-CGO can consider **historical snapshot metrics**, enabling consistent behavior across time.
+CGO may support:
 
-Examples:
+- rewarding consistent past decisions  
+- penalizing historically unstable deltas  
 
-- proposals that repeat past beneficial decisions receive positive weighting
-- proposals that caused issues in past snapshots receive penalties
-
-This creates **temporal continuity** in reasoning.
+This would introduce *temporal coherence* into long-running graphs.
 
 ---
 
-### 6.3 LLM-Based Scoring (Advanced)
+## 6.3 LLM-Based Scoring (Advanced / Optional)
 
-LLM scoring is optional and pluggable.
+LLM scoring **will not be part of Alpha‑2 or Alpha‑3**,  
+but may appear in later versions.
 
-In this mode, the Scorer:
+Concept:
 
-1. Extracts JSON deltas from each proposal
-2. Builds a **structured prompt** describing the competing proposals
-3. Sends the prompt to a model (GPT, Claude, etc.)
-4. Interprets the result as a ranking or direct selection
+1. Extract proposal JSON deltas  
+2. Build deterministic prompt  
+3. Use temperature‑0 inference  
+4. Parse winner into ScoringResult  
 
-LLM scoring is appropriate for:
-
-- complex tradeoffs
-- multi-factor reasoning
-- natural language constraints
-- scenarios where business preferences cannot be fully coded
-
-All LLM interactions MUST remain deterministic at CGO level:
-
-- temperature = 0
-- stable prompt format
-- stable ordering of proposals
+This enables complex tradeoff reasoning that is difficult to encode manually.
 
 ---
 
-## 7. Ensuring Determinism in Scoring
+# 7. Determinism Requirements (Core Principle)
 
-Scoring must never introduce randomness.
+Before Scoring is officially added, CGO will enforce:
 
-To guarantee deterministic outcomes:
+- Stable sorting of proposals before scoring  
+- Frozen JSON canonicalization  
+- Temperature = 0 for any model use  
+- No external mutable state  
+- Idempotent scoring decisions  
 
-- Proposal set is **sorted** by stable fields (ID, hash)
-- Prompt templates (for LLMs) are **frozen**
-- No sampling-based randomness (temperature = 0)
-- Scoring rules must not depend on external mutable state
-
-If these rules are followed, scoring is perfectly deterministic.
+Determinism is mandatory.  
+Scoring will **never** introduce randomness.
 
 ---
 
-## 8. Example Scorer (Deterministic)
+# 8. Conceptual Example: Deterministic Scorer
 
 ```java
 public class ShortestRouteScorer implements Scorer {
@@ -182,114 +186,112 @@ public class ShortestRouteScorer implements Scorer {
     @Override
     public ScoringResult score(Set<Proposal> proposals, GraphView view) {
 
-        Proposal best = null;
+        // Pseudocode: not implemented in Alpha-2
+        Proposal winner = null;
         int bestDistance = Integer.MAX_VALUE;
 
         for (Proposal p : proposals) {
-            int distance = extractDistance(p); // parse JSON
-            if (distance < bestDistance) {
-                best = p;
-                bestDistance = distance;
+            int d = extractDistance(p);
+            if (d < bestDistance) {
+                bestDistance = d;
+                winner = p;
             }
         }
-
-        return new ScoringResult(best, List.of(best));
-    }
-}
-```
-
-This scorer simply chooses the shortest route.
-
----
-
-## 9. Example LLM-Backed Scorer (Conceptual)
-
-```java
-public class LlmScorer implements Scorer {
-
-    private final LlmClient client; // wrapper around GPT/Claude
-
-    @Override
-    public ScoringResult score(Set<Proposal> proposals, GraphView view) {
-
-        String prompt = PromptBuilder.build(proposals, view);
-        String response = client.complete(prompt, Temperature.ZERO);
-
-        Proposal winner = parseWinnerFrom(response, proposals);
 
         return new ScoringResult(winner, List.of(winner));
     }
 }
 ```
 
-The prompt builder ensures stable JSON ordering:
+---
 
-- sort proposals by ID
-- canonicalize JSON
-- deterministic prompt format
+# 9. Conceptual Example: LLM Scorer (Future Only)
+
+```java
+public class LlmScorer implements Scorer {
+
+    private final LlmClient client; // planned integration
+
+    @Override
+    public ScoringResult score(Set<Proposal> proposals, GraphView view) {
+
+        // Not implemented in Alpha-2
+        String prompt = PromptBuilder.buildForScoring(proposals, view);
+        String response = client.executePrompt(prompt); // temp=0
+
+        Proposal winner = parse(response, proposals);
+
+        return new ScoringResult(winner, List.of(winner));
+    }
+}
+```
+
+This example is **architectural only**.
 
 ---
 
-## 10. Prompt Wiring Model (Stable)
+# 10. Prompt Model (Frozen After Release)
 
-LLM scoring requires a **frozen schema**:
+Before scoring is released, CGO will finalize:
 
-- Unified proposal JSON format
-- Stable prompt template
-- Stable ordering of competing proposals
+- canonical proposal JSON  
+- deterministic proposal ordering  
+- stable scoring prompt template  
 
-Example (conceptual prompt):
+Example preview:
 
 ```
-You are the CGO Scorer. Evaluate the following proposals.
-Each proposal contains JSON describing the delta.
-Choose the most operationally efficient outcome.
+You are the CGO Scorer.
+Evaluate these proposals and select the best candidate.
+Respond ONLY with the winning proposal ID.
 
 Context:
 {{GRAPH_VIEW_JSON}}
 
 Proposals:
-{{SORTED_PROPOSAL_LIST}}
-
-Respond with the ID of the winner.
+{{SORTED_CANONICALIZED_PROPOSALS}}
 ```
-
-This template never changes once published.
 
 ---
 
-## 11. Integration with CGO
+# 11. Integration Path (Future)
 
-CGO invokes scoring only when needed:
+Once implemented, scoring will be invoked internally:
 
 ```java
-if (proposals.size() > 1) {
-    ScoringResult scoring = scorer.score(proposals, view);
-    Proposal winner = scoring.getWinner();
-    proposals = Set.of(winner);
+if (proposals.size() > 1 && scorer != null) {
+    ScoringResult result = scorer.score(proposals, view);
+    proposals = Set.of(result.getWinner());
 }
 ```
 
-After scoring, CGO proceeds to the mutation phase.
+Today: this block does **not** exist.  
+It will appear once the Scoring module is shipped.
 
 ---
 
-## 12. Scoring Checklist
+# 12. Roadmap Status
 
-### ✔ Scorer interface implemented
-
-### ✔ Proposal set is sorted before scoring
-
-### ✔ Deterministic scoring logic
-
-### ✔ Temperature = 0 for LLM calls
-
-### ✔ Stable prompt schema
-
-### ✔ Historical weighting optional but deterministic
-
-### ✔ Only used when proposals conflict
-
-When all of the above are satisfied, CGO scoring remains predictable, transparent, and robust.
+| Layer                        | Status         |
+|------------------------------|----------------|
+| Rulepacks                    | ✔ Complete     |
+| Substrate Validation         | ✔ Complete     |
+| Proposal Validation          | ✔ Complete     |
+| QueryPipeline Validation     | ✔ Complete     |
+| **Scoring Layer**            | 🚧 *Not Implemented* |
+| LLM‑Scoring                  | 🚧 *Future Optional* |
 
 ---
+
+# 13. Summary
+
+The Scoring Layer is a **future CGO module** designed to:
+
+- Resolve competing proposals  
+- Apply deterministic decision rules  
+- Support advanced optimization  
+- Optionally integrate with LLM‑based tradeoff reasoning  
+
+Alpha‑2 does **not** include scoring logic.  
+This document describes the **planned architecture** that will be implemented in a future release.
+
