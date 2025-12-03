@@ -75,12 +75,14 @@ CGO’s core is built around four pillars:
 - **Scoring (D_Scoring.md)** _(architectural preview)_  
   Planned future layer for resolving multiple valid proposals into a single winning decision.
 
-You can find these docs under `docs/`:
+### Documentation
 
-- `docs/A_API_Integration.md`
-- `docs/B_Rulepack.md`
-- `docs/C_Validation.md`
-- `docs/D_Scoring.md`
+| Module            | File                                              |
+| ----------------- | ------------------------------------------------- |
+| API Integration   | [A_API_Integration.md](docs/A_API_Integration.md) |
+| Rulepacks         | [B_Rulepack.md](docs/B_Rulepack.md)               |
+| Validation        | [C_Validation.md](docs/C_Validation.md)           |
+| Scoring (preview) | [D_Scoring.md](docs/D_Scoring.md)                 |
 
 ### Project Status
 
