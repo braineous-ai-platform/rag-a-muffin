@@ -12,6 +12,7 @@
 
     <modules>
         <module>cgo-core</module>
+        <module>cgo-scorer</module>
         <module>agentic-apps</module>
     </modules>
 </project>
