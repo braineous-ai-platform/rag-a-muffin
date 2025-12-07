@@ -17,13 +17,19 @@ import java.util.Objects;
 public final class HistoryRecord {
 
     private final QueryExecution<?> queryExecution;
+    private final ScorerResult result;
 
-    public HistoryRecord(QueryExecution<?> queryExecution) {
-        this.queryExecution = Objects.requireNonNull(queryExecution, "queryExecution must not be null");
+    public HistoryRecord(QueryExecution<?> queryExecution, ScorerResult result) {
+        this.queryExecution = queryExecution;
+        this.result = result;
     }
 
     public QueryExecution<?> getQueryExecution() {
         return queryExecution;
+    }
+
+    public ScorerResult getResult() {
+        return result;
     }
 
     /**
@@ -50,8 +56,8 @@ public final class HistoryRecord {
     @Override
     public String toString() {
         return "HistoryRecord{" +
-                "queryKind=" + getQueryKind() +
-                ", version=" + getVersion() +
+                "queryExecution=" + queryExecution +
+                ", result=" + result +
                 '}';
     }
 }
