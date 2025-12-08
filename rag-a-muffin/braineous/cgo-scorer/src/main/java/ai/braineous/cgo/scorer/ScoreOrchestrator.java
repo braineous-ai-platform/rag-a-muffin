@@ -6,8 +6,18 @@ import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 
 public class ScoreOrchestrator {
-    private final Scorer scorer = new Scorer();
-    private final HistoryStore store = new HistoryStore();
+    private final Scorer scorer;
+    private final HistoryStore store;
+
+    public ScoreOrchestrator() {
+        this(new Scorer(), new HistoryStore());
+    }
+
+    // package-private for tests
+    ScoreOrchestrator(Scorer scorer, HistoryStore store) {
+        this.scorer = scorer;
+        this.store = store;
+    }
 
 
     public void orchestrate(QueryExecution queryExecution){
@@ -24,9 +34,22 @@ public class ScoreOrchestrator {
                record = new HistoryRecord(queryExecution, result);
            }
         }finally {
-            if(record != null);{
+            this.storeRecord(record);
+        }
+    }
+
+    public HistoryStore getStore() {
+        return store;
+    }
+
+    private void storeRecord(HistoryRecord record){
+        try {
+            if (record != null) ;
+            {
                 store.addRecord(record);
             }
+        }catch (Exception e){
+            //fail-silently
         }
     }
 }

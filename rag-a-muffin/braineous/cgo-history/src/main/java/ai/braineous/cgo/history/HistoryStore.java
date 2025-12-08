@@ -35,4 +35,8 @@ public class HistoryStore {
 
         return view;
     }
+
+    public List<HistoryRecord> getAll(){
+        return this.records;
+    }
 }
