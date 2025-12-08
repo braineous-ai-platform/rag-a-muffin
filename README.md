@@ -84,6 +84,37 @@ CGO’s core is built around four pillars:
 | Validation        | [C_Validation.md](docs/C_Validation.md)           |
 | Scoring (preview) | [D_Scoring.md](docs/D_Scoring.md)                 |
 
+### Evolution of the Repository
+
+This project began as a standard RAG exploration — small experiments in  
+`rag_fast_api/`, `prompt_engineering_quarkus/`, `llm_orchestration_fast_api/`,  
+and `prototyping/`.
+
+These folders are intentionally preserved.
+
+They document the _research path_ that led to CGO:
+
+- early RAG prototypes
+- prompt-engineering experiments
+- LLM orchestration attempts
+- low-level cURL and response-validation tests
+- learning notes and dead ends
+
+From these experiments, the current **CGO monorepo** emerged inside `braineous/`,  
+representing the consolidated, production-grade architecture:
+
+- `cgo-core` — graph substrate + reasoning backbone
+- `cgo-api` — stable public contract
+- `cgo-scorer` — deterministic scoring engine
+- `cgo-history` — memory + event records
+- `cgo-llm` — abstract LLM/vector interfaces
+- `cgo-observer` — telemetry hooks
+- `agentic-apps` — demos, including the Flight Network Optimizer (FNO)
+
+Engineers and VCs who browse the repo often appreciate this evolution:  
+the path from **“just another RAG project”** to a **new reasoning substrate category**  
+is visible directly in the folder history.
+
 ### Project Status
 
 CGO’s core (Integration, Rulepacks, Validation) is stable and active in development.  
