@@ -1,4 +1,4 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import java.util.ArrayList;
 import java.util.Collections;

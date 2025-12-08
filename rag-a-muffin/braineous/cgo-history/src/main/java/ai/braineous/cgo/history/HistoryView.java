@@ -1,7 +1,6 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;

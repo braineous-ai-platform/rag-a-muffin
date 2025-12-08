@@ -1,5 +1,6 @@
 package ai.braineous.cgo.scorer;
 
+import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.observe.Console;
