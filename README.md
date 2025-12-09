@@ -80,7 +80,7 @@ CGO’s core is built around **four pillars**, corresponding to Chapters A–D.
 
 ---
 
-## **1. Integration Layer (A_API_Integration.md)**
+## **1. Integration Layer **
 
 How your service talks to CGO:
 
@@ -92,7 +92,7 @@ How your service talks to CGO:
 
 ---
 
-## **2. Rulepack Engine (B_Rulepack.md)**
+## **2. Rulepack Engine **
 
 Domain reasoning defined as **pure BusinessRule functions**:
 
@@ -104,7 +104,7 @@ CGO executes all rules in parallel and validates the proposal set.
 
 ---
 
-## **3. Validation Layer (C_Validation.md)**
+## **3. Validation Layer **
 
 CGO’s safety system — four phases:
 
@@ -117,7 +117,7 @@ Mutations occur **only** if all phases pass.
 
 ---
 
-## **4. Pipeline Architecture (D_Pipeline.md)**
+## **4. Pipeline Architecture **
 
 End-to-end reasoning flow:
 
