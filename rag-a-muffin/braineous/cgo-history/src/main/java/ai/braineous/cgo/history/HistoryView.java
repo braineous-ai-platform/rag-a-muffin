@@ -39,6 +39,10 @@ public final class HistoryView {
         this.records.add(record);
     }
 
+    public int size(){
+        return this.records.size();
+    }
+
     /**
      * Convenience stream so Scorer can filter fast.
      */

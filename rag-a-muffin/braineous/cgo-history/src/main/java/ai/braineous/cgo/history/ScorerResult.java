@@ -58,6 +58,10 @@ public class ScorerResult {
         // default: UNKNOWN, no score
     }
 
+    public ScorerResult(Double score) {
+        this.score = score;
+    }
+
     // --- Status / score ---
 
     public Status getStatus() {
