@@ -1,8 +1,7 @@
 # C. CGO Validation Guide (Refined – 2025 Architecture)
 
 > **Audience:** Java developers using or extending CGO's safety layer  
-> **Goal:** Understand the 4-phase validation model that protects CGO’s graph and reasoning pipeline  
-> fileciteturn1file0
+> **Goal:** Understand the 4-phase validation model that protects CGO’s graph and reasoning pipeline
 
 ---
 
@@ -24,13 +23,13 @@ Only after all phases pass does CGO apply mutations to the graph.
 
 This prevents:
 
-- Broken relationships  
-- Missing facts  
-- Malformed JSON  
-- Logical contradictions  
-- Unsafe deltas  
-- Bad rule logic  
-- Invalid LLM output  
+- Broken relationships
+- Missing facts
+- Malformed JSON
+- Logical contradictions
+- Unsafe deltas
+- Bad rule logic
+- Invalid LLM output
 
 ---
 
@@ -47,7 +46,7 @@ Domain → Facts → Input → GraphBuilder.bind(...)
                        V
                Validation Phases
                        |
-         OK → Apply Mutation → New GraphSnapshot  
+         OK → Apply Mutation → New GraphSnapshot
      NOT OK → BindResult.notOk(...)
 ```
 
@@ -62,20 +61,24 @@ This validates the **incoming Input**, before any rules run.
 Checks include:
 
 ### 3.1 Fact-Level Safety
-- `Fact.id` cannot be null  
-- JSON payload must be valid  
+
+- `Fact.id` cannot be null
+- JSON payload must be valid
 - Fact mode must be recognized (`atomic`, `relational`, etc.)
 
 ### 3.2 Relationship Construction
+
 For relational Facts:
-- `from` and `to` Facts must exist  
-- They must have stable IDs  
+
+- `from` and `to` Facts must exist
+- They must have stable IDs
 - Relationship Fact JSON must be valid
 
 ### 3.3 Graph Topology
-- No self-loops unless explicitly allowed  
-- No orphan edges  
-- No malformed Input triples  
+
+- No self-loops unless explicitly allowed
+- No orphan edges
+- No malformed Input triples
 
 If substrate invalid → **Rulepack never runs**.
 
@@ -88,20 +91,23 @@ After Rulepack execution, CGO inspects the **Set<Proposal>**.
 Core responsibilities:
 
 ### 4.1 Internal Integrity
-- Proposal type must be valid  
-- Required fields must be present  
-- No null IDs  
+
+- Proposal type must be valid
+- Required fields must be present
+- No null IDs
 - JSON payload of proposed mutations must be valid
 
 ### 4.2 Cross-Proposal Consistency
-- No conflicting updates  
-- No contradictory deltas  
-- No duplicate mutations  
+
+- No conflicting updates
+- No contradictory deltas
+- No duplicate mutations
 - Mutations must be idempotent and well-formed
 
 ### 4.3 Topological Safety
-- Mutations cannot create orphaned nodes  
-- Edge updates must remain resolvable  
+
+- Mutations cannot create orphaned nodes
+- Edge updates must remain resolvable
 - Node deletions must not break relationships (unless allowed)
 
 **This is the strongest safety layer.**  
@@ -125,11 +131,13 @@ public interface FactValidatorRule {
 ```
 
 Examples:
-- Flight must have `from` and `to`  
-- Airport code must be IATA-valid  
-- Crew must have required qualifications  
+
+- Flight must have `from` and `to`
+- Airport code must be IATA-valid
+- Crew must have required qualifications
 
 Return:
+
 - `ValidationResult.ok()`
 - or descriptive failure
 
@@ -145,8 +153,9 @@ public interface RelationshipValidatorRule {
 ```
 
 Examples:
-- `from != to` for any flight  
-- Turnaround time edges must include `taMinutes >= 0`  
+
+- `from != to` for any flight
+- Turnaround time edges must include `taMinutes >= 0`
 
 Domain validators run **after Proposal structure validation**, ensuring the rules’ proposed changes also respect domain constraints.
 
@@ -156,15 +165,16 @@ Domain validators run **after Proposal structure validation**, ensuring the rule
 
 For QueryPipeline requests:
 
-1. PromptBuilder generates a prompt  
-2. LLM returns structured JSON  
+1. PromptBuilder generates a prompt
+2. LLM returns structured JSON
 3. **PromptOutputValidator** validates:
-   - required fields  
-   - schema correctness  
-   - JSON syntax  
-   - response type restrictions  
 
-4. DomainValidation (optional) may run on the LLM output  
+   - required fields
+   - schema correctness
+   - JSON syntax
+   - response type restrictions
+
+4. DomainValidation (optional) may run on the LLM output
 
 If invalid → CGO returns:
 
@@ -191,11 +201,11 @@ if (!result.isOk()) {
 
 BindResult may contain:
 
-- error message  
-- field name  
-- involved Fact IDs  
-- proposal IDs  
-- conflict report  
+- error message
+- field name
+- involved Fact IDs
+- proposal IDs
+- conflict report
 - schema validation errors (LLM path)
 
 This unified interface simplifies debugging.
@@ -235,15 +245,15 @@ This unified interface simplifies debugging.
 
 # 9. Why CGO’s Validation Model Matters
 
-- Guarantees **graph safety**  
-- Allows **risky domain logic** without fear  
-- Rules can be complex — the validator protects the system  
-- Ensures **cross-rule determinism**  
+- Guarantees **graph safety**
+- Allows **risky domain logic** without fear
+- Rules can be complex — the validator protects the system
+- Ensures **cross-rule determinism**
 - Makes CGO safe for:
-  - multi-tenant environments  
-  - LLM-assisted reasoning  
-  - real-time ingest pipelines  
-  - batch data ingestion  
+  - multi-tenant environments
+  - LLM-assisted reasoning
+  - real-time ingest pipelines
+  - batch data ingestion
 
 Validation is the **immune system** of CGO.
 
