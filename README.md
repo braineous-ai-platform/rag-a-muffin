@@ -142,7 +142,7 @@ CGO ensures deterministic, explainable outcomes.
 | API Integration | [A_API_Integration.md](docs/A_API_Integration.md) |
 | Rulepacks       | [B_Rulepack.md](docs/B_Rulepack.md)               |
 | Validation      | [C_Validation.md](docs/C_Validation.md)           |
-| Pipeline        | [D_Pipeline.md](docs/D_Pipeline.md)               |
+| Pipeline        | [D_Pipeline.md](docs/D_Pipeline_Architectute.md)  |
 
 ---
 
