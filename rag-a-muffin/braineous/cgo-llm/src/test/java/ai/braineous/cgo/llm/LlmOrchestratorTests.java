@@ -95,4 +95,54 @@ public class LlmOrchestratorTests {
         assertTrue(rawResponse.contains("\"VALID\""),
                 "rawResponse should contain VALID as returned by the stubbed OpenAILlmAdapter");
     }
+
+    @Test
+    void execute_withRealLlmOrchestrator_shouldReturnStubbedAdapterResponse() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate that the selected flight has valid airports"
+        );
+
+        ValidateTask task = new ValidateTask("dummy validation", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+
+        // PromptBuilder without validators
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // LlmClient = null → pipeline.json → LlmClientOrchestrator → OpenAILlmAdapter
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, null);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // assert
+        assertNotNull(execution, "Execution should not be null");
+        assertEquals(request, execution.getRequest());
+
+        // This is the exact stubbed adapter response
+        String expected = "{\"result\":{\"status\":\"VALID\"}}";
+
+        assertNotNull(execution.getRawResponse(), "rawResponse should not be null");
+        assertEquals(expected, execution.getRawResponse(), "rawResponse should match stubbed adapter output");
+
+        // And because no validators were added:
+        assertNull(execution.getPromptValidation());
+        assertNull(execution.getLlmResponseValidation());
+        assertNull(execution.getDomainValidation());
+    }
 }
