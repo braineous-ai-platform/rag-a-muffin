@@ -1,4 +1,4 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -34,5 +34,9 @@ public class HistoryStore {
         }
 
         return view;
+    }
+
+    public List<HistoryRecord> getAll(){
+        return this.records;
     }
 }

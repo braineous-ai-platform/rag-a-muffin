@@ -1,7 +1,6 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Stream;
@@ -38,6 +37,10 @@ public final class HistoryView {
 
     public void addRecord(HistoryRecord record){
         this.records.add(record);
+    }
+
+    public int size(){
+        return this.records.size();
     }
 
     /**

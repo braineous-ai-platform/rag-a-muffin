@@ -1,4 +1,4 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 

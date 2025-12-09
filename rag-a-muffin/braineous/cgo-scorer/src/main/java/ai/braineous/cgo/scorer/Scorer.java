@@ -1,14 +1,13 @@
 package ai.braineous.cgo.scorer;
 
+import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 
 public class Scorer {
-    private final HistoryStore store = new HistoryStore();
+
 
     public ScorerResult calculateScore(ScorerContext scorerContext){
-        HistoryRecord record = null;
-
         if(scorerContext == null || scorerContext.getQueryExecution() == null){
             //fail silently
             return null;
@@ -16,18 +15,11 @@ public class Scorer {
 
         //get query_execution
         QueryExecution queryExecution = scorerContext.getQueryExecution();
-        try {
-            //calculate_result
-            ScorerResult result = calculateResult(queryExecution);
 
-            record = new HistoryRecord(queryExecution, result);
+        //calculate_result
+        ScorerResult result = calculateResult(queryExecution);
 
-            return result;
-        }finally {
-            if (record != null) {
-                store.addRecord(record);
-            }
-        }
+        return result;
     }
 
     private ScorerResult calculateResult(QueryExecution execution){

@@ -1,134 +1,206 @@
-# rag-a-muffin
+# **rag-a-muffin**
 
-### Retrieval-Augmented Generation with the CGO reasoning engine
+### **Retrieval-Augmented Generation with the CGO reasoning engine**
 
 ![This is an image](parallax-image.jpg)
 
-CGO (Causal Graph Orchestrator) is a deterministic reasoning engine that sits inside modern RAG pipelines.  
-Instead of relying only on LLMs for reasoning, CGO uses a graph substrate, rulepacks, and a validation pipeline  
-to produce reliable, safe, and explainable decisions.
+**CGO (Causal Graph Orchestrator)** is a **deterministic reasoning engine** designed to sit inside modern RAG pipelines and agentic systems.  
+Where LLMs provide language understanding, CGO provides:
 
-### Why CGO?
+- a **graph substrate**
+- **rule-driven reasoning**
+- **multi-phase validation**
+- **safe, explainable mutations**
 
-- RAG retrieves facts, but cannot reason over them safely
-- LLMs are non-deterministic and hard to validate
-- Business logic scattered across microservices becomes brittle
+This produces **predictable**, **trustworthy** decisions that LLMs alone cannot guarantee.
 
-CGO unifies this into a deterministic, rule-driven reasoning substrate.
+---
 
-### Where CGO Fits in RAG
+# **Why CGO?**
 
-RAG retrieves relevant context.  
-CGO takes that context, applies rules, validates changes, and produces deterministic decisions.
+### RAG retrieves context — but cannot _reason_ over it safely.
 
-Retriever → Documents/DB/API
-↓
-Retrieved Facts
-↓
-CGO (graph + rules + validation)
-↓
-Deterministic, safe, explainable results
+### LLMs reason — but cannot guarantee _correctness_ or _consistency_.
 
-### Quickstart — Try CGO locally
+### Business logic spreads across microservices — and becomes _brittle_.
 
-Clone the repo and run the tests:
+CGO unifies these concerns into a **single deterministic substrate**.
+
+It turns **facts → relationships → validated graph → deterministic decisions**.
+
+---
+
+# **Where CGO Fits in RAG**
+
+RAG handles _retrieval_.  
+CGO handles _reasoning_.
+
+```
+Retriever → Documents / DB / API
+            ↓
+         Retrieved Facts
+            ↓
+   CGO (Graph + Rulepacks + Validation)
+            ↓
+   Deterministic, safe, explainable results
+```
+
+CGO ensures the reasoning loop is **stable, reproducible, safe**, and **verifiable**.
+
+---
+
+# **Quickstart — Try CGO Locally**
+
+Clone and run the core tests:
 
 ```bash
-cd rag-a-muffin
-cd braineous
-
-# Run the core CGO tests
+cd rag-a-muffin/braineous
 mvn -q test
 ```
 
-To see a concrete flight-network demo (FNO) using CGO:
+Run the **Flight Network Optimizer (FNO) demo**:
 
 ```bash
-cd rag-a-muffin
-cd braineous
-cd agentic-apps
-cd fno-app
-
+cd rag-a-muffin/braineous/agentic-apps/fno-app
 mvn -q -Dtest=FNOOrchestratorTests test
 ```
 
 This demo:
 
-- builds a small flight network as a graph
-- applies a Rulepack over Facts (flights + airports)
-- runs through the CGO reasoning cycle (Facts → Rulepacks → Validation → Graph snapshot)
-- prints the final reasoning context and graph snapshot to the console.
+- builds a small **flight network graph**
+- applies a **Rulepack** (flights + airports)
+- runs through the full **CGO reasoning cycle**
+- prints the final reasoning context & GraphSnapshot
 
-### CGO Architecture at a Glance
+---
 
-CGO’s core is built around four pillars:
+# **CGO Architecture at a Glance (Alpha2)**
 
-- **Integration (A_API_Integration.md)**  
-  How your service talks to CGO: Facts, Inputs, GraphBuilder, and BindResult.
+CGO’s core is built around **four pillars**, corresponding to Chapters A–D.
 
-- **Rulepacks (B_Rulepack.md)**  
-  How you express domain reasoning as pure BusinessRule functions over a GraphView.
+---
 
-- **Validation (C_Validation.md)**  
-  How CGO protects the graph with multi-phase validation (substrate, proposals, domain, query/LLM).
+## **1. Integration Layer **
 
-- **Scoring (D_Scoring.md)** _(architectural preview)_  
-  Planned future layer for resolving multiple valid proposals into a single winning decision.
+How your service talks to CGO:
 
-### Documentation
+- Facts
+- Relationships
+- GraphBuilder
+- BindResult
+- GraphView (read-only snapshots)
 
-| Module            | File                                              |
-| ----------------- | ------------------------------------------------- |
-| API Integration   | [A_API_Integration.md](docs/A_API_Integration.md) |
-| Rulepacks         | [B_Rulepack.md](docs/B_Rulepack.md)               |
-| Validation        | [C_Validation.md](docs/C_Validation.md)           |
-| Scoring (preview) | [D_Scoring.md](docs/D_Scoring.md)                 |
+---
 
-### Evolution of the Repository
+## **2. Rulepack Engine **
 
-This project began as a standard RAG exploration — small experiments in  
-`rag_fast_api/`, `prompt_engineering_quarkus/`, `llm_orchestration_fast_api/`,  
-and `prototyping/`.
+Domain reasoning defined as **pure BusinessRule functions**:
 
-These folders are intentionally preserved.
+```
+GraphView → Proposal
+```
 
-They document the _research path_ that led to CGO:
+CGO executes all rules in parallel and validates the proposal set.
 
-- early RAG prototypes
+---
+
+## **3. Validation Layer **
+
+CGO’s safety system — four phases:
+
+1. Substrate validation (Facts + Relationships)
+2. Proposal structure validation
+3. Domain validation (optional, pluggable)
+4. LLM output validation (QueryPipeline only)
+
+Mutations occur **only** if all phases pass.
+
+---
+
+## **4. Pipeline Architecture **
+
+End-to-end reasoning flow:
+
+```
+Request
+ → Input mapping
+ → Rulepack execution
+ → Validation
+ → Mutation (if safe)
+ → GraphSnapshot
+ → QueryExecution
+```
+
+CGO ensures deterministic, explainable outcomes.
+
+---
+
+# **Documentation**
+
+| Module                | File                                                          |
+| --------------------- | ------------------------------------------------------------- |
+| API Integration       | [A_API_Integration.md](docs/A_API_Integration.md)             |
+| Rulepacks             | [B_Rulepack.md](docs/B_Rulepack.md)                           |
+| Validation            | [C_Validation.md](docs/C_Validation.md)                       |
+| Pipeline Architecture | [D_Pipeline_Architecture.md](docs/D_Pipeline_Architecture.md) |
+
+---
+
+# **Evolution of the Repository**
+
+This project began as RAG experimentation across:
+
+- `rag_fast_api/`
+- `prompt_engineering_quarkus/`
+- `llm_orchestration_fast_api/`
+- `prototyping/`
+
+These folders are intentionally preserved.  
+They show the research journey:
+
+- early RAG attempts
 - prompt-engineering experiments
-- LLM orchestration attempts
-- low-level cURL and response-validation tests
-- learning notes and dead ends
+- LLM orchestration prototypes
+- schema validation tests
+- abandoned designs
 
-From these experiments, the current **CGO monorepo** emerged inside `braineous/`,  
-representing the consolidated, production-grade architecture:
+From these experiments emerged the consolidated **CGO monorepo** under `braineous/`:
 
-- `cgo-core` — graph substrate + reasoning backbone
-- `cgo-api` — stable public contract
-- `cgo-scorer` — deterministic scoring engine
-- `cgo-history` — memory + event records
+- `cgo-core` — graph substrate + reasoning engine + public/developer api
+- `cgo-scorer` — deterministic scoring (upcoming)
+- `cgo-history` — event sourcing & memory (upcoming)
 - `cgo-llm` — abstract LLM/vector interfaces
-- `cgo-observer` — telemetry hooks
-- `agentic-apps` — demos, including the Flight Network Optimizer (FNO)
+- `cgo-observer` — observability hooks
+- `agentic-apps` — demos such as the FNO flight optimizer
 
-Engineers and VCs who browse the repo often appreciate this evolution:  
-the path from **“just another RAG project”** to a **new reasoning substrate category**  
-is visible directly in the folder history.
+This visible evolution shows the transition from **“just another RAG repo”** →  
+**“a new reasoning substrate category.”**
 
-### Project Status
+---
 
-CGO’s core (Integration, Rulepacks, Validation) is stable and active in development.  
-The Scoring layer is a planned module and not implemented yet.
+# **Project Status**
 
-**Current release:** `1.0.0-alpha.2`  
-**Next milestones:**
+CGO Alpha2 contains:
+
+- stable Integration model
+- deterministic Rulepack engine
+- multi-phase Validation
+- full Pipeline documentation (Chapters A–D)
+
+**Current release:** `1.0.0-alpha.2`
+
+### **Next Milestones**
 
 - Query pipeline refinements
 - LLM output validation
-- Deterministic scoring
+- Deterministic scoring engine
+- History/event recording
 - Microservice runtime wrapper
+- Observability extensions
 
-### License & Contributions
+---
+
+# **License & Contributions**
 
 Apache 2.0  
 Maintainer: Sohil Shah (@braineous-ai-platform)

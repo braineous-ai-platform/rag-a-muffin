@@ -1,4 +1,4 @@
-package ai.braineous.cgo.scorer;
+package ai.braineous.cgo.history;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -56,6 +56,10 @@ public class ScorerResult {
 
     public ScorerResult() {
         // default: UNKNOWN, no score
+    }
+
+    public ScorerResult(Double score) {
+        this.score = score;
     }
 
     // --- Status / score ---

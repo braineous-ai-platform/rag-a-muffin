@@ -1,17 +1,13 @@
 package ai.braineous.rag.prompt.cgo.api;
 
+import ai.braineous.rag.prompt.services.cgo.causal.LLMFacts;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonParser;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Function;
-
-import ai.braineous.rag.prompt.cgo.api.Fact;
-import ai.braineous.rag.prompt.cgo.api.FactExtractor;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParser;
-
-import ai.braineous.rag.prompt.services.cgo.causal.LLMFacts;
 
 public class LLMContext {
     private final Map<String, LLMFacts> context = new HashMap<>();

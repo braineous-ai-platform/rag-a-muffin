@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.utils;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 import org.apache.commons.io.IOUtils;
 
@@ -12,8 +13,11 @@ public class Resources {
 
         InputStream inputStream = Thread.currentThread().getContextClassLoader().
         getResourceAsStream(resource);
+        if (inputStream == null) {
+            throw new IOException("Resource not found: " + resource);
+        }
 
-        resourceStr = IOUtils.toString(inputStream);
+        resourceStr = IOUtils.toString(inputStream, StandardCharsets.UTF_8);
 
         return resourceStr;
     }
