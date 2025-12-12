@@ -1,5 +1,6 @@
-package ai.braineous.fno;
+package ai.braineous.fno.reasoning;
 
+import ai.braineous.fno.reasoning.FNOOrchestrator;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 import ai.braineous.rag.prompt.observe.Console;
