@@ -27,5 +27,14 @@ public final class Meta {
     public String getDescription() {
         return description;
     }
+
+    @Override
+    public String toString() {
+        return "Meta{" +
+                "version='" + version + '\'' +
+                ", queryKind='" + queryKind + '\'' +
+                ", description='" + description + '\'' +
+                '}';
+    }
 }
 

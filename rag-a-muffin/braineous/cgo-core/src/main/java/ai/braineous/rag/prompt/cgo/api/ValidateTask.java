@@ -43,4 +43,12 @@ public final class ValidateTask implements QueryTask {
 
         return new ValidateTask(description, factId);
     }
+
+    @Override
+    public String toString() {
+        return "ValidateTask{" +
+                "description='" + description + '\'' +
+                ", factId='" + factId + '\'' +
+                '}';
+    }
 }

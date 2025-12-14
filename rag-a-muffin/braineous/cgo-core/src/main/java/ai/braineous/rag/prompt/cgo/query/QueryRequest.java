@@ -48,5 +48,15 @@ public final class QueryRequest<T extends QueryTask> {
     public LLMResponseValidatorRule getRule() {
         return rule;
     }
+
+    @Override
+    public String toString() {
+        return "QueryRequest{" +
+                "meta=" + meta +
+                ", context=" + context +
+                ", task=" + task +
+                ", rule=" + rule +
+                '}';
+    }
 }
 

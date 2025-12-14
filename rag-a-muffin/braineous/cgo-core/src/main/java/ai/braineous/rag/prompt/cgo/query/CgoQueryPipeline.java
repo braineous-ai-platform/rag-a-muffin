@@ -33,7 +33,8 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PhaseResultValidator llmResponseValidator;
 
-    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient, PhaseResultValidator llmResponseValidator) {
+    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
+                            PhaseResultValidator llmResponseValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = llmClient;
         this.llmResponseValidator = llmResponseValidator;
@@ -42,6 +43,8 @@ public final class CgoQueryPipeline implements QueryPipeline {
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
         this(promptBuilder, llmClient, null);
     }
+
+
 
     @Override
     public <T extends QueryTask> QueryExecution<T> execute(QueryRequest<T> request) {

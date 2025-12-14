@@ -125,6 +125,17 @@ public final class QueryExecution<T extends QueryTask> {
     public boolean hasValidationResult() {
         return hasLlmResponseValidation();
     }
+
+    @Override
+    public String toString() {
+        return "QueryExecution{" +
+                "request=" + request +
+                ", rawResponse='" + rawResponse + '\'' +
+                ", promptValidation=" + promptValidation +
+                ", llmResponseValidation=" + llmResponseValidation +
+                ", domainValidation=" + domainValidation +
+                '}';
+    }
 }
 
 

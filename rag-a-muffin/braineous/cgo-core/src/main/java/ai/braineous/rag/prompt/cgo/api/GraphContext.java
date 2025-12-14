@@ -41,5 +41,12 @@ public final class GraphContext {
 
         return new GraphContext(nodeMap);
     }
+
+    @Override
+    public String toString() {
+        return "GraphContext{" +
+                "nodes=" + nodes +
+                '}';
+    }
 }
 

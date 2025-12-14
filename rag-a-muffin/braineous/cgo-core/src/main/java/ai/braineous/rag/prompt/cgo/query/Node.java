@@ -79,4 +79,14 @@ public final class Node {
 
         return new Node(id, text, attributes, mode);
     }
+
+    @Override
+    public String toString() {
+        return "Node{" +
+                "id='" + id + '\'' +
+                ", text='" + text + '\'' +
+                ", attributes=" + attributes +
+                ", mode=" + mode +
+                '}';
+    }
 }

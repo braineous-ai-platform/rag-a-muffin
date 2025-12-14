@@ -7,49 +7,42 @@ import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
+import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 
 import ai.braineous.rag.prompt.observe.Console;
 
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 import java.util.List;
 import java.util.Map;
 
 public class FNOPromptOrchestrator {
 
-    public void orchestrate(JsonObject jsonObject){
-        // arrange
-        String factId = "Flight:F100";
+    public QueryExecution<ValidateTask> orchestrate(JsonObject json){
+        PromptInput promptInput = new PromptInput().generate(json);
+        Meta meta = promptInput.getMeta();
+        ValidateTask task = promptInput.getTask();
+        GraphContext context = promptInput.getGraphContext();
+        String factId = task.getFactId();
 
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
+        //TODO: wire validators
+        PhaseResultValidator llmResponseValidator = null;
+        PhaseResultValidator phaseResultValidator = null;
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
 
         // PromptBuilder with NO prompt validator
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        PromptBuilder promptBuilder = new PromptBuilder(
+                new SimpleResponseContractRegistry(),
+                phaseResultValidator);
 
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, null);
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder,
+                null, //use the CGO LLMOrchestrator
+                llmResponseValidator
+        );
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
@@ -59,5 +52,7 @@ public class FNOPromptOrchestrator {
         Console.log("happy.promptValidation", execution.getPromptValidation());
         Console.log("happy.llmResponseValidation", execution.getLlmResponseValidation());
         Console.log("happy.domainValidation", execution.getDomainValidation());
+
+        return execution;
     }
 }
