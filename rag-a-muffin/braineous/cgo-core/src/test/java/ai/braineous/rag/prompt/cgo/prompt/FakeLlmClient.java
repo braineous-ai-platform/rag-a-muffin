@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.prompt;
 
+import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import com.google.gson.JsonObject;
 
@@ -17,7 +18,7 @@ public final class FakeLlmClient implements LlmClient {
     }
 
     @Override
-    public String executePrompt(JsonObject prompt) {
+    public String executePrompt(LlmAdapter llmAdapter,JsonObject prompt) {
         this.lastPrompt = prompt;
         return response;
     }

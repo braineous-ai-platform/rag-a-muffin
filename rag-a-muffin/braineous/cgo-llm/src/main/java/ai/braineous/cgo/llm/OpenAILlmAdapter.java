@@ -1,8 +1,13 @@
 package ai.braineous.cgo.llm;
 
+import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import com.google.gson.JsonObject;
 
-public class OpenAILlmAdapter implements LlmAdapter{
+public class OpenAILlmAdapter extends LlmAdapter {
+
+    public OpenAILlmAdapter() {
+        super();
+    }
 
     @Override
     public String invokeLlm(JsonObject prompt){

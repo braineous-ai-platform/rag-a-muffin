@@ -546,7 +546,7 @@ class CgoQueryPipelineTests {
         JsonObject lastPrompt;
 
         @Override
-        public String executePrompt(JsonObject prompt) {
+        public String executePrompt(LlmAdapter adapter,JsonObject prompt) {
             callCount++;
             lastPrompt = prompt;
             Console.log("LLM Prompt (CountingLlmClient)", prompt);

@@ -19,9 +19,10 @@ public class LlmOrchestratorTests {
 
     @Test
     void executePrompt_withNullPrompt_returnsEmptyString() {
-        LlmClientOrchestrator orchestrator = new LlmClientOrchestrator(new OpenAILlmAdapter());
+        OpenAILlmAdapter llmAdapter = new OpenAILlmAdapter();
+        LlmClientOrchestrator orchestrator = new LlmClientOrchestrator();
 
-        String result = orchestrator.executePrompt(null);
+        String result = orchestrator.executePrompt(llmAdapter, null);
 
         assertNotNull(result);
         assertEquals("", result);
@@ -29,10 +30,10 @@ public class LlmOrchestratorTests {
 
     @Test
     void executePrompt_delegatesToAdapter() {
-        LlmAdapter fake = prompt -> "STUBBED";
-        LlmClientOrchestrator orchestrator = new LlmClientOrchestrator(fake);
+        LlmAdapter fake = new FakeLlmAdapter();
+        LlmClientOrchestrator orchestrator = new LlmClientOrchestrator();
 
-        String result = orchestrator.executePrompt(new JsonObject());
+        String result = orchestrator.executePrompt(fake, new JsonObject());
 
         assertEquals("STUBBED", result);
     }
@@ -66,6 +67,7 @@ public class LlmOrchestratorTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new OpenAILlmAdapter());
 
         // PromptBuilder with no prompt/core/domain validators – pure happy path
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -120,6 +122,7 @@ public class LlmOrchestratorTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new OpenAILlmAdapter());
 
         // PromptBuilder without validators
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -144,5 +147,13 @@ public class LlmOrchestratorTests {
         assertNull(execution.getPromptValidation());
         assertNull(execution.getLlmResponseValidation());
         assertNull(execution.getDomainValidation());
+    }
+
+    private static class FakeLlmAdapter extends LlmAdapter{
+
+        @Override
+        public String invokeLlm(JsonObject prompt) {
+            return "STUBBED";
+        }
     }
 }
