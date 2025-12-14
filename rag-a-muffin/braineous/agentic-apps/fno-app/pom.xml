@@ -101,6 +101,11 @@
             <artifactId>cgo-core</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>ai.braineous</groupId>
+            <artifactId>cgo-llm</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- later: spring-boot-starter-web etc. -->
         <dependency>
             <groupId>io.quarkus</groupId>

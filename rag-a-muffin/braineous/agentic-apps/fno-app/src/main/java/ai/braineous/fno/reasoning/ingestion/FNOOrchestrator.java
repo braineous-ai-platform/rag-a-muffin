@@ -1,4 +1,4 @@
-package ai.braineous.fno.reasoning;
+package ai.braineous.fno.reasoning.ingestion;
 
 import ai.braineous.rag.prompt.cgo.api.FactExtractor;
 import ai.braineous.rag.prompt.cgo.api.GraphView;

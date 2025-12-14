@@ -110,6 +110,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
             return this.llmClient;
         }catch (Exception e){
+            e.printStackTrace();
             return null;
         }
     }
