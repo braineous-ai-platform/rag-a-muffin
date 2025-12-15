@@ -62,12 +62,13 @@ public final class QueryRequest<T extends QueryTask> {
 
     @Override
     public String toString() {
+        String adapterType = (adapter == null) ? "null" : adapter.getClass().getSimpleName();
         return "QueryRequest{" +
                 "meta=" + meta +
                 ", context=" + context +
                 ", task=" + task +
                 ", rule=" + rule +
-                ", adapter=" + adapter +
+                ", adapterType=" + adapterType +
                 '}';
     }
 }
