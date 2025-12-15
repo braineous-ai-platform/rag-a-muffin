@@ -44,6 +44,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new FakeLlmAdapter());
 
         // PromptBuilder with NO prompt validator
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -104,6 +105,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new FakeLlmAdapter());
 
         // Prompt validator that ALWAYS returns an error
         PhaseResultValidator failingPromptValidator = raw ->
@@ -182,6 +184,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new FakeLlmAdapter());
 
         // PromptBuilder with NO prompt-validation in this scenario
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -253,6 +256,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new FakeLlmAdapter());
 
         // PromptBuilder with NO prompt-validation in this scenario
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -336,6 +340,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
 
         // no prompt validator
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -412,6 +417,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
 
         // no prompt validator
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
@@ -480,6 +486,7 @@ class CgoQueryPipelineTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
 
         // Prompt validator – promptValidation slot
         PhaseResultValidator okPromptValidator = raw ->
@@ -577,6 +584,14 @@ class CgoQueryPipelineTests {
 
         String getLastRawResponse() {
             return lastRawResponse;
+        }
+    }
+
+    private static class FakeLlmAdapter extends LlmAdapter{
+
+        @Override
+        public String invokeLlm(JsonObject prompt) {
+            return "STUBBED";
         }
     }
 }

@@ -9,6 +9,10 @@ public class OpenAILlmAdapter extends LlmAdapter {
         super();
     }
 
+    public OpenAILlmAdapter(JsonObject config) {
+        super(config);
+    }
+
     @Override
     public String invokeLlm(JsonObject prompt){
         String response = null;

@@ -1,6 +1,7 @@
 package ai.braineous.cgo.llm;
 
 import ai.braineous.rag.prompt.cgo.api.*;
+import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
@@ -73,7 +74,7 @@ public class LlmOrchestratorTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
 
         // IMPORTANT: pass null for LlmClient so pipeline uses pipeline.json -> llm_client
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, null);
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
@@ -128,7 +129,7 @@ public class LlmOrchestratorTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
 
         // LlmClient = null → pipeline.json → LlmClientOrchestrator → OpenAILlmAdapter
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, null);
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);

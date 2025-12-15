@@ -1,5 +1,6 @@
 package ai.braineous.fno.reasoning.prompt;
 
+import ai.braineous.cgo.llm.OpenAILlmAdapter;
 import ai.braineous.rag.prompt.cgo.api.*;
 
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
@@ -31,8 +32,15 @@ public class FNOPromptOrchestrator {
         PhaseResultValidator llmResponseValidator = null;
         PhaseResultValidator phaseResultValidator = null;
 
+        //OpenAI LLM Adapter
+        //Adapter configuration
+        //TODO: finalize json structure
+        JsonObject config = new JsonObject();
+        LlmAdapter adapter = new OpenAILlmAdapter(config);
+
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(adapter);
 
         // PromptBuilder with NO prompt validator
         PromptBuilder promptBuilder = new PromptBuilder(
@@ -40,7 +48,6 @@ public class FNOPromptOrchestrator {
                 phaseResultValidator);
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder,
-                null, //use the CGO LLMOrchestrator
                 llmResponseValidator
         );
 
