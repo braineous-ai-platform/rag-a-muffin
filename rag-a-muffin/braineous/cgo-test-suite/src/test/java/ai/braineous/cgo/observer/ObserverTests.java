@@ -4,14 +4,20 @@ import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.cgo.history.HistoryView;
 import ai.braineous.cgo.history.ScorerResult;
-import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
+import ai.braineous.rag.prompt.observe.Console;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 class ObserverTests {
+    @BeforeEach
+    public void setup(){
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+    }
 
     @Test
     void snapshot_withMultipleRecords_shouldComputeLastAndAverageScore() {
