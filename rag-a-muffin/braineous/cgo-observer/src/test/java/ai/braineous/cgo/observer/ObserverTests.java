@@ -17,7 +17,7 @@ class ObserverTests {
     void snapshot_withMultipleRecords_shouldComputeLastAndAverageScore() {
         Console.log("test_start", "snapshot_withMultipleRecords_shouldComputeLastAndAverageScore");
 
-        HistoryStore store = new HistoryStore();
+        HistoryStore store = HistoryStore.getInstance();
 
         // fake executions just for wiring; real fields don't matter here
         QueryExecution<?> exec1 = null;

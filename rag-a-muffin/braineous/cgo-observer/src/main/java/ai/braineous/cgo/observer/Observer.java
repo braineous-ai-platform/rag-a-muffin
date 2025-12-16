@@ -11,7 +11,7 @@ import java.util.List;
 import java.util.Objects;
 
 public class Observer {
-    private final HistoryStore store = new HistoryStore();
+    private final HistoryStore store = HistoryStore.getInstance();
 
     /**
      * High-level WHY() entrypoint for now:

@@ -28,6 +28,8 @@ public final class CgoQueryPipeline implements QueryPipeline {
     private final PromptBuilder promptBuilder;
     private volatile LlmClient llmClient;
 
+    private volatile ScorerClient scorerClient;
+
     private final PhaseResultValidator llmResponseValidator;
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
@@ -49,7 +51,9 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.llmResponseValidator = llmResponseValidator;
     }
 
-
+    public ScorerClient getScorerClient() {
+        return scorerClient;
+    }
 
     @Override
     public <T extends QueryTask> QueryExecution<T> execute(QueryRequest<T> request) {
@@ -101,12 +105,17 @@ public final class CgoQueryPipeline implements QueryPipeline {
             }
         }
 
+        QueryExecution execution = new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+
+        //integrate_scorer
+        this.score(execution);
+
 
         // 4) Wrap into a generic QueryExecution; domain decides how to map rawResponse → domain DTO
         // Domain-level validation is not performed here yet, so domainValidation = null.
-        return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+        return execution;
     }
-
+    //--------------------------------------------------------------------------------------
     private LlmClient findLlmClient(){
         try {
             if (this.llmClient != null) {
@@ -132,6 +141,39 @@ public final class CgoQueryPipeline implements QueryPipeline {
         }catch (Exception e){
             throw new IllegalStateException("Failed to resolve LlmClient from pipeline.json", e);
         }
+    }
+
+    private ScorerClient findScorerClient(){
+        try {
+            if (this.scorerClient != null) {
+                return this.scorerClient;
+            }
+
+            synchronized (this) {
+                if (this.scorerClient != null) {   // <-- add this
+                    return this.scorerClient;
+                }
+
+                //otherwise use the core-cgo-llm-orchestrator
+                String pipelineStr = Resources.getResource("pipeline.json");
+                JsonObject pipeLineJson = JsonParser.parseString(pipelineStr).getAsJsonObject();
+
+                String scorerStr = pipeLineJson.get("scorer").getAsString();
+                ScorerClient scorer = (ScorerClient) Thread.currentThread().getContextClassLoader().
+                        loadClass(scorerStr).getDeclaredConstructor().newInstance();
+                this.scorerClient = scorer;
+
+                return this.scorerClient;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new IllegalStateException("Failed to resolve ScorerClient from pipeline.json", e);
+        }
+    }
+
+    private void score(QueryExecution execution){
+        ScorerClient scorer = this.findScorerClient();
+        scorer.orchestrate(execution);
     }
 }
 

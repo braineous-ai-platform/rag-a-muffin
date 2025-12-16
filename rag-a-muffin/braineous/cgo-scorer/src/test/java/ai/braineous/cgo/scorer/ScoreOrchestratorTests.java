@@ -3,23 +3,38 @@ package ai.braineous.cgo.scorer;
 import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.cgo.history.ScorerResult;
-import ai.braineous.rag.prompt.cgo.api.GraphContext;
-import ai.braineous.rag.prompt.cgo.api.Meta;
-import ai.braineous.rag.prompt.cgo.api.QueryExecution;
-import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import ai.braineous.rag.prompt.cgo.api.*;
+import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
+import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
+import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
+import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
+import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.observe.Console;
+import com.google.gson.JsonObject;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
+import java.util.List;
+import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ScoreOrchestratorTests {
+
+    @BeforeEach
+    public void setup(){
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+    }
+
     @Test
     void orchestrate_withNullQueryExecution_shouldNotAddHistoryRecord() {
+        HistoryStore store = HistoryStore.getInstance();
+
         // arrange
         Console.log("test_start", "orchestrate_withNullQueryExecution_shouldNotAddHistoryRecord");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
@@ -28,7 +43,6 @@ public class ScoreOrchestratorTests {
         orchestrator.orchestrate(null);
 
         // assert
-        HistoryStore store = orchestrator.getStore();
         int size = store.getAll().size();
         Console.log("history_size_after_null_orchestrate", size);
 
@@ -37,11 +51,13 @@ public class ScoreOrchestratorTests {
 
     @Test
     void orchestrate_withValidExecution_shouldAppendHistoryRecord() {
+        HistoryStore store = HistoryStore.getInstance();
+
         // arrange
         Console.log("test_start", "orchestrate_withValidExecution_shouldAppendHistoryRecord");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
 
-        int before = orchestrator.getStore().getAll().size();
+        int before = store.getAll().size();
         Console.log("history_size_before", before);
 
         QueryExecution<DummyTask> execution = createHappyPathExecution();
@@ -50,7 +66,6 @@ public class ScoreOrchestratorTests {
         orchestrator.orchestrate(execution);
 
         // assert
-        HistoryStore store = orchestrator.getStore();
         int after = store.getAll().size();
         Console.log("history_size_after", after);
 
@@ -66,11 +81,13 @@ public class ScoreOrchestratorTests {
 
     @Test
     void orchestrate_whenCalledMultipleTimes_shouldAppendMultipleHistoryRecords() {
+        HistoryStore store = HistoryStore.getInstance();
+
         // arrange
         Console.log("test_start", "orchestrate_whenCalledMultipleTimes_shouldAppendMultipleHistoryRecords");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
 
-        int before = orchestrator.getStore().getAll().size();
+        int before = store.getAll().size();
         Console.log("history_size_before", before);
 
         QueryExecution<DummyTask> execution1 = createHappyPathExecution();
@@ -81,7 +98,7 @@ public class ScoreOrchestratorTests {
         orchestrator.orchestrate(execution2);
 
         // assert
-        int after = orchestrator.getStore().getAll().size();
+        int after = store.getAll().size();
         Console.log("history_size_after", after);
 
         assertEquals(
@@ -100,8 +117,7 @@ public class ScoreOrchestratorTests {
 
         // arrange
         SequenceScorer sequenceScorer = new SequenceScorer(expectedScores);
-        HistoryStore store = new HistoryStore();
-        ScoreOrchestrator orchestrator = new ScoreOrchestrator(sequenceScorer, store);
+        ScoreOrchestrator orchestrator = new ScoreOrchestrator(sequenceScorer);
 
         // act – 4 calls
         orchestrator.orchestrate(createHappyPathExecution());
@@ -109,6 +125,7 @@ public class ScoreOrchestratorTests {
         orchestrator.orchestrate(createHappyPathExecution());
         orchestrator.orchestrate(createHappyPathExecution());
 
+        HistoryStore store = HistoryStore.getInstance();
         // assert – history size + order + score values
         var records = store.getAll();
         int size = records.size();
@@ -123,6 +140,60 @@ public class ScoreOrchestratorTests {
                     "Score at index " + i + " should match expected band");
         }
     }
+
+    @Test
+    void execute_withConfiguredScorer_shouldAppendHistoryRecord() {
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "desc");
+
+        ValidateTask task = new ValidateTask(
+                "validate flight airports",
+                factId
+        );
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder =
+                new PromptBuilder(new SimpleResponseContractRegistry());
+
+        // IMPORTANT: null LlmClient → pipeline.json used
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(promptBuilder, new FakeLlmClient("{\"result\":{\"status\":\"VALID\"}}"));
+
+
+        // capture history size BEFORE
+        HistoryStore store = HistoryStore.getInstance();
+        int before = store.getAll().size();
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // assert pipeline basics
+        assertNotNull(execution);
+        assertNotNull(execution.getRawResponse());
+
+        // assert REAL scorer side-effect
+        int after = store.getAll().size();
+        assertEquals(before + 1, after,
+                "Real ScorerOrchestrator should append exactly one HistoryRecord");
+
+        HistoryRecord last = store.getAll().get(after - 1);
+        assertNotNull(last.getResult(), "ScorerResult must be present");
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private QueryExecution<DummyTask> createHappyPathExecution() {
@@ -179,6 +250,32 @@ public class ScoreOrchestratorTests {
             ScorerResult result = new ScorerResult();
             result.setScore(score);
             return result;
+        }
+    }
+
+    private QueryExecution<DummyTask> createLlmResponseErrorExecution() {
+        Meta meta = new Meta("v1", "test_query_kind", "test description");
+        GraphContext context = new GraphContext(Collections.emptyMap());
+        DummyTask task = new DummyTask("dummy task for scoring");
+        QueryRequest<DummyTask> request = new QueryRequest<>(meta, context, task);
+
+        ValidationResult ok = ValidationResult.ok("OK", "OK");
+        ValidationResult err = ValidationResult.error(
+                "response.contract.empty",
+                "Raw LLM response is empty",
+                "llm_response",
+                null,
+                Collections.singletonMap("rawResponse", "")
+        );
+
+        return new QueryExecution<>(request, "", ok, err, null);
+    }
+
+    private static class FakeLlmAdapter extends LlmAdapter{
+
+        @Override
+        public String invokeLlm(JsonObject prompt) {
+            return "STUBBED";
         }
     }
 }
