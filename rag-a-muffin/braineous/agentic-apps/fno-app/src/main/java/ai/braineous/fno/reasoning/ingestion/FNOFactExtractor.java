@@ -36,49 +36,88 @@ public class FNOFactExtractor implements FactExtractor {
     public List<Fact> extract(String jsonArrayStr) {
         List<Fact> facts = new ArrayList<>();
 
-        JsonArray flightsArray = JsonParser.parseString(jsonArrayStr).getAsJsonArray();
+        if (jsonArrayStr == null || jsonArrayStr.isBlank()) {
+            return facts;
+        }
+
+        JsonArray flightsArray;
+        try {
+            var root = JsonParser.parseString(jsonArrayStr);
+
+            if (root.isJsonArray()) {
+                flightsArray = root.getAsJsonArray();
+            } else if (root.isJsonObject()
+                    && root.getAsJsonObject().has("flights")
+                    && root.getAsJsonObject().get("flights").isJsonArray()) {
+                flightsArray = root.getAsJsonObject().getAsJsonArray("flights");
+            } else {
+                // v1: fail-soft
+                return facts;
+            }
+        } catch (Exception e) {
+            // v1: fail-soft
+            return facts;
+        }
+
+        // Dedup airport facts across all flights
+        java.util.Set<String> seenAirports = new java.util.HashSet<>();
+
         for (int i = 0; i < flightsArray.size(); i++) {
+            if (!flightsArray.get(i).isJsonObject()) {
+                continue;
+            }
+
             JsonObject o = flightsArray.get(i).getAsJsonObject();
 
-            String id = o.get("id").getAsString(); // "F102"
-            String src = o.get("origin").getAsString(); // "AUS"
-            String dst = o.get("dest").getAsString(); // "DFW"
-            String depZ = o.get("dep_utc").getAsString(); // "2025-10-22T11:30:00Z"
-            String arrZ = o.get("arr_utc").getAsString(); // "2025-10-22T12:40:00Z"
+            // Skip malformed flight rows (v1: resilient ingestion)
+            if (!o.has("id") || !o.has("origin") || !o.has("dest") || !o.has("dep_utc") || !o.has("arr_utc")) {
+                continue;
+            }
+
+            String id = o.get("id").getAsString();          // "F102"
+            String src = o.get("origin").getAsString();     // "AUS"
+            String dst = o.get("dest").getAsString();       // "DFW"
+            String depZ = o.get("dep_utc").getAsString();   // "2025-10-22T11:30:00Z"
+            String arrZ = o.get("arr_utc").getAsString();   // "2025-10-22T12:40:00Z"
 
             // Airport facts (one per station)
             String srcAirportId = "Airport:" + src;
-            String srcAirportText = "Airport(" + src + ", '" + src + "')";
             JsonObject srcAirportJson = new JsonObject();
             srcAirportJson.addProperty("id", srcAirportId);
             srcAirportJson.addProperty("kind", "Airport");
             srcAirportJson.addProperty("mode", "atomic");
-            // TODO: feats and meta objects
+            srcAirportJson.addProperty("code", src); // simple feature for v1
             Console.log("src_airport", srcAirportJson);
 
+            if (seenAirports.add(srcAirportId)) {
+                facts.add(new Fact(srcAirportId, srcAirportJson.toString()));
+            }
+
             String dstAirportId = "Airport:" + dst;
-            String dstAirportText = "Airport(" + dst + ", '" + dst + "')";
             JsonObject dstAirportJson = new JsonObject();
             dstAirportJson.addProperty("id", dstAirportId);
             dstAirportJson.addProperty("kind", "Airport");
             dstAirportJson.addProperty("mode", "atomic");
-            // TODO: feats and meta objects
-            Console.log("dst_airport", srcAirportJson);
+            dstAirportJson.addProperty("code", dst); // simple feature for v1
+            Console.log("dst_airport", dstAirportJson); // FIX: log correct object
 
-            facts.add(new Fact(srcAirportId, srcAirportJson.toString()));
-            facts.add(new Fact(dstAirportId, dstAirportJson.toString()));
+            if (seenAirports.add(dstAirportId)) {
+                facts.add(new Fact(dstAirportId, dstAirportJson.toString()));
+            }
 
             // Flight fact (canonical)
-            String flightText = "Flight(id:'" + id + "', " + src + ", " + dst + ", '" + depZ + "', '" + arrZ + "')";
+            String flightId = "Flight:" + id;
             JsonObject flightJson = new JsonObject();
-            flightJson.addProperty("id", id);
+            flightJson.addProperty("id", flightId);         // align JSON id with Fact id
             flightJson.addProperty("kind", "Flight");
             flightJson.addProperty("mode", "relational");
-            flightJson.addProperty("from", src);
-            flightJson.addProperty("to", dst);
-            // TODO: feats and meta objects
+            flightJson.addProperty("from", srcAirportId);   // link to Airport IDs
+            flightJson.addProperty("to", dstAirportId);
+            flightJson.addProperty("dep_utc", depZ);
+            flightJson.addProperty("arr_utc", arrZ);
+
             Console.log("flight", flightJson);
-            facts.add(new Fact("Flight:" + id, flightJson.toString()));
+            facts.add(new Fact(flightId, flightJson.toString()));
         }
 
         return facts;

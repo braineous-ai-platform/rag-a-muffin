@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.query;
 
+import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.FakeLlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
@@ -546,6 +547,110 @@ class CgoQueryPipelineTests {
         assertThrows(NullPointerException.class,
                 () -> pipeline.execute(null),
                 "execute(null) should fail fast with NullPointerException due to Objects.requireNonNull");
+    }
+
+
+    @Test
+    void pipeline_execute_missingAdapter_shouldFailFast_andNotAppendHistory() {
+        Console.log("test_start", "pipeline_execute_missingAdapter_shouldFailFast_andNotAppendHistory");
+
+        // arrange
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+
+        int before = store.getAll().size();
+        Console.log("history_before", before);
+
+        String factId = "Flight:F100";
+        Meta meta = new Meta("v1", "validate_flight_airports", "missing adapter guard");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+
+        QueryRequest<ValidateTask> request = QueryRequests.validateTask(meta, task, context, factId);
+
+        // IMPORTANT: DO NOT set adapter. This should trigger fail-fast.
+        // request.setAdapter(...);
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+
+        // act
+        try {
+            pipeline.execute(request);
+            fail("Expected pipeline to fail fast when adapter is missing");
+        } catch (Exception e) {
+            Console.log("caught_exception_class", e.getClass().getName());
+            Console.log("caught_exception_message", e.getMessage());
+            // optional: assert message contains your exact guardrail text
+            assertTrue(
+                    e.getMessage() != null && e.getMessage().toLowerCase().contains("missing llmadapter"),
+                    "Exception message should mention missing LlmAdapter"
+            );
+        }
+
+        // assert: scorer side-effect did NOT happen
+        int after = store.getAll().size();
+        Console.log("history_after", after);
+
+        assertEquals(before, after, "History should not change when adapter is missing");
+    }
+
+    @Test
+    void pipeline_doubleExecute_shouldAppendTwoHistoryRecords() {
+        Console.log("test_start", "pipeline_doubleExecute_shouldAppendTwoHistoryRecords");
+
+        // arrange
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+
+        int before = store.getAll().size();
+        Console.log("history_before", before);
+
+        String factId = "Flight:F100";
+        Meta meta = new Meta("v1", "validate_flight_airports", "double execute");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(Map.of(factId, node));
+        QueryRequest<ValidateTask> request = QueryRequests.validateTask(meta, task, context, factId);
+
+        request.setAdapter(new LlmAdapter() {
+            @Override
+            public String invokeLlm(JsonObject prompt) {
+                Console.log("fake_adapter_invoked", "ok");
+                return "{\"result\":{\"status\":\"VALID\"}}";
+            }
+        });
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+
+        // act
+        QueryExecution<ValidateTask> e1 = pipeline.execute(request);
+        QueryExecution<ValidateTask> e2 = pipeline.execute(request);
+
+        // assert
+        assertNotNull(e1);
+        assertNotNull(e2);
+
+        int after = store.getAll().size();
+        Console.log("history_after", after);
+
+        assertEquals(before + 2, after, "Pipeline should append two history records for two executes");
     }
     ////--------------------------------------------------------------------------
     private static final class CountingLlmClient implements LlmClient {

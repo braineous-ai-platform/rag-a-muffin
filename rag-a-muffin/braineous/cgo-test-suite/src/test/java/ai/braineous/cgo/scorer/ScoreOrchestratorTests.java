@@ -193,6 +193,98 @@ public class ScoreOrchestratorTests {
         assertNotNull(last.getResult(), "ScorerResult must be present");
     }
 
+
+    @Test
+    void scorer_orchestrate_nullExecution_shouldNotAppendHistory() {
+        Console.log("test_start", "scorer_orchestrate_nullExecution_shouldNotAppendHistory");
+
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+
+        int before = store.getAll().size();
+        Console.log("history_before", before);
+
+        ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+
+        // act
+        orchestrator.orchestrate(null);
+
+        // assert
+        int after = store.getAll().size();
+        Console.log("history_after", after);
+
+        assertEquals(before, after, "History should remain unchanged for null execution");
+    }
+
+    @Test
+    void scorer_orchestrate_multipleExecutions_shouldAppendInOrder() {
+        Console.log("test_start", "scorer_orchestrate_multipleExecutions_shouldAppendInOrder");
+
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+
+        ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+
+        QueryExecution<DummyTask> e1 = createHappyPathExecution();
+        QueryExecution<DummyTask> e2 = createHappyPathExecution();
+
+        // act
+        orchestrator.orchestrate(e1);
+        orchestrator.orchestrate(e2);
+
+        // assert
+        var records = store.getAll();
+        int size = records.size();
+        Console.log("history_size", size);
+
+        assertEquals(2, size, "Two executions should append two history records");
+
+        HistoryRecord r1 = records.get(0);
+        HistoryRecord r2 = records.get(1);
+
+        Console.log("record_0_score", r1.getResult().getScore());
+        Console.log("record_1_score", r2.getResult().getScore());
+
+        assertNotNull(r1.getResult(), "First record should have result");
+        assertNotNull(r2.getResult(), "Second record should have result");
+    }
+
+    @Test
+    void scorer_orchestrate_shouldAlwaysPersistNonNullResult() {
+        Console.log("test_start", "scorer_orchestrate_shouldAlwaysPersistNonNullResult");
+
+        HistoryStore store = HistoryStore.getInstance();
+        store.clear();
+
+        ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+
+        // Build an execution with empty rawResponse (still recorded)
+        Meta meta = new Meta("v1", "test_query_kind", "result must exist");
+        GraphContext context = new GraphContext(Collections.emptyMap());
+        DummyTask task = new DummyTask("dummy");
+
+        QueryRequest<DummyTask> request = new QueryRequest<>(meta, context, task);
+
+        ValidationResult ok = ValidationResult.ok("OK", "OK");
+        QueryExecution<DummyTask> execution = new QueryExecution<>(request, "", ok, ok, ok);
+
+        // act
+        orchestrator.orchestrate(execution);
+
+        // assert
+        var records = store.getAll();
+        int size = records.size();
+        Console.log("history_size", size);
+
+        assertEquals(1, size, "One orchestrate call should append one record");
+
+        HistoryRecord last = records.get(0);
+        Console.log("last_record", last);
+
+        assertNotNull(last.getResult(), "ScorerResult must never be null");
+        Console.log("score", last.getResult().getScore());
+    }
+
     // ---- Helpers ---------------------------------------------------------
 
     private QueryExecution<DummyTask> createHappyPathExecution() {
