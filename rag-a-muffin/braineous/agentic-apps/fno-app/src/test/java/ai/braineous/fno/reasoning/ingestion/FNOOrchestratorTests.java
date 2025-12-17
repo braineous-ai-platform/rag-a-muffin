@@ -1,6 +1,8 @@
 package ai.braineous.fno.reasoning.ingestion;
 
 import ai.braineous.fno.reasoning.ingestion.FNOOrchestrator;
+import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.FactExtractor;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 import ai.braineous.rag.prompt.observe.Console;
@@ -9,6 +11,10 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
+
+import java.util.List;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FNOOrchestratorTests {
     private FNOOrchestrator fnoOrchestrator = new FNOOrchestrator();
@@ -53,6 +59,74 @@ public class FNOOrchestratorTests {
         Console.log("prompt_json", promptJson.toString());
     }
 
+    @Test
+    void ingestion_buildsGraphView_fromFlightsJsonArray() {
+        // arrange
+        JsonArray flights = new JsonArray();
+
+        JsonObject f1 = new JsonObject();
+        f1.addProperty("id", "F102");
+        f1.addProperty("origin", "AUS");
+        f1.addProperty("dest", "DFW");
+        f1.addProperty("dep_utc", "2025-10-22T11:30:00Z");
+        f1.addProperty("arr_utc", "2025-10-22T12:40:00Z");
+
+        JsonObject f2 = new JsonObject();
+        f2.addProperty("id", "F103");
+        f2.addProperty("origin", "DFW");
+        f2.addProperty("dest", "IAH");
+        f2.addProperty("dep_utc", "2025-10-22T13:30:00Z");
+        f2.addProperty("arr_utc", "2025-10-22T14:35:00Z");
+
+        flights.add(f1);
+        flights.add(f2);
+
+        Console.log("test.flights.input", flights);
+
+        FNOOrchestrator orchestrator = new FNOOrchestrator();
+
+        // act
+        GraphView graph = orchestrator.orchestrate(flights);
+
+        // assert (v1: spine test — just prove the substrate exists)
+        assertNotNull(graph);
+
+        // debug: blackbox commentary
+        Console.log("test.graphview.type", (graph == null ? "null" : graph.getClass().getName()));
+        Console.log("test.graphview.string", String.valueOf(graph));
+
+        // Optional: if GraphView exposes anything stable, log it here (you'll wire exact calls)
+        // Console.log("test.graph.nodes", graph.getNodes());
+        // Console.log("test.graph.edges", graph.getEdges());
+    }
+
+    @Test
+    void extract_emitsAirportAndFlightFacts_and_dedupsAirports() {
+        String json =
+                "[" +
+                        "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
+                        "{\"id\":\"F103\",\"origin\":\"DFW\",\"dest\":\"IAH\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T14:35:00Z\"}" +
+                        "]";
+
+
+        FactExtractor fx = new FNOFactExtractor();
+
+        Console.log("test.input", json);
+
+        List<Fact> facts = fx.extract(json);
+
+        Console.log("test.facts.size", String.valueOf(facts.size()));
+        for (Fact f : facts) {
+            Console.log("test.fact", f.getId() + " :: " + f.getText());
+        }
+
+        assertNotNull(facts);
+        assertFalse(facts.isEmpty());
+
+        // v1 assertions (keep them loose)
+        assertTrue(facts.stream().anyMatch(f -> f.getId().startsWith("Airport:")));
+        assertTrue(facts.stream().anyMatch(f -> f.getId().startsWith("Flight:")));
+    }
     //-------response_contract-------------------------------
     // Small helpers to reduce boilerplate
     // Small helpers to reduce boilerplate
