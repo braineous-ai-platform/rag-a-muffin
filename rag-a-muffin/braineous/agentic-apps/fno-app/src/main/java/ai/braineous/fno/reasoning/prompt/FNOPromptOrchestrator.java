@@ -21,20 +21,31 @@ import java.util.Map;
 
 public class FNOPromptOrchestrator {
 
-    public QueryExecution<ValidateTask> orchestrate(JsonObject json){
+    public QueryExecution<ValidateTask> orchestrate(JsonObject json) {
+        if (json == null) {
+            throw new IllegalArgumentException("json must not be null");
+        }
+
+        // Parse input into task + context
         PromptInput promptInput = new PromptInput().generate(json);
         Meta meta = promptInput.getMeta();
         ValidateTask task = promptInput.getTask();
         GraphContext context = promptInput.getGraphContext();
-        String factId = task.getFactId();
 
-        //TODO: wire validators
+        if (meta == null || task == null || context == null) {
+            throw new IllegalStateException("PromptInput.generate produced null meta/task/context");
+        }
+
+        String factId = task.getFactId();
+        if (factId == null || factId.isBlank()) {
+            throw new IllegalArgumentException("task.factId must be non-empty");
+        }
+
+        // v1: validators not wired yet (explicitly null)
         PhaseResultValidator llmResponseValidator = null;
         PhaseResultValidator phaseResultValidator = null;
 
-        //OpenAI LLM Adapter
-        //Adapter configuration
-        //TODO: finalize json structure
+        // v1: adapter config placeholder (keep stable shape, no assumptions)
         JsonObject config = new JsonObject();
         LlmAdapter adapter = new OpenAILlmAdapter(config);
 
@@ -42,24 +53,26 @@ public class FNOPromptOrchestrator {
                 QueryRequests.validateTask(meta, task, context, factId);
         request.setAdapter(adapter);
 
-        // PromptBuilder with NO prompt validator
+        // PromptBuilder (no prompt validator for v1)
         PromptBuilder promptBuilder = new PromptBuilder(
                 new SimpleResponseContractRegistry(),
-                phaseResultValidator);
+                phaseResultValidator
+        );
 
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder,
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(
+                promptBuilder,
                 llmResponseValidator
         );
 
-        // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
-        // console inspect
-        Console.log("happy.rawResponse", execution.getRawResponse());
-        Console.log("happy.promptValidation", execution.getPromptValidation());
-        Console.log("happy.llmResponseValidation", execution.getLlmResponseValidation());
-        Console.log("happy.domainValidation", execution.getDomainValidation());
+        // inspect
+        Console.log("rawResponse", execution.getRawResponse());
+        Console.log("promptValidation", execution.getPromptValidation());
+        Console.log("llmResponseValidation", execution.getLlmResponseValidation());
+        Console.log("domainValidation", execution.getDomainValidation());
 
         return execution;
     }
+
 }

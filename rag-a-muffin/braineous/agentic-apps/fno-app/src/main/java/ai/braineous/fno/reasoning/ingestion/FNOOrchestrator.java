@@ -9,10 +9,6 @@ import ai.braineous.rag.prompt.services.cgo.causal.CausalLLMBridge;
 import com.google.gson.JsonArray;
 
 public class FNOOrchestrator {
-
-    // TODO: [eventually] : make_it_quarkus_containarized.
-    // For now no dependency_injection overhead
-    // @Inject
     private LLMBridge llmBridge = new CausalLLMBridge();
 
     public GraphView orchestrate(JsonArray flightsJsonArray) {
