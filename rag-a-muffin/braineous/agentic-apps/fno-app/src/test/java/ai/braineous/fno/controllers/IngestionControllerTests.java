@@ -1,11 +1,13 @@
 package ai.braineous.fno.controllers;
 
 import ai.braineous.rag.prompt.observe.Console;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
 import static org.junit.jupiter.api.Assertions.*;
 
+@QuarkusTest
 public class IngestionControllerTests {
     @Test
     void ingestEndpoint_acceptsFlightsArray_andReturnsGraphSnapshotString() {

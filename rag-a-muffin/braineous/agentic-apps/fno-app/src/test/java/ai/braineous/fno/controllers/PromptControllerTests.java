@@ -3,8 +3,10 @@ package ai.braineous.fno.controllers;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import io.quarkus.test.junit.QuarkusTest;
 import org.junit.jupiter.api.Test;
 
+@QuarkusTest
 public class PromptControllerTests {
 
     @Test
