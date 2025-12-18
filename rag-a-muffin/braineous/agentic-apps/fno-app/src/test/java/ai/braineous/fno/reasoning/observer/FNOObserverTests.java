@@ -1,6 +1,7 @@
 package ai.braineous.fno.reasoning.observer;
 
 import ai.braineous.cgo.history.HistoryView;
+import ai.braineous.cgo.observer.WhySnapshot;
 import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.Test;
 
@@ -17,14 +18,13 @@ public class FNOObserverTests {
         FNOObserver observer = new FNOObserver();
 
         // act
-        HistoryView view = observer.getHistory(queryKind);
+        WhySnapshot snapshot = observer.getHistory(queryKind);
 
         // assert (spine test)
-        assertNotNull(view);
+        assertNotNull(snapshot);
 
         // debug
-        Console.log("test.historyview.type", view.getClass().getName());
-        Console.log("test.historyview.string", String.valueOf(view));
+        Console.log("why_snapshot", snapshot.toJson());
     }
 
 }
