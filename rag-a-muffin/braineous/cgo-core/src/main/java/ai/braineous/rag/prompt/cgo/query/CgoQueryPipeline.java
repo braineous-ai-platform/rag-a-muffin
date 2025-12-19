@@ -32,22 +32,22 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PhaseResultValidator llmResponseValidator;
 
-    public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
-                            PhaseResultValidator llmResponseValidator) {
+    public CgoQueryPipeline(PromptBuilder promptBuilder) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
-        this.llmClient = llmClient;
-        this.llmResponseValidator = llmResponseValidator;
+        this.llmClient = null;
+        this.llmResponseValidator = new GsonPhaseResultValidator();
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
-
-        this(promptBuilder, llmClient, null);
+        this.promptBuilder = promptBuilder;
+        this.llmClient = llmClient;
+        this.llmResponseValidator = new GsonPhaseResultValidator();
     }
 
-    public CgoQueryPipeline(PromptBuilder promptBuilder,
-                            PhaseResultValidator llmResponseValidator) {
+    CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
+                     PhaseResultValidator llmResponseValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
-        this.llmClient = null;
+        this.llmClient = llmClient;
         this.llmResponseValidator = llmResponseValidator;
     }
 
@@ -105,7 +105,11 @@ public final class CgoQueryPipeline implements QueryPipeline {
             }
         }
 
-        QueryExecution execution = new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+        QueryExecution execution = new QueryExecution<>(request,
+                rawResponse,
+                promptValidation,
+                responseValidation,
+                domainValidation);
 
         //integrate_scorer
         this.score(execution);

@@ -5,7 +5,6 @@ import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
-import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
@@ -166,11 +165,26 @@ public class ScoreOrchestratorTests {
         request.setAdapter(new FakeLlmAdapter());
 
         PromptBuilder promptBuilder =
-                new PromptBuilder(new SimpleResponseContractRegistry());
+                new PromptBuilder();
 
         // IMPORTANT: null LlmClient → pipeline.json used
+        String raw = """
+        {
+          "result": {
+            "ok": true,
+            "code": "response.contract.ok",
+            "message": "VALID",
+            "stage": "llm_response_validation",
+            "anchorId": null,
+            "metadata": { "adapter": "fake" }
+          }
+        }
+        """;
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(promptBuilder, new FakeLlmClient("{\"result\":{\"status\":\"VALID\"}}"));
+                new CgoQueryPipeline(promptBuilder,
+                        new FakeLlmClient(
+                                raw)
+                );
 
 
         // capture history size BEFORE

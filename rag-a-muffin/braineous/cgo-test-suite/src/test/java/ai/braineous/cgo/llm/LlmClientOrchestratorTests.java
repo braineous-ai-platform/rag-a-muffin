@@ -3,9 +3,7 @@ package ai.braineous.cgo.llm;
 import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.rag.prompt.cgo.api.*;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
-import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
@@ -107,14 +105,25 @@ public class LlmClientOrchestratorTests {
             @Override
             public String invokeLlm(JsonObject prompt) {
                 Console.log("fake_adapter_invoked", prompt == null ? "prompt=null" : "prompt=ok");
-                return "{\"result\":{\"status\":\"VALID\"}}";
+                return """
+                {
+                  "result": {
+                    "ok": true,
+                    "code": "response.contract.ok",
+                    "message": "VALID",
+                    "stage": "llm_response_validation",
+                    "anchorId": null,
+                    "metadata": { "adapter": "fake" }
+                  }
+                }
+                """;
             }
         });
 
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        PromptBuilder promptBuilder = new PromptBuilder();
 
         // KEY: pass null llmClient so pipeline uses pipeline.json wiring
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);

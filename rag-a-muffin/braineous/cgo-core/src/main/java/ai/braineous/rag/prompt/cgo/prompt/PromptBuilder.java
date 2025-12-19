@@ -2,6 +2,10 @@ package ai.braineous.rag.prompt.cgo.prompt;
 
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import ai.braineous.rag.prompt.cgo.prompt.PromptRequestOutput;
+import ai.braineous.rag.prompt.cgo.prompt.ResponseContractRegistry;
+import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
+import ai.braineous.rag.prompt.cgo.query.GsonPromptRequestValidator;
 import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import com.google.gson.JsonArray;
@@ -15,8 +19,14 @@ public class PromptBuilder {
     private final ResponseContractRegistry registry;
     private final PhaseResultValidator validator;
 
+    public PromptBuilder() {
+        this.registry = new SimpleResponseContractRegistry();
+        this.validator = new GsonPromptRequestValidator();
+    }
+
     public PromptBuilder(ResponseContractRegistry registry) {
-        this(registry, null);
+
+        this(registry, new GsonPromptRequestValidator());
     }
 
     public PromptBuilder(ResponseContractRegistry registry, PhaseResultValidator validator) {

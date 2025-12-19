@@ -7,17 +7,12 @@ import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
-import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 
 import ai.braineous.rag.prompt.observe.Console;
 
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
-
-import java.util.List;
-import java.util.Map;
 
 public class FNOPromptOrchestrator {
 
@@ -60,8 +55,7 @@ public class FNOPromptOrchestrator {
         );
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(
-                promptBuilder,
-                llmResponseValidator
+                promptBuilder
         );
 
         QueryExecution<ValidateTask> execution = pipeline.execute(request);

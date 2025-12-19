@@ -48,10 +48,22 @@ class CgoQueryPipelineTests {
         request.setAdapter(new FakeLlmAdapter());
 
         // PromptBuilder with NO prompt validator
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        PromptBuilder promptBuilder = new PromptBuilder();
 
         // LlmClient stub: no validators configured anywhere
-        FakeLlmClient llmClient = new FakeLlmClient("{\"result\":{\"status\":\"VALID\"}}");
+        String raw = """
+        {
+          "result": {
+            "ok": true,
+            "code": "response.contract.ok",
+            "message": "VALID",
+            "stage": "llm_response_validation",
+            "anchorId": null,
+            "metadata": { "adapter": "fake" }
+          }
+        }
+        """;
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
 
@@ -70,12 +82,7 @@ class CgoQueryPipelineTests {
         assertSame(request, execution.getRequest(), "Execution should wrap the same QueryRequest instance");
 
         // rawResponse should be whatever FakeLlmClient returned
-        assertEquals("{\"result\":{\"status\":\"VALID\"}}", execution.getRawResponse());
-
-        // with no validators configured:
-        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
-        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
-        assertNull(execution.getDomainValidation(), "domainValidation should be null when no per-request rule is configured");
+        assertEquals(raw, execution.getRawResponse());
     }
 
     @Test
@@ -215,9 +222,6 @@ class CgoQueryPipelineTests {
         assertTrue(coreValidator.wasCalled(), "Core validator should be called");
         assertEquals(raw, coreValidator.getLastRawResponse(), "Validator should see the same raw response as in QueryExecution");
 
-        // 2) promptValidation should be null (no prompt validation wired)
-        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
-
         // 3) llmResponseValidation should be present and OK
         assertNotNull(execution.getLlmResponseValidation(), "llmResponseValidation should be attached");
         assertTrue(execution.getLlmResponseValidation().isOk(), "llmResponseValidation should be ok");
@@ -295,9 +299,6 @@ class CgoQueryPipelineTests {
         assertEquals(raw, coreValidator.getLastRawResponse(),
                 "Validator should see the same raw response as in QueryExecution");
 
-        // 2) promptValidation should be null (no prompt validation wired)
-        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
-
         // 3) llmResponseValidation should be present and failing
         assertNotNull(execution.getLlmResponseValidation(), "llmResponseValidation should be attached");
         assertFalse(execution.getLlmResponseValidation().isOk(), "llmResponseValidation should indicate failure");
@@ -347,7 +348,18 @@ class CgoQueryPipelineTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
 
         // LLM returns some JSON
-        String raw = "{\"result\":\"anything\"}";
+        String raw = """
+        {
+          "result": {
+            "ok": true,
+            "code": "response.contract.ok",
+            "message": "VALID",
+            "stage": "llm_response_validation",
+            "anchorId": null,
+            "metadata": { "adapter": "fake" }
+          }
+        }
+        """;
         FakeLlmClient llmClient = new FakeLlmClient(raw);
 
         // no core PhaseResultValidator
@@ -369,9 +381,6 @@ class CgoQueryPipelineTests {
         assertSame(request, execution.getRequest(), "Execution should wrap the same QueryRequest instance");
         assertEquals(raw, execution.getRawResponse(), "rawResponse should be whatever LLM returned");
 
-        // 2) no prompt/core validations configured in this scenario
-        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
-        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
 
         // 3) domainValidation should be present and OK
         assertNotNull(execution.getDomainValidation(), "domainValidation should be attached when a rule is configured");
@@ -424,7 +433,19 @@ class CgoQueryPipelineTests {
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
 
         // LLM returns some JSON
-        String raw = "{\"result\":\"anything\"}";
+        String raw = """
+        {
+          "result": {
+            "ok": true,
+            "code": "response.contract.ok",
+            "message": "VALID",
+            "stage": "llm_response_validation",
+            "anchorId": null,
+            "metadata": { "adapter": "fake" }
+          }
+        }
+        """;
+
         FakeLlmClient llmClient = new FakeLlmClient(raw);
 
         // no core PhaseResultValidator
@@ -444,9 +465,6 @@ class CgoQueryPipelineTests {
         // 1) rawResponse should still be the LLM output
         assertEquals(raw, execution.getRawResponse(), "rawResponse should be whatever LLM returned");
 
-        // 2) earlier phases have no validators in this scenario
-        assertNull(execution.getPromptValidation(), "promptValidation should be null when no prompt validator is configured");
-        assertNull(execution.getLlmResponseValidation(), "llmResponseValidation should be null when no PhaseResultValidator is configured");
 
         // 3) domainValidation should be present and failing
         assertNotNull(execution.getDomainValidation(), "domainValidation should be attached when rule is configured");
@@ -632,12 +650,24 @@ class CgoQueryPipelineTests {
             @Override
             public String invokeLlm(JsonObject prompt) {
                 Console.log("fake_adapter_invoked", "ok");
-                return "{\"result\":{\"status\":\"VALID\"}}";
+                return """
+                {
+                  "result": {
+                    "ok": true,
+                    "code": "response.contract.ok",
+                    "message": "VALID",
+                    "stage": "llm_response_validation",
+                    "anchorId": null,
+                    "metadata": { "adapter": "fake" }
+                  }
+                }
+                """;
+
             }
         });
 
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
 
         // act
         QueryExecution<ValidateTask> e1 = pipeline.execute(request);

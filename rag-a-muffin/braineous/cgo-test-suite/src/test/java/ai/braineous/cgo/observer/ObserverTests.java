@@ -2,18 +2,13 @@ package ai.braineous.cgo.observer;
 
 import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
-import ai.braineous.cgo.history.HistoryView;
-import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.*;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
-import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
-import com.sun.net.httpserver.Request;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -77,12 +72,24 @@ class ObserverTests {
             @Override
             public String invokeLlm(JsonObject prompt) {
                 Console.log("fake_adapter_invoked", prompt == null ? "prompt=null" : "prompt=ok");
-                return "{\"result\":{\"status\":\"VALID\"}}";
+                return """
+                {
+                  "result": {
+                    "ok": true,
+                    "code": "response.contract.ok",
+                    "message": "VALID",
+                    "stage": "llm_response_validation",
+                    "anchorId": null,
+                    "metadata": { "adapter": "fake" }
+                  }
+                }
+                """;
+
             }
         });
 
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+        PromptBuilder promptBuilder = new PromptBuilder();
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
 
         // act
         QueryExecution<ValidateTask> exec = pipeline.execute(request);
@@ -141,14 +148,26 @@ class ObserverTests {
             @Override
             public String invokeLlm(JsonObject prompt) {
                 Console.log("fake_adapter_invoked", "ok");
-                return "{\"result\":{\"status\":\"VALID\"}}";
+                return """
+                {
+                  "result": {
+                    "ok": true,
+                    "code": "response.contract.ok",
+                    "message": "VALID",
+                    "stage": "llm_response_validation",
+                    "anchorId": null,
+                    "metadata": { "adapter": "fake" }
+                  }
+                }
+                """;
+
             }
         });
 
         PromptBuilder promptBuilder =
-                new PromptBuilder(new SimpleResponseContractRegistry());
+                new PromptBuilder();
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(promptBuilder, (LlmClient) null);
+                new CgoQueryPipeline(promptBuilder);
 
         pipeline.execute(request);
 

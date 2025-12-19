@@ -1,10 +1,7 @@
 package ai.braineous.rag.prompt.cgo.prompt;
 
 import ai.braineous.rag.prompt.cgo.api.*;
-import ai.braineous.rag.prompt.cgo.query.GsonPromptRequestValidator;
-import ai.braineous.rag.prompt.cgo.query.Node;
-import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
-import ai.braineous.rag.prompt.cgo.query.QueryRequest;
+import ai.braineous.rag.prompt.cgo.query.*;
 import ai.braineous.rag.prompt.observe.Console;
 
 import com.google.gson.JsonArray;
