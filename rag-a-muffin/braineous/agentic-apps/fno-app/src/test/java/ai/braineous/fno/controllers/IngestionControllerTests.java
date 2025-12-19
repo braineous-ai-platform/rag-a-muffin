@@ -9,144 +9,23 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 public class IngestionControllerTests {
-    @Test
-    void ingestEndpoint_acceptsFlightsArray_andReturnsGraphSnapshotString() {
-        String body =
-                "[" +
-                        "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
-                        "{\"id\":\"F103\",\"origin\":\"DFW\",\"dest\":\"IAH\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T14:35:00Z\"}" +
-                        "]";
-
-        Console.log("test.ingest.in", body);
-
-        String resp =
-                given()
-                        .contentType("application/json")
-                        .body(body)
-                        .when()
-                        .post("/fno/ingest")
-                        .then()
-                        .statusCode(200)
-                        .extract()
-                        .asString();
-
-        Console.log("test.ingest.out", resp);
-
-        // calibration asserts (loose, but signal-rich)
-        assertNotNull(resp);
-        assertFalse(resp.isBlank());
-
-        // prove substrate came back (stringified GraphSnapshot)
-        assertTrue(resp.contains("GraphSnapshot") || resp.contains("GraphSnapshot{"));
-        assertTrue(resp.contains("Airport:AUS"));
-        assertTrue(resp.contains("Airport:DFW"));
-        assertTrue(resp.contains("Airport:IAH"));
-        assertTrue(resp.contains("Flight:F102"));
-        assertTrue(resp.contains("Flight:F103"));
-    }
 
     @Test
-    void ingestEndpoint_rejectsInvalidPayloadShape() {
-        String body = "{\"item\":\"Book\",\"quantity\":2,\"price\":10.5}";
-        Console.log("test.ingest.bs.shape.in", body);
-
-        String resp =
-                given()
-                        .contentType("application/json")
-                        .body(body)
-                        .when()
-                        .post("/fno/ingest")
-                        .then()
-                        .statusCode(400)
-                        .extract()
-                        .asString();
-
-        Console.log("test.ingest.bs.shape.out", resp);
-
-        assertNotNull(resp);
-        assertTrue(resp.contains("invalid payload") || resp.contains("parse failed"));
-    }
-
-
-    @Test
-    void ingestEndpoint_bookArray_returnsEmptyGraphSnapshot() {
-        String body =
-                "[" +
-                        "{\"item\":\"Book\",\"quantity\":2,\"price\":10.5}" +
-                        "]";
-
-        Console.log("test.ingest.bs.bookArray.in", body);
-
-        String resp =
-                given()
-                        .contentType("application/json")
-                        .body(body)
-                        .when()
-                        .post("/fno/ingest")
-                        .then()
-                        .statusCode(200)
-                        .extract()
-                        .asString();
-
-        Console.log("test.ingest.bs.bookArray.out", resp);
-
-        assertNotNull(resp);
-        assertFalse(resp.isBlank());
-
-        // calibration: confirms “fail-soft → empty substrate”
-        assertTrue(resp.contains("GraphSnapshot"));
-        assertTrue(resp.contains("nodes={}") || resp.contains("nodes={}"));
-    }
-
-    @Test
-    void ingestEndpoint_mixedArray_ignoresGarbage_andKeepsValidFacts() {
-        String body =
-                "[" +
-                        "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
-                        "{\"item\":\"Book\",\"quantity\":2,\"price\":10.5}" +
-                        "]";
-
-        Console.log("test.ingest.mixed.in", body);
-
-        String resp =
-                given()
-                        .contentType("application/json")
-                        .body(body)
-                        .when()
-                        .post("/fno/ingest")
-                        .then()
-                        .statusCode(200)
-                        .extract()
-                        .asString();
-
-        Console.log("test.ingest.mixed.out", resp);
-
-        assertNotNull(resp);
-        assertFalse(resp.isBlank());
-
-        // Calibration: valid flight facts must appear
-        assertTrue(resp.contains("Flight:F102"));
-        assertTrue(resp.contains("Airport:AUS"));
-        assertTrue(resp.contains("Airport:DFW"));
-
-        // Calibration: garbage should not create nodes
-        assertFalse(resp.contains("Book"));
-        assertFalse(resp.contains("quantity"));
-        assertFalse(resp.contains("price"));
-    }
-
-
-    @Test
-    void ingestEndpoint_acceptsFlightsWrapperObject() {
+    void ingest_accepts_wrapper_object_and_returns_graph_with_edges() {
         String body =
                 "{" +
                         "\"flights\":[" +
+                        "{\"id\":\"F100\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T10:00:00Z\",\"arr_utc\":\"2025-10-22T11:10:00Z\"}," +
                         "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
-                        "{\"id\":\"F103\",\"origin\":\"DFW\",\"dest\":\"IAH\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T14:35:00Z\"}" +
+                        "{\"id\":\"F110\",\"origin\":\"SAT\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:10:00Z\",\"arr_utc\":\"2025-10-22T12:15:00Z\"}," +
+                        "{\"id\":\"F120\",\"origin\":\"IAH\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:20:00Z\",\"arr_utc\":\"2025-10-22T12:25:00Z\"}," +
+                        "{\"id\":\"F200\",\"origin\":\"DFW\",\"dest\":\"ORD\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T16:50:00Z\"}," +
+                        "{\"id\":\"F210\",\"origin\":\"DFW\",\"dest\":\"JFK\",\"dep_utc\":\"2025-10-22T13:20:00Z\",\"arr_utc\":\"2025-10-22T17:10:00Z\"}," +
+                        "{\"id\":\"F220\",\"origin\":\"DFW\",\"dest\":\"LAX\",\"dep_utc\":\"2025-10-22T13:45:00Z\",\"arr_utc\":\"2025-10-22T15:20:00Z\"}" +
                         "]" +
                         "}";
 
-        Console.log("test.ingest.wrapper.in", body);
+        Console.log("test.fno.ingest.wrapper.in", body);
 
         String resp =
                 given()
@@ -159,22 +38,31 @@ public class IngestionControllerTests {
                         .extract()
                         .asString();
 
-        Console.log("test.ingest.wrapper.out", resp);
+        Console.log("test.fno.ingest.wrapper.out", resp);
 
         assertNotNull(resp);
         assertFalse(resp.isBlank());
 
-        assertTrue(resp.contains("Flight:F102"));
-        assertTrue(resp.contains("Flight:F103"));
-        assertTrue(resp.contains("Airport:AUS"));
-        assertTrue(resp.contains("Airport:DFW"));
-        assertTrue(resp.contains("Airport:IAH"));
+        // minimal controller contract: returns GraphSnapshot string (v1 driver response)
+        assertTrue(resp.contains("GraphSnapshot{nodes="), resp);
+        assertTrue(resp.contains("Flight:F102"), resp);
+        assertTrue(resp.contains("Airport:DFW"), resp);
+        assertTrue(resp.contains("edges={"), resp);
+
+        // at least one known edge
+        assertTrue(resp.contains("Edge:Flight:F100->Flight:F200"), resp);
     }
 
+
     @Test
-    void ingestEndpoint_emptyArray_returnsEmptyGraphSnapshot() {
-        String body = "[]";
-        Console.log("test.ingest.empty.in", body);
+    void ingest_accepts_top_level_array_and_returns_graph() {
+        String body =
+                "[" +
+                        "{\"id\":\"F100\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T10:00:00Z\",\"arr_utc\":\"2025-10-22T11:10:00Z\"}," +
+                        "{\"id\":\"F200\",\"origin\":\"DFW\",\"dest\":\"ORD\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T16:50:00Z\"}" +
+                        "]";
+
+        Console.log("test.fno.ingest.array.in", body);
 
         String resp =
                 given()
@@ -187,20 +75,23 @@ public class IngestionControllerTests {
                         .extract()
                         .asString();
 
-        Console.log("test.ingest.empty.out", resp);
+        Console.log("test.fno.ingest.array.out", resp);
 
         assertNotNull(resp);
         assertFalse(resp.isBlank());
 
-        // Calibration invariant: empty input → empty substrate
-        assertTrue(resp.contains("GraphSnapshot"));
-        assertTrue(resp.contains("nodes={}"));
+        assertTrue(resp.contains("GraphSnapshot{nodes="), resp);
+        assertTrue(resp.contains("Flight:F100"), resp);
+        assertTrue(resp.contains("Flight:F200"), resp);
+        assertTrue(resp.contains("Airport:DFW"), resp);
     }
 
+
     @Test
-    void ingestEndpoint_malformedJson_returns400() {
-        String body = "[{";
-        Console.log("test.ingest.malformed.in", body);
+    void ingest_rejects_invalid_payload_shape_with_400() {
+        String body = "{\"item\":\"Book\",\"quantity\":2,\"price\":10.5}";
+
+        Console.log("test.fno.ingest.invalid.in", body);
 
         String resp =
                 given()
@@ -213,9 +104,191 @@ public class IngestionControllerTests {
                         .extract()
                         .asString();
 
-        Console.log("test.ingest.malformed.out", resp);
+        Console.log("test.fno.ingest.invalid.out", resp);
 
         assertNotNull(resp);
-        assertTrue(resp.contains("parse failed"));
+        assertTrue(resp.contains("invalid payload") || resp.contains("parse failed"), resp);
     }
+
+    @Test
+    void ingest_malformed_json_returns_400() {
+        String body = "[{";
+
+        Console.log("test.fno.ingest.malformed.in", body);
+
+        String resp =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.malformed.out", resp);
+
+        assertNotNull(resp);
+        assertTrue(resp.contains("parse failed"), resp);
+    }
+
+    @Test
+    void ingest_empty_array_returns_empty_graph_snapshot() {
+        String body = "[]";
+
+        Console.log("test.fno.ingest.empty.in", body);
+
+        String resp =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.empty.out", resp);
+
+        assertNotNull(resp);
+        assertFalse(resp.isBlank());
+
+        // empty input → empty substrate
+        assertTrue(resp.contains("GraphSnapshot"), resp);
+        assertTrue(resp.contains("nodes={}"), resp);
+        assertTrue(resp.contains("edges={}"), resp);
+    }
+
+    @Test
+    void ingest_mixed_array_ignores_garbage_and_keeps_valid_facts() {
+        String body =
+                "[" +
+                        "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
+                        "{\"item\":\"Book\",\"quantity\":2,\"price\":10.5}" +
+                        "]";
+
+        Console.log("test.fno.ingest.mixed.in", body);
+
+        String resp =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.mixed.out", resp);
+
+        assertNotNull(resp);
+        assertFalse(resp.isBlank());
+
+        // valid facts present
+        assertTrue(resp.contains("Flight:F102"), resp);
+        assertTrue(resp.contains("Airport:AUS"), resp);
+        assertTrue(resp.contains("Airport:DFW"), resp);
+
+        // garbage not promoted to nodes
+        assertFalse(resp.contains("Book"), resp);
+        assertFalse(resp.contains("quantity"), resp);
+        assertFalse(resp.contains("price"), resp);
+    }
+
+    @Test
+    void ingest_wrapper_with_empty_flights_array_returns_empty_graph() {
+        String body = "{\"flights\":[]}";
+
+        Console.log("test.fno.ingest.wrapper.empty.in", body);
+
+        String resp =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.wrapper.empty.out", resp);
+
+        assertNotNull(resp);
+        assertFalse(resp.isBlank());
+
+        assertTrue(resp.contains("GraphSnapshot"), resp);
+        assertTrue(resp.contains("nodes={}"), resp);
+        assertTrue(resp.contains("edges={}"), resp);
+    }
+
+    @Test
+    void ingest_null_flights_field_is_rejected() {
+        String body = "{\"flights\":null}";
+
+        Console.log("test.fno.ingest.wrapper.null.in", body);
+
+        String resp =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(400)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.wrapper.null.out", resp);
+
+        assertNotNull(resp);
+        assertTrue(resp.contains("invalid payload") || resp.contains("parse failed"), resp);
+    }
+
+    @Test
+    void ingest_is_deterministic_for_same_input() {
+        String body =
+                "[" +
+                        "{\"id\":\"F100\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T10:00:00Z\",\"arr_utc\":\"2025-10-22T11:10:00Z\"}," +
+                        "{\"id\":\"F102\",\"origin\":\"AUS\",\"dest\":\"DFW\",\"dep_utc\":\"2025-10-22T11:30:00Z\",\"arr_utc\":\"2025-10-22T12:40:00Z\"}," +
+                        "{\"id\":\"F200\",\"origin\":\"DFW\",\"dest\":\"ORD\",\"dep_utc\":\"2025-10-22T13:30:00Z\",\"arr_utc\":\"2025-10-22T16:50:00Z\"}" +
+                        "]";
+
+        Console.log("test.fno.ingest.determinism.in", body);
+
+        String r1 =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString();
+
+        String r2 =
+                given()
+                        .contentType("application/json")
+                        .body(body)
+                        .when()
+                        .post("/fno/ingest")
+                        .then()
+                        .statusCode(200)
+                        .extract()
+                        .asString();
+
+        Console.log("test.fno.ingest.determinism.out1", r1);
+        Console.log("test.fno.ingest.determinism.out2", r2);
+
+        assertNotNull(r1);
+        assertNotNull(r2);
+
+        // driver response should be stable
+        assertEquals(r1, r2);
+    }
+
 }

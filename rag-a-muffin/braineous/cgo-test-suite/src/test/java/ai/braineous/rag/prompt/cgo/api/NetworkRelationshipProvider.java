@@ -17,13 +17,28 @@ public class NetworkRelationshipProvider implements RelationshipProvider {
         Map<String, List<Fact>> flightsByFromAirport = new HashMap<>();
         List<Fact> flights = new ArrayList<>();
 
+        // collect flight-like facts by JSON shape (not by mode)
         for (Fact f : facts) {
-            if(f.getMode().equals("relational")) {
-                JsonObject flightJson = JsonParser.parseString(f.getText()).getAsJsonObject();
-                String fromAirport = flightJson.get("from").getAsString();
-                flights.add(f);
-                flightsByFromAirport.computeIfAbsent(fromAirport, k -> new ArrayList<>()).add(f);
+            if (f == null || f.getId() == null || f.getText() == null) continue;
+
+            JsonObject j;
+            try {
+                j = JsonParser.parseString(f.getText()).getAsJsonObject();
+            } catch (Exception e) {
+                continue;
             }
+
+            if (!j.has("from") || !j.has("to")) continue;
+
+            String fromAirport;
+            try {
+                fromAirport = j.get("from").getAsString();
+            } catch (Exception e) {
+                continue;
+            }
+
+            flights.add(f);
+            flightsByFromAirport.computeIfAbsent(fromAirport, k -> new ArrayList<>()).add(f);
         }
 
         if (flights.size() < 2) return List.of();
@@ -39,23 +54,40 @@ public class NetworkRelationshipProvider implements RelationshipProvider {
                 continue;
             }
 
-            // need both keys
-            if (!aJson.has("from") || !aJson.has("to")) continue;
+            String hub;
+            try {
+                hub = aJson.get("to").getAsString(); // a arrives here
+            } catch (Exception e) {
+                continue;
+            }
 
-            String to = aJson.get("to").getAsString(); // a lands here
+            List<Fact> candidates = flightsByFromAirport.getOrDefault(hub, List.of());
 
-            List<Fact> candidates = flightsByFromAirport.getOrDefault(to, List.of()); // flights that depart from hub
             for (Fact b : candidates) {
-                if (a.getId().equals(b.getId())) continue;
+                if (b == null || b.getId() == null) continue;
 
-                String key = a.getId() + "->" + b.getId();
+                String fromId = a.getId();
+                String toId = b.getId();
+
+                // hard self-edge guard
+                if (fromId.equals(toId)) continue;
+
+                // dedupe (stable)
+                String key = fromId + "->" + toId;
                 if (!seen.add(key)) continue;
 
+                // create edge with stable id
                 Edge edge = new Edge();
-                edge.setFromFactId(a.getId());
-                edge.setToFactId(b.getId());
+                edge.setId("Edge:" + key);
+                edge.setFromFactId(fromId);
+                edge.setToFactId(toId);
 
-                rels.add(new Relationship(a, b, edge));
+                // IMPORTANT: do NOT reuse the same Fact instances as relationship endpoints
+                // Create lightweight refs so equals()/identity can't collapse into self-edges downstream.
+                Fact fromRef = new Fact(fromId, a.getText());
+                Fact toRef   = new Fact(toId, b.getText());
+
+                rels.add(new Relationship(fromRef, toRef, edge));
             }
         }
 
