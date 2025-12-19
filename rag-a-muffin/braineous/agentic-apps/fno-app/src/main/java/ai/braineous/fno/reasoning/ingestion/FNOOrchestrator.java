@@ -18,8 +18,12 @@ public class FNOOrchestrator {
             FactExtractor factExtractor = new FNOFactExtractor();
 
             context.build("flights",
-                    flightsJsonArray.toString(), factExtractor,
-            null, null, null, null);
+                    flightsJsonArray.toString(),
+                    factExtractor,
+            null,
+                    null,
+                    null,
+                    null);
 
             // bridge to CGO
             return this.llmBridge.submit(context);

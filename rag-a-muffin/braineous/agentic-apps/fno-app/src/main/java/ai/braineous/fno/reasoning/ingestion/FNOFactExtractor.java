@@ -117,7 +117,9 @@ public class FNOFactExtractor implements FactExtractor {
             flightJson.addProperty("arr_utc", arrZ);
 
             Console.log("flight", flightJson);
-            facts.add(new Fact(flightId, flightJson.toString()));
+            Fact flightFact = new Fact(flightId, flightJson.toString());
+            flightFact.setMode("relational");
+            facts.add(flightFact);
         }
 
         return facts;

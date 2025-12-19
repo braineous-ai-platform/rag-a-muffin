@@ -42,7 +42,10 @@ public class LLMContext {
 
         for (var entry : this.context.entrySet()) {
             LLMFacts llmFacts = entry.getValue();
-            facts.addAll(llmFacts.getFacts());
+            List<Fact> cour = llmFacts.getFacts();
+            if(cour != null) {
+                facts.addAll(cour);
+            }
         }
 
         return facts;
@@ -53,7 +56,10 @@ public class LLMContext {
 
         for (var entry : this.context.entrySet()) {
             LLMFacts llmFacts = entry.getValue();
-            relationships.addAll(llmFacts.getRelationships());
+            List<Relationship> cour = llmFacts.getRelationships();
+            if(cour != null) {
+                relationships.addAll(cour);
+            }
         }
 
         return relationships;
