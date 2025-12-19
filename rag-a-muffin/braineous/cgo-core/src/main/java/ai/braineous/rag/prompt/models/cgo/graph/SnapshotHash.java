@@ -3,6 +3,9 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 public class SnapshotHash {
     private String value;
 
+    public SnapshotHash() {
+    }
+
     public SnapshotHash(String value) {
         this.value = value;
     }

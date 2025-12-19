@@ -23,8 +23,17 @@ public class LLMContext {
                       List<BusinessRule> businessRules) {
         this.validate(jsonArrayStr);
         try {
+            if(factExtractor == null){
+                return;
+            }
+
             List<Fact> facts = factExtractor.extract(jsonArrayStr);
-            List<Relationship> relationships = relationshipProvider.provideRelationships(facts);
+
+
+            List<Relationship> relationships = new ArrayList<>();
+            if(relationshipProvider != null){
+                relationships = relationshipProvider.provideRelationships(facts);
+            }
 
             LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts,
                     relationships,
