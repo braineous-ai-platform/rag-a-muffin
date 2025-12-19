@@ -17,13 +17,14 @@ public class LLMContext {
 
     public void build(String type, String jsonArrayStr,
             FactExtractor factExtractor,
-                      List<Relationship> relationships,
+                      RelationshipProvider relationshipProvider,
                       List<FactValidatorRule> factValidatorRules,
                       List<RelationshipValidatorRule> relationshipValidatorRules,
                       List<BusinessRule> businessRules) {
         this.validate(jsonArrayStr);
         try {
             List<Fact> facts = factExtractor.extract(jsonArrayStr);
+            List<Relationship> relationships = relationshipProvider.provideRelationships(facts);
 
             LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts,
                     relationships,

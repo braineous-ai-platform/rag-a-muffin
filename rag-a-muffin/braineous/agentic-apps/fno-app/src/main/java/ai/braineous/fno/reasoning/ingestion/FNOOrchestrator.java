@@ -1,12 +1,11 @@
 package ai.braineous.fno.reasoning.ingestion;
 
-import ai.braineous.rag.prompt.cgo.api.FactExtractor;
-import ai.braineous.rag.prompt.cgo.api.GraphView;
-import ai.braineous.rag.prompt.cgo.api.LLMBridge;
-import ai.braineous.rag.prompt.cgo.api.LLMContext;
+import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.services.cgo.causal.CausalLLMBridge;
 
 import com.google.gson.JsonArray;
+
+import java.util.List;
 
 public class FNOOrchestrator {
     private LLMBridge llmBridge = new CausalLLMBridge();
@@ -16,11 +15,12 @@ public class FNOOrchestrator {
             LLMContext context = new LLMContext();
 
             FactExtractor factExtractor = new FNOFactExtractor();
+            RelationshipProvider relationshipProvider = new FNORelationshipProvider();
 
             context.build("flights",
                     flightsJsonArray.toString(),
                     factExtractor,
-            null,
+            relationshipProvider,
                     null,
                     null,
                     null);

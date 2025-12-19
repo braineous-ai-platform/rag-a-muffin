@@ -1,13 +1,8 @@
-package ai.braineous.rag.prompt.services.cgo;
+package ai.braineous.rag.prompt.cgo.api;
 
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import ai.braineous.rag.prompt.cgo.api.Fact;
-import ai.braineous.rag.prompt.cgo.api.FactExtractor;
-import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import org.junit.jupiter.api.Test;
 
 import com.google.gson.JsonArray;
@@ -17,26 +12,50 @@ import com.google.gson.JsonParser;
 import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 
+import static org.junit.jupiter.api.Assertions.*;
+
 public class LLMContextTests {
 
     @Test
     public void testFactGeneration() throws Exception {
+        Console.log("test.start", "LLMContext.testFactGeneration");
+
         LLMContext context = new LLMContext();
+        Console.log("llm_context.before", context);
 
-        Console.log("llm_context", context);
+        // sample_dataset - flights (single flight object wrapped as array)
+        String flightJsonStr =
+                Resources.getResource(
+                        "models/fno/models/flight.json"
+                );
 
-        // sample_dataset - flights
-        String flightJsonStr = Resources.getResource("models/fno/models/flight.json");
         JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
         JsonArray flightsJsonArray = new JsonArray();
         flightsJsonArray.add(flightJson);
 
         FactExtractor factExtractor = this.getFlightFactExtractor();
-        context.build("flights", flightsJsonArray.toString(), factExtractor,
-        null, null, null, null);
 
-        Console.log("llm_context", context);
+        // Minimal RelationshipProvider for this test (no relationships expected)
+        RelationshipProvider relationshipProvider = facts -> List.of();
+
+        context.build(
+                "flights",
+                flightsJsonArray.toString(),
+                factExtractor,
+                relationshipProvider,
+                List.of(),
+                List.of(),
+                List.of()
+        );
+
+        Console.log("llm_context.after", context);
+        Console.log("facts.count", context.getAllFacts().size());
+        Console.log("relationships.count", context.getAllRelationships().size());
+
+        assertFalse(context.getAllFacts().isEmpty(), "facts should be generated");
+        assertEquals(0, context.getAllRelationships().size(), "no relationships expected");
     }
+
 
     @Test
     public void testInvalidData() throws Exception {
@@ -59,6 +78,41 @@ public class LLMContextTests {
 
         assertTrue(invalidFormat, "invalid_data_format_check_failed");
     }
+
+    @Test
+    public void testFactAndRelationshipGeneration() throws Exception {
+        Console.log("test.start", "LLMContext.testFactAndRelationshipGeneration");
+
+        LLMContext context = new LLMContext();
+
+        // curated dataset with connections
+        String flightsJsonStr =
+                ai.braineous.rag.prompt.utils.Resources.getResource(
+                        "models/fno/models/flights.json"
+                );
+        JsonObject root = JsonParser.parseString(flightsJsonStr).getAsJsonObject();
+        String arrStr = root.getAsJsonArray("flights").toString();
+
+        FactExtractor factExtractor = new NetworkFactExtractor();
+        RelationshipProvider relationshipProvider = new NetworkRelationshipProvider();
+
+        context.build(
+                "flights",
+                arrStr,
+                factExtractor,
+                relationshipProvider,
+                List.of(),
+                List.of(),
+                List.of()
+        );
+
+        Console.log("facts.count", context.getAllFacts().size());
+        Console.log("relationships.count", context.getAllRelationships().size());
+
+        assertEquals(14, context.getAllFacts().size(), "facts count mismatch");
+        assertEquals(12, context.getAllRelationships().size(), "relationships count mismatch");
+    }
+    ///-----------------------------------------------------------------------------
 
     private FactExtractor getFlightFactExtractor() {
         FactExtractor flightExtractor = (jsonArrayStr) -> {
