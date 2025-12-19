@@ -36,10 +36,6 @@ public class FNOPromptOrchestrator {
             throw new IllegalArgumentException("task.factId must be non-empty");
         }
 
-        // v1: validators not wired yet (explicitly null)
-        PhaseResultValidator llmResponseValidator = null;
-        PhaseResultValidator phaseResultValidator = null;
-
         // v1: adapter config placeholder (keep stable shape, no assumptions)
         JsonObject config = new JsonObject();
         LlmAdapter adapter = new OpenAILlmAdapter(config);
@@ -49,10 +45,7 @@ public class FNOPromptOrchestrator {
         request.setAdapter(adapter);
 
         // PromptBuilder (no prompt validator for v1)
-        PromptBuilder promptBuilder = new PromptBuilder(
-                new SimpleResponseContractRegistry(),
-                phaseResultValidator
-        );
+        PromptBuilder promptBuilder = new PromptBuilder();
 
         CgoQueryPipeline pipeline = new CgoQueryPipeline(
                 promptBuilder
