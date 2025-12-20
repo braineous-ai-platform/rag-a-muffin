@@ -82,7 +82,7 @@ public class Validator {
 
     public boolean validateRelationship(GraphSnapshot snapshot, Relationship relationship){
         boolean isValid = this.isRelationshipValid(relationship);
-        if(!isValid || snapshot == null){
+        if(snapshot == null || !isValid){
             return false;
         }
 
@@ -111,7 +111,8 @@ public class Validator {
             return false;
         }
 
-        if(!fact.getMode().equals("atomic")){
+        String mode = fact.getMode();
+        if( mode == null || !mode.trim().equals("atomic")){
             return false;
         }
 

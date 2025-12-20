@@ -5,6 +5,7 @@ import ai.braineous.rag.prompt.cgo.api.FactValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Relationship;
 import ai.braineous.rag.prompt.cgo.api.RelationshipValidatorRule;
 import ai.braineous.rag.prompt.observe.Console;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Collections;
@@ -15,176 +16,162 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProposalValidatorTests {
-    //@Test
-    public void testValidateSingleSimpleProposalSuccess() {
-        Console.log("testValidateSingleSimpleProposalSuccess", null);
 
-        // -------- arrange --------
-        // minimal fact that matches the GraphView stub in ProposalValidator (id = "F1")
-        Fact f1 = new Fact("F1", "{\"id\":\"F1\"}");
-
-        // no updates/deletes/edges for the first driver test
-        Set<Fact> inserts = Collections.singleton(f1);
-        Set<Fact> updates = Collections.emptySet();
-        Set<Fact> deletes = Collections.emptySet();
-        Set<Relationship> edges = Collections.emptySet();
-
-        // however your Proposal is constructed – constructor or setters
-        Proposal proposal = new Proposal();
-        proposal.setInsert(inserts);
-        proposal.setUpdate(updates);
-        proposal.setDelete(deletes);
-        proposal.setEdges(edges);
-
-        // ProposalContext holding a single proposal
-        ProposalContext ctx = new ProposalContext();
-        ctx.setProposals(Collections.singleton(proposal)); // or via ctor: new ProposalContext(Set.of(proposal))
-
-        ProposalValidator validator = ProposalValidator.getInstance();
-
-        // -------- act --------
-        boolean result = validator.validate(ctx);
-
-        // -------- assert --------
-        // For now the contract is: returns true for a simple valid proposal.
-        // As you add real validation logic, this test keeps the basic “happy path” pinned.
-        assertTrue(result);
+    @BeforeEach
+    void setup() {
+        GraphBuilder.getInstance().clear();
     }
 
-    //@Test
-    public void testValidateEmptyContextIsOk() {
-        Console.log("testValidateEmptyContextIsOk", null);
+    @Test
+    void validate_returns_true_when_no_proposals_present() {
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         ProposalContext ctx = new ProposalContext();
-        ctx.setProposals(Collections.emptySet());
-
-        ProposalValidator validator = ProposalValidator.getInstance();
+        ctx.setProposals(new HashSet<>());
+        ctx.setSnapshot(GraphBuilder.getInstance().snapshot());
 
         boolean result = validator.validate(ctx);
 
         assertTrue(result);
     }
 
-    //@Test
-    public void testValidateSingleSimpleProposalFailsOnFactRule() {
-        Console.log("testValidateSingleSimpleProposalFailsOnFactRule", null);
-
-        // -------- arrange --------
-        // minimal fact that matches the GraphView stub (id = "F1")
-        Fact f1 = new Fact("F1", "{\"id\":\"F1\"}");
-
-        Set<Fact> inserts = Collections.singleton(f1);
-        Set<Fact> updates = Collections.emptySet();
-        Set<Fact> deletes = Collections.emptySet();
-        Set<Relationship> edges = Collections.emptySet();
-
-        Proposal proposal = new Proposal();
-        proposal.setInsert(inserts);
-        proposal.setUpdate(updates);
-        proposal.setDelete(deletes);
-        proposal.setEdges(edges);
-
-        ProposalContext ctx = new ProposalContext();
-        ctx.setProposals(Collections.singleton(proposal));
-
-        // one FactValidatorRule that ALWAYS fails → should make the whole validation fail
-        FactValidatorRule failingRule = (fact, view) -> false;
-
-
+    @Test
+    void validate_accepts_valid_insert_fact() {
         ProposalValidator validator = ProposalValidator.getInstance();
 
-        // -------- act --------
+        Fact airport = new Fact("Airport:AUS", "AUS");
+        airport.setMode("atomic");
+
+        Proposal proposal = new Proposal();
+        proposal.setInsert(Set.of(airport));
+        proposal.setUpdate(Set.of());
+        proposal.setDelete(Set.of());
+        proposal.setEdges(Set.of());
+
+        ProposalContext ctx = new ProposalContext();
+        ctx.setProposals(Set.of(proposal));
+        ctx.setSnapshot(GraphBuilder.getInstance().snapshot());
+
         boolean result = validator.validate(ctx);
 
-        // -------- assert --------
+        assertTrue(result);
+    }
+
+    @Test
+    void validate_rejects_invalid_insert_fact() {
+        ProposalValidator validator = ProposalValidator.getInstance();
+
+        Fact bad = new Fact("", "bad");
+        bad.setMode("atomic");
+
+        Proposal proposal = new Proposal();
+        proposal.setInsert(Set.of(bad));
+        proposal.setUpdate(Set.of());
+        proposal.setDelete(Set.of());
+        proposal.setEdges(Set.of());
+
+        ProposalContext ctx = new ProposalContext();
+        ctx.setProposals(Set.of(proposal));
+        ctx.setSnapshot(GraphBuilder.getInstance().snapshot());
+
+        boolean result = validator.validate(ctx);
+
         assertFalse(result);
     }
 
-    //@Test
-    public void testValidateSingleSimpleProposalFailsOnRelationshipRule() {
-        Console.log("testValidateSingleSimpleProposalFailsOnRelationshipRule", null);
-
-        // -------- arrange --------
-        // Minimal facts for relationship
-        Fact from = new Fact("F1", "{\"id\":\"F1\"}");
-        Fact to   = new Fact("F2", "{\"id\":\"F2\"}");
-        Fact edge = new Fact("E1", "{\"id\":\"E1\",\"mode\":\"relational\"}");
-
-        Relationship r = new Relationship(from, to, edge);
-
-        Set<Fact> inserts = Collections.emptySet();
-        Set<Fact> updates = Collections.emptySet();
-        Set<Fact> deletes = Collections.emptySet();
-        Set<Relationship> edges = Collections.singleton(r);
-
-        Proposal proposal = new Proposal();
-        proposal.setInsert(inserts);
-        proposal.setUpdate(updates);
-        proposal.setDelete(deletes);
-        proposal.setEdges(edges);
-
-        ProposalContext ctx = new ProposalContext();
-        ctx.setProposals(Collections.singleton(proposal));
-
-        // failing relationship rule → proposal should fail
-        RelationshipValidatorRule failingRule = (relationship, view) -> false;
-
-
+    @Test
+    void validate_rejects_update_when_fact_not_in_snapshot() {
         ProposalValidator validator = ProposalValidator.getInstance();
 
-        // -------- act --------
+        Fact missing = new Fact("Airport:DFW", "DFW");
+        missing.setMode("atomic");
+
+        Proposal proposal = new Proposal();
+        proposal.setInsert(Set.of());
+        proposal.setUpdate(Set.of(missing));
+        proposal.setDelete(Set.of());
+        proposal.setEdges(Set.of());
+
+        ProposalContext ctx = new ProposalContext();
+        ctx.setProposals(Set.of(proposal));
+        ctx.setSnapshot(GraphBuilder.getInstance().snapshot());
+
         boolean result = validator.validate(ctx);
 
-        // -------- assert --------
         assertFalse(result);
     }
 
-    //@Test
-    public void testValidateMultipleProposalsFailsIfAnyProposalFails() {
-        Console.log("testValidateMultipleProposalsFailsIfAnyProposalFails", null);
+    @Test
+    void validate_accepts_valid_relationship_against_snapshot() {
+        GraphBuilder builder = GraphBuilder.getInstance();
 
-        // -------- arrange --------
-        // Proposal 1: should PASS
-        Fact okFact = new Fact("OK", "{\"id\":\"OK\"}");
-        Proposal okProposal = new Proposal();
-        okProposal.setInsert(Collections.singleton(okFact));
-        okProposal.setUpdate(Collections.emptySet());
-        okProposal.setDelete(Collections.emptySet());
-        okProposal.setEdges(Collections.emptySet());
+        Fact aus = new Fact("Airport:AUS", "AUS");
+        aus.setMode("atomic");
+        Fact dfw = new Fact("Airport:DFW", "DFW");
+        dfw.setMode("atomic");
 
-        // Proposal 2: should FAIL
-        Fact badFact = new Fact("BAD", "{\"id\":\"BAD\"}");
-        Proposal badProposal = new Proposal();
-        badProposal.setInsert(Collections.singleton(badFact));
-        badProposal.setUpdate(Collections.emptySet());
-        badProposal.setDelete(Collections.emptySet());
-        badProposal.setEdges(Collections.emptySet());
+        builder.addNode(aus);
+        builder.addNode(dfw);
 
-        // Context holds BOTH proposals
+        GraphSnapshot snapshot = builder.snapshot();
+
+        Fact edgeFact = new Fact("Edge:AUS->DFW", "connects");
+        edgeFact.setMode("relational");
+
+        Relationship rel = new Relationship();
+        rel.setFrom(aus);
+        rel.setTo(dfw);
+        rel.setEdge(edgeFact);
+
+        Proposal proposal = new Proposal();
+        proposal.setInsert(Set.of());
+        proposal.setUpdate(Set.of());
+        proposal.setDelete(Set.of());
+        proposal.setEdges(Set.of(rel));
+
         ProposalContext ctx = new ProposalContext();
-        Set<Proposal> proposals = new HashSet<>();
-        proposals.add(okProposal);
-        proposals.add(badProposal);
-        ctx.setProposals(proposals);
+        ctx.setProposals(Set.of(proposal));
+        ctx.setSnapshot(snapshot);
 
-        // Single FactValidatorRule:
-        // - returns true for "OK"
-        // - returns false for "BAD"
-        FactValidatorRule rule = (fact, view) -> {
-            String id = fact.getId();
-            if ("BAD".equals(id)) {
-                return false;
-            }
-            return true;
-        };
+        boolean result = ProposalValidator.getInstance().validate(ctx);
 
-        ProposalValidator validator = ProposalValidator.getInstance();
+        assertTrue(result);
+    }
 
-        // -------- act --------
-        boolean result = validator.validate(ctx);
+    @Test
+    void validate_rejects_relationship_with_missing_node() {
+        GraphBuilder builder = GraphBuilder.getInstance();
 
-        // -------- assert --------
-        // Even though one proposal passes, the other fails → overall result must be false.
+        Fact aus = new Fact("Airport:AUS", "AUS");
+        aus.setMode("atomic");
+        builder.addNode(aus);
+
+        GraphSnapshot snapshot = builder.snapshot();
+
+        Fact missing = new Fact("Airport:DFW", "DFW");
+        missing.setMode("atomic");
+
+        Fact edgeFact = new Fact("Edge:AUS->DFW", "connects");
+        edgeFact.setMode("relational");
+
+        Relationship rel = new Relationship();
+        rel.setFrom(aus);
+        rel.setTo(missing);
+        rel.setEdge(edgeFact);
+
+        Proposal proposal = new Proposal();
+        proposal.setInsert(Set.of());
+        proposal.setUpdate(Set.of());
+        proposal.setDelete(Set.of());
+        proposal.setEdges(Set.of(rel));
+
+        ProposalContext ctx = new ProposalContext();
+        ctx.setProposals(Set.of(proposal));
+        ctx.setSnapshot(snapshot);
+
+        boolean result = ProposalValidator.getInstance().validate(ctx);
+
         assertFalse(result);
     }
 }
+

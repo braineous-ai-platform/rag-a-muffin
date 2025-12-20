@@ -15,6 +15,9 @@ public class ProposalMonitor {
     }
 
     public ProposalContext receive(ProposalContext ctx){
+        if(ctx == null){
+            return null;
+        }
         ProposalValidator proposalValidator = ProposalValidator.getInstance();
 
         //execute business level validation
