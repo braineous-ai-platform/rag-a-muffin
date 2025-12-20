@@ -4,12 +4,14 @@ import ai.braineous.fno.reasoning.ingestion.FNOOrchestrator;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.FactExtractor;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 import ai.braineous.rag.prompt.observe.Console;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -18,6 +20,11 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class FNOOrchestratorTests {
     private FNOOrchestrator fnoOrchestrator = new FNOOrchestrator();
+
+    @BeforeEach
+    public void setup(){
+        GraphBuilder.getInstance().clear();
+    }
 
     @Test
     void orchestrate_builds_nodes_and_edges_for_dfw_hub() {

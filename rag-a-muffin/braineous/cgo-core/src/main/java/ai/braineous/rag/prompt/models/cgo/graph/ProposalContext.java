@@ -12,8 +12,6 @@ public class ProposalContext {
 
     private GraphSnapshot snapshot;
 
-    private Validator validator;
-
 
 
     private boolean validationSuccess;
@@ -41,13 +39,5 @@ public class ProposalContext {
 
     public void setSnapshot(GraphSnapshot snapshot) {
         this.snapshot = snapshot;
-    }
-
-    public Validator getValidator() {
-        return validator;
-    }
-
-    public void setValidator(Validator validator) {
-        this.validator = validator;
     }
 }

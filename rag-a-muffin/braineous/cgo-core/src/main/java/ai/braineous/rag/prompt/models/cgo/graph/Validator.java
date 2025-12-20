@@ -4,6 +4,15 @@ import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.Relationship;
 
 public class Validator {
+    private static Validator validator = new Validator();
+
+    private Validator(){
+
+    }
+
+    public static Validator getInstance(){
+        return validator;
+    }
 
     public BindResult bind(Input input){
         if(input == null){

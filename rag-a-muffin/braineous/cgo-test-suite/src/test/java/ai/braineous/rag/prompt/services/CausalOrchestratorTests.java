@@ -3,12 +3,19 @@ package ai.braineous.rag.prompt.services;
 import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import ai.braineous.rag.prompt.cgo.api.NetworkFactExtractor;
 import ai.braineous.rag.prompt.cgo.api.NetworkRelationshipProvider;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
 import ai.braineous.rag.prompt.observe.Console;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 public class CausalOrchestratorTests {
+
+    @BeforeEach
+    public void setup(){
+        GraphBuilder.getInstance().clear();
+    }
 
     @Test
     void orchestrate_builds_graph_from_llmContext_facts_and_relationships() {

@@ -3,6 +3,7 @@ package ai.braineous.rag.prompt.models.cgo.graph;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.data.FNOFactExtractors;
 import ai.braineous.rag.prompt.observe.Console;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.function.Function;
@@ -11,11 +12,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class GraphBuilderTests {
 
+    @BeforeEach
+    public void setup(){
+        GraphBuilder.getInstance().clear();
+    }
+
     @Test
     public void testSnapshot_SimpleAirportGraph() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -54,9 +58,7 @@ public class GraphBuilderTests {
 
     @Test
     public void testBindSucceedsForValidFlightBetweenTwoAirports() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -111,9 +113,7 @@ public class GraphBuilderTests {
 
     @Test
     public void testBindFailsWhenFlightReferencesMissingAirportTo() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
         // given: AUS + Flight added, DFW NOT added to the graph
         Fact aus = new Fact("Airport:AUS", """
@@ -151,9 +151,7 @@ public class GraphBuilderTests {
 
     @Test
     public void testBindFailsWhenFlightReferencesMissingAirportFrom() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
         // given: AUS + Flight added, DFW NOT added to the graph
         Fact aus = new Fact("Airport:AUS", """
@@ -191,9 +189,7 @@ public class GraphBuilderTests {
 
     @Test
     public void testBindIsIdempotentForSameFlight() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
         // given
         Fact aus = new Fact("Airport:AUS", """
@@ -238,9 +234,7 @@ public class GraphBuilderTests {
     //----------------------------------------------------------------------------------
     @Test
     public void testBindSucceedsForValidFlightBetweenTwoAirportsWithValidation() {
-        Validator validator = new Validator();
-        ProposalMonitor proposalMonitor = new ProposalMonitor();
-        GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
         Function<Fact, Boolean> validationRule = new FNOFactExtractors.SimpleValidationRuleGenerator();
 
         // given

@@ -15,9 +15,7 @@ public class CausalOrchestrator {
   }
 
   public GraphView orchestrate(LLMContext llmContext) {
-    Validator validator = new Validator();
-    ProposalMonitor proposalMonitor = new ProposalMonitor();
-    GraphBuilder graphBuilder = new GraphBuilder(validator, proposalMonitor);
+    GraphBuilder graphBuilder = GraphBuilder.getInstance();
 
     List<Fact> allFacts = llmContext.getAllFacts();
 

@@ -6,7 +6,15 @@ import java.util.HashSet;
 import java.util.Set;
 
 public class ProposalValidator {
+    private static ProposalValidator proposalValidator = new ProposalValidator();
 
+    private ProposalValidator(){
+
+    }
+
+    public static ProposalValidator getInstance(){
+        return ProposalValidator.proposalValidator;
+    }
 
     public boolean validate(ProposalContext ctx){
         boolean result;
@@ -15,7 +23,7 @@ public class ProposalValidator {
         GraphSnapshot snapshot = ctx.getSnapshot();
 
         for(Proposal proposal: proposals){
-            boolean assertion = this.validate(snapshot, ctx.getValidator(), proposal);
+            boolean assertion = this.validate(snapshot,proposal);
             assertions.add(assertion);
             break;
         }
@@ -25,7 +33,8 @@ public class ProposalValidator {
     }
 
 
-    private boolean validate(GraphSnapshot snapshot, Validator validator, Proposal proposal){
+    private boolean validate(GraphSnapshot snapshot, Proposal proposal){
+        Validator validator = Validator.getInstance();
         boolean result;
         Set<Boolean> assertions = new HashSet<>();
 

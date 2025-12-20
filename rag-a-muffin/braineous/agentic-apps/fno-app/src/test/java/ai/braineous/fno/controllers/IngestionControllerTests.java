@@ -1,7 +1,9 @@
 package ai.braineous.fno.controllers;
 
+import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
 import ai.braineous.rag.prompt.observe.Console;
 import io.quarkus.test.junit.QuarkusTest;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static io.restassured.RestAssured.given;
@@ -9,6 +11,10 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @QuarkusTest
 public class IngestionControllerTests {
+    @BeforeEach
+    public void setup(){
+        GraphBuilder.getInstance().clear();
+    }
 
     @Test
     void ingest_accepts_wrapper_object_and_returns_graph_with_edges() {

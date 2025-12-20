@@ -40,7 +40,7 @@ public class ProposalValidatorTests {
         ProposalContext ctx = new ProposalContext();
         ctx.setProposals(Collections.singleton(proposal)); // or via ctor: new ProposalContext(Set.of(proposal))
 
-        ProposalValidator validator = new ProposalValidator();
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         // -------- act --------
         boolean result = validator.validate(ctx);
@@ -58,7 +58,7 @@ public class ProposalValidatorTests {
         ProposalContext ctx = new ProposalContext();
         ctx.setProposals(Collections.emptySet());
 
-        ProposalValidator validator = new ProposalValidator();
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         boolean result = validator.validate(ctx);
 
@@ -91,7 +91,7 @@ public class ProposalValidatorTests {
         FactValidatorRule failingRule = (fact, view) -> false;
 
 
-        ProposalValidator validator = new ProposalValidator();
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         // -------- act --------
         boolean result = validator.validate(ctx);
@@ -130,7 +130,7 @@ public class ProposalValidatorTests {
         RelationshipValidatorRule failingRule = (relationship, view) -> false;
 
 
-        ProposalValidator validator = new ProposalValidator();
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         // -------- act --------
         boolean result = validator.validate(ctx);
@@ -178,7 +178,7 @@ public class ProposalValidatorTests {
             return true;
         };
 
-        ProposalValidator validator = new ProposalValidator();
+        ProposalValidator validator = ProposalValidator.getInstance();
 
         // -------- act --------
         boolean result = validator.validate(ctx);

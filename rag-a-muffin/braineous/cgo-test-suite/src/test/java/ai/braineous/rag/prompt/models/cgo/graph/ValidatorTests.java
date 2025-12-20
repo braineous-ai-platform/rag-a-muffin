@@ -9,7 +9,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindOk() throws Exception{
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
 
         Input input = FNOFactExtractors.okInput();
         BindResult bindResult = validator.bind(input);
@@ -21,14 +21,14 @@ public class ValidatorTests {
     //----Failure cases -----------
     @Test
     public void testBindRejectsNullInput() {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         BindResult bindResult = validator.bind(null);
         assertFalse(bindResult.isOk(), "null_input_should_fail");
     }
 
     @Test
     public void testBindRejectsNullFacts() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
 
         // from = null
         Input input1 = new Input(null, FNOFactExtractors.dummyFact("Airport:DFW", "atomic"),
@@ -48,7 +48,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindRejectsNonAtomicFrom() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         Input input = FNOFactExtractors.inputFromExtractor(new FNOFactExtractors.NonAtomicFromExtractor());
         BindResult result = validator.bind(input);
 
@@ -57,7 +57,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindRejectsNonAtomicTo() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         Input input = FNOFactExtractors.inputFromExtractor(new FNOFactExtractors.NonAtomicToExtractor());
         BindResult result = validator.bind(input);
 
@@ -66,7 +66,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindRejectsNonRelationalEdge() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         Input input = FNOFactExtractors.inputFromExtractor(new FNOFactExtractors.NonRelationalEdgeExtractor());
         BindResult result = validator.bind(input);
 
@@ -75,7 +75,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindRejectsSelfEdge() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         Input input = FNOFactExtractors.inputFromExtractor(new
                 FNOFactExtractors.SelfEdgeExtractor());
         BindResult result = validator.bind(input);
@@ -85,7 +85,7 @@ public class ValidatorTests {
 
     @Test
     public void testBindRejectsNullModes() throws Exception {
-        Validator validator = new Validator();
+        Validator validator = Validator.getInstance();
         Input input = FNOFactExtractors.inputFromExtractor(new FNOFactExtractors.NullModesExtractor());
         BindResult result = validator.bind(input);
 

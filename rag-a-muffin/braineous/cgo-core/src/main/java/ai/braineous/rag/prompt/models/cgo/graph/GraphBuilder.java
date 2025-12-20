@@ -10,17 +10,27 @@ import java.util.Map;
 import java.util.Set;
 
 public class GraphBuilder {
-    private final Validator validator;
+    private static GraphBuilder graphBuilder = new GraphBuilder();
 
-    private final ProposalMonitor proposalMonitor;
+    private final Validator validator = Validator.getInstance();
+
+    private final ProposalMonitor proposalMonitor = ProposalMonitor.getInstance();
 
     // internal mutable state
     private final Map<String, Fact> nodes = new HashMap<>(); // atomic
     private final Map<String, Edge> edges = new HashMap<>(); // relational
 
-    public GraphBuilder(Validator validator, ProposalMonitor proposalMonitor) {
-        this.validator = validator;
-        this.proposalMonitor = proposalMonitor;
+    private GraphBuilder(){
+
+    }
+
+    public static GraphBuilder getInstance(){
+        return GraphBuilder.graphBuilder;
+    }
+
+    public void clear(){
+        this.nodes.clear();
+        this.edges.clear();
     }
 
     /**
@@ -107,7 +117,6 @@ public class GraphBuilder {
         GraphSnapshot snapshot = this.snapshot();
         ctx.setProposals(proposals);
         ctx.setSnapshot(snapshot);
-        ctx.setValidator(validator);
 
         //use the proposal_monitor to validate
         ctx = this.proposalMonitor.receive(ctx);
