@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.api;
 
+import ai.braineous.rag.prompt.models.cgo.graph.Rulepack;
 import ai.braineous.rag.prompt.services.cgo.causal.LLMFacts;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -18,8 +19,6 @@ public class LLMContext {
     public void build(String type, String jsonArrayStr,
             FactExtractor factExtractor,
                       RelationshipProvider relationshipProvider,
-                      List<FactValidatorRule> factValidatorRules,
-                      List<RelationshipValidatorRule> relationshipValidatorRules,
                       List<BusinessRule> businessRules) {
         this.validate(jsonArrayStr);
         try {
@@ -37,8 +36,8 @@ public class LLMContext {
 
             LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts,
                     relationships,
-                    factValidatorRules,
-                    relationshipValidatorRules,
+                    List.of(),
+                    List.of(),
                     businessRules
             );
             context.put(type, llmFacts);
@@ -73,6 +72,23 @@ public class LLMContext {
         }
 
         return relationships;
+    }
+
+    public Rulepack getRulepack(){
+        Rulepack rulepack = new Rulepack();
+
+        List<BusinessRule> rules = new ArrayList<>();
+        for (var entry : this.context.entrySet()) {
+            LLMFacts llmFacts = entry.getValue();
+            List<BusinessRule> cour = llmFacts.getBusinessRules();
+            if(cour != null) {
+                rules.addAll(cour);
+            }
+        }
+
+        rulepack.setRules(rules);
+
+        return rulepack;
     }
 
     private void validate(String jsonArrayStr) {

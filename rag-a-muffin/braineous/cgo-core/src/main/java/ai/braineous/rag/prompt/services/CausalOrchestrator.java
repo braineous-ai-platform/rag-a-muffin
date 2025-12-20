@@ -51,7 +51,8 @@ public class CausalOrchestrator {
       Input input = new Input(rel.getFrom(), rel.getTo(), rel.getEdge());
 
       // substrate-only for now (rulepack null)
-      BindResult r = graphBuilder.bind(input, null);
+      Rulepack rulepack = llmContext.getRulepack();
+      BindResult r = graphBuilder.bind(input, rulepack);
 
       if (!r.isOk()) {
         // important: GraphBuilder fails if from/to nodes not present in nodes map

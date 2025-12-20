@@ -12,11 +12,10 @@ public class ProposalValidator {
         boolean result;
         Set<Boolean> assertions = new HashSet<>();
         Set<Proposal> proposals = ctx.getProposals();
-        Set<FactValidatorRule> factValidatorRules = ctx.getFactValidatorRules();
-        Set<RelationshipValidatorRule> relationshipValidatorRules = ctx.getRelationshipValidatorRules();
+        GraphSnapshot snapshot = ctx.getSnapshot();
 
         for(Proposal proposal: proposals){
-            boolean assertion = this.validate(proposal, factValidatorRules, relationshipValidatorRules);
+            boolean assertion = this.validate(snapshot, ctx.getValidator(), proposal);
             assertions.add(assertion);
         }
 
@@ -25,126 +24,40 @@ public class ProposalValidator {
     }
 
 
-    private boolean validate(Proposal proposal,
-                             Set<FactValidatorRule> factValidatorRules,
-                             Set<RelationshipValidatorRule> relationshipValidatorRules){
+    private boolean validate(GraphSnapshot snapshot, Validator validator, Proposal proposal){
         boolean result;
         Set<Boolean> assertions = new HashSet<>();
+
         Set<Fact> inserts = proposal.getInsert();
         Set<Fact> updates = proposal.getUpdate();
         Set<Fact> deletes = proposal.getDelete();
         Set<Relationship> relationships = proposal.getEdges();
 
-        //validate_facts
+        //validate inserts
         for(Fact fact:inserts){
-            //TODO: finalize_later
-            GraphView view = new GraphView() {
-                @Override
-                public Fact getFactById(String id) {
-                    if ("F1".equals(id)) {
-                        return fact;
-                    }
-                    return null;
-                }
-            };
-            boolean assertion = this.validateFactWithRules(fact, view, factValidatorRules);
+            boolean assertion = validator.validateInsert(fact);
             assertions.add(assertion);
         }
+
+        //validate updates
         for(Fact fact:updates){
-            //TODO: finalize_later
-            GraphView view = new GraphView() {
-                @Override
-                public Fact getFactById(String id) {
-                    if ("F1".equals(id)) {
-                        return fact;
-                    }
-                    return null;
-                }
-            };
-            boolean assertion = this.validateFactWithRules(fact, view, factValidatorRules);
+            boolean assertion = validator.validateUpdate(snapshot, fact);
             assertions.add(assertion);
         }
+
+        //validate deletes
         for(Fact fact:deletes){
-            //TODO: finalize_later
-            GraphView view = new GraphView() {
-                @Override
-                public Fact getFactById(String id) {
-                    if ("F1".equals(id)) {
-                        return fact;
-                    }
-                    return null;
-                }
-            };
-            boolean assertion = this.validateFactWithRules(fact, view, factValidatorRules);
+            boolean assertion = validator.validateDelete(fact);
             assertions.add(assertion);
         }
 
-        //validate_relationships
+        //validate relationships
         for(Relationship relationship:relationships){
-            //TODO: finalize_later
-            /*GraphView view = new GraphView() {
-                @Override
-                public Fact getFactById(String id) {
-                    if ("F1".equals(id)) {
-                        return fact;
-                    }
-                    return null;
-                }
-            };*/
-            boolean assertion = this.validateRelationshipWithRules(relationship, null, relationshipValidatorRules);
+            boolean assertion = validator.validateRelationship(snapshot, relationship);
             assertions.add(assertion);
         }
 
         result = !assertions.contains(false);
-        return result;
-    }
-
-    private boolean validateFactWithRules(Fact fact, GraphView view,
-                                          Set<FactValidatorRule> factValidatorRules){
-        boolean result;
-        Set<Boolean> assertions = new HashSet<>();
-
-        for(FactValidatorRule factValidatorRule: factValidatorRules){
-            boolean assertion = this.validateFactWithRule(fact, view, factValidatorRule);
-            assertions.add(assertion);
-        }
-
-        result = !assertions.contains(false);
-        return result;
-    }
-
-    private boolean validateFactWithRule(Fact fact, GraphView view,
-                                         FactValidatorRule factValidatorRule){
-        FactValidatorAdapter adapter = new FactValidatorAdapter();
-
-        // act
-        boolean result = adapter.validate(factValidatorRule, fact, view);
-
-        return result;
-    }
-
-    private boolean validateRelationshipWithRules(Relationship relationship, GraphView view,
-                                                  Set<RelationshipValidatorRule> relationshipValidatorRules){
-        boolean result;
-        Set<Boolean> assertions = new HashSet<>();
-
-        for(RelationshipValidatorRule relationshipValidatorRule: relationshipValidatorRules){
-            boolean assertion = this.validateRelationshipWithRule(relationship, view, relationshipValidatorRule);
-            assertions.add(assertion);
-        }
-
-        result = !assertions.contains(false);
-        return result;
-    }
-
-    private boolean validateRelationshipWithRule(Relationship relationship, GraphView view,
-                                                  RelationshipValidatorRule relationshipValidatorRule){
-
-        RelationshipValidatorAdapter adapter = new RelationshipValidatorAdapter();
-
-        // act
-        boolean result = adapter.validate(relationshipValidatorRule, relationship, view);
-
         return result;
     }
 }

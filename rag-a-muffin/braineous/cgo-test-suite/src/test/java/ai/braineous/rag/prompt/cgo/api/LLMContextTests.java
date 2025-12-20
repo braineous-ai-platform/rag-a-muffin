@@ -43,8 +43,6 @@ public class LLMContextTests {
                 flightsJsonArray.toString(),
                 factExtractor,
                 relationshipProvider,
-                List.of(),
-                List.of(),
                 List.of()
         );
 
@@ -70,7 +68,7 @@ public class LLMContextTests {
             JsonObject flightJson = JsonParser.parseString(flightJsonStr).getAsJsonObject();
             FactExtractor factExtractor = this.getFlightFactExtractor();
             context.build("flights", flightJson.toString(), factExtractor,
-                    null, null, null, null);
+                    null, null);
         } catch (Exception e) {
             Console.log("exception", e.getMessage());
             invalidFormat = true;
@@ -101,8 +99,6 @@ public class LLMContextTests {
                 arrStr,
                 factExtractor,
                 relationshipProvider,
-                List.of(),
-                List.of(),
                 List.of()
         );
 

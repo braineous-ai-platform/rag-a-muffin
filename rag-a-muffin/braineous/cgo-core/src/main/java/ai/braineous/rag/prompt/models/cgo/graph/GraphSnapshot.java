@@ -7,6 +7,7 @@ import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
 import java.util.Collections;
+import java.util.List;
 import java.util.Map;
 
 public class GraphSnapshot implements GraphView {
@@ -80,5 +81,30 @@ public class GraphSnapshot implements GraphView {
         } catch (Exception e) {
             throw new RuntimeException("snapshot_hash_failed: " + e.getMessage(), e);
         }
+    }
+
+    public boolean doesFactExist(Fact fact){
+        if(fact == null){
+            return false;
+        }
+
+        String factId = fact.getId();
+        if(factId == null || factId.trim().length()==0){
+            return false;
+        }
+
+        if(!fact.getMode().equals("atomic")){
+            return false;
+        }
+
+        for(var entry: this.nodes.entrySet()){
+            Fact local = entry.getValue();
+            if(local.getId().trim().equals(factId)){
+                return true;
+            }
+        }
+
+
+        return false;
     }
 }

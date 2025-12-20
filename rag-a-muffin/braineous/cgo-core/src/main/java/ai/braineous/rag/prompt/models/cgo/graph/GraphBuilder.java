@@ -104,6 +104,10 @@ public class GraphBuilder {
         BindResult bindResult = new BindResult(true);
 
         ProposalContext ctx = new ProposalContext();
+        GraphSnapshot snapshot = this.snapshot();
+        ctx.setProposals(proposals);
+        ctx.setSnapshot(snapshot);
+        ctx.setValidator(validator);
 
         //use the proposal_monitor to validate
         ctx = this.proposalMonitor.receive(ctx);

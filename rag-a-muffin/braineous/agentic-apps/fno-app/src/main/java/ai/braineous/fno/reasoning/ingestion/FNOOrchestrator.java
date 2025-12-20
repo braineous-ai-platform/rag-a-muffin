@@ -21,8 +21,6 @@ public class FNOOrchestrator {
                     flightsJsonArray.toString(),
                     factExtractor,
             relationshipProvider,
-                    null,
-                    null,
                     null);
 
             // bridge to CGO
