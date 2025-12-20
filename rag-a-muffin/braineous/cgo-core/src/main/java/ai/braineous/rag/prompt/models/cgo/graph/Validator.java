@@ -9,7 +9,6 @@ public class Validator {
         if(input == null){
             return new BindResult(false);
         }
-
         BindResult bindResult = new BindResult(true);
 
         Fact from = input.getFrom();
@@ -50,50 +49,18 @@ public class Validator {
     }
 
     public boolean validateInsert(Fact fact){
-        if(fact == null){
-            return false;
-        }
-
-        String factId = fact.getId();
-        if(factId == null || factId.trim().length()==0){
-            return false;
-        }
-
-        if(!fact.getMode().equals("atomic")){
-            return false;
-        }
-
-        return true;
+        boolean isValid = this.isFactValid(fact);
+        return isValid;
     }
 
     public boolean validateDelete(Fact fact){
-        if(fact == null){
-            return false;
-        }
-
-        String factId = fact.getId();
-        if(factId == null || factId.trim().length()==0){
-            return false;
-        }
-
-        if(!fact.getMode().equals("atomic")){
-            return false;
-        }
-
-        return true;
+        boolean isValid = this.isFactValid(fact);
+        return isValid;
     }
 
     public boolean validateUpdate(GraphSnapshot snapshot, Fact fact){
-        if(fact == null || snapshot == null){
-            return false;
-        }
-
-        String factId = fact.getId();
-        if(factId == null || factId.trim().length()==0){
-            return false;
-        }
-
-        if(!fact.getMode().equals("atomic")){
+        boolean isValid = this.isFactValid(fact);
+        if(!isValid){
             return false;
         }
 
@@ -105,7 +72,45 @@ public class Validator {
     }
 
     public boolean validateRelationship(GraphSnapshot snapshot, Relationship relationship){
-        if(snapshot == null || relationship == null){
+        boolean isValid = this.isRelationshipValid(relationship);
+        if(!isValid || snapshot == null){
+            return false;
+        }
+
+        Fact from = relationship.getFrom();
+        Fact to = relationship.getTo();
+        //check if both nodes exists
+        boolean toExists = snapshot.doesFactExist(to);
+        boolean fromExists = snapshot.doesFactExist(from);
+
+        if(!toExists || !fromExists)
+        {
+            return false;
+        }
+
+        return true;
+    }
+
+    //-------------------------------------------------------------------------
+    private boolean isFactValid(Fact fact){
+        if(fact == null){
+            return false;
+        }
+
+        String factId = fact.getId();
+        if(factId == null || factId.trim().length()==0){
+            return false;
+        }
+
+        if(!fact.getMode().equals("atomic")){
+            return false;
+        }
+
+        return true;
+    }
+
+    private boolean isRelationshipValid(Relationship relationship){
+        if(relationship == null){
             return false;
         }
 
@@ -142,16 +147,6 @@ public class Validator {
         if(!edgeMode.equals("relational")){
             return false;
         }
-
-        //check if both nodes exists
-        boolean toExists = snapshot.doesFactExist(to);
-        boolean fromExists = snapshot.doesFactExist(from);
-
-        if(!toExists || !fromExists)
-        {
-            return false;
-        }
-
         return true;
     }
 }

@@ -17,6 +17,7 @@ public class ProposalValidator {
         for(Proposal proposal: proposals){
             boolean assertion = this.validate(snapshot, ctx.getValidator(), proposal);
             assertions.add(assertion);
+            break;
         }
 
         result = !assertions.contains(false);
