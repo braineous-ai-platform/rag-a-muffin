@@ -44,6 +44,10 @@ public class Proposal {
         this.id = id;
     }
 
+    public String getId() {
+        return id;
+    }
+
     public Set<Fact> getInsert() {
         return insert;
     }
