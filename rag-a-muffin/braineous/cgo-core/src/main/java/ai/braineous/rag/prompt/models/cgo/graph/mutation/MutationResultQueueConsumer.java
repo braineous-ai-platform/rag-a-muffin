@@ -1,8 +1,10 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
-class MutationResultQueueConsumer {
+class MutationResultQueueConsumer implements QueueConsumer{
 
-    public void startConsuming(){
+
+    @Override
+    public void startConsuming() {
 
     }
 }

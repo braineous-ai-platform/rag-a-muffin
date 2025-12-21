@@ -5,7 +5,7 @@ import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
 import java.util.ArrayList;
 import java.util.List;
 
-class MutationResult {
+public class MutationResult {
     private String id;
 
     private String mutationEventId;
