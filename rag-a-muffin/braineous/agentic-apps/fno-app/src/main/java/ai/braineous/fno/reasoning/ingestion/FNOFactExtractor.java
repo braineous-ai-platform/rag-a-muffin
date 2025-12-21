@@ -110,7 +110,7 @@ public class FNOFactExtractor implements FactExtractor {
             JsonObject flightJson = new JsonObject();
             flightJson.addProperty("id", flightId);         // align JSON id with Fact id
             flightJson.addProperty("kind", "Flight");
-            flightJson.addProperty("mode", "relational");
+            flightJson.addProperty("mode", "atomic");
             flightJson.addProperty("from", srcAirportId);   // link to Airport IDs
             flightJson.addProperty("to", dstAirportId);
             flightJson.addProperty("dep_utc", depZ);
@@ -118,7 +118,7 @@ public class FNOFactExtractor implements FactExtractor {
 
             Console.log("flight", flightJson);
             Fact flightFact = new Fact(flightId, flightJson.toString());
-            flightFact.setMode("relational");
+            flightFact.setMode("atomic");
             facts.add(flightFact);
         }
 
