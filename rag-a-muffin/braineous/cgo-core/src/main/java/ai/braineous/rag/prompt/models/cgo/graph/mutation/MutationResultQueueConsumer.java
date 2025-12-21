@@ -1,11 +1,23 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
-class MutationResultQueueConsumer implements QueueListener{
+import ai.braineous.rag.prompt.observe.Console;
 
+class MutationResultQueueConsumer implements QueueListener{
+    private static MutationResultQueueConsumer consumer = new MutationResultQueueConsumer();
+
+    private MutationResultQueueConsumer() {
+    }
+
+    static MutationResultQueueConsumer getInstance(){
+        return consumer;
+    }
 
     @Override
     public void signal() {
         //consume mutation_result from mutation_result_queue
+        MutationResultQueue queue = MutationOrchestrator.getInstance().getResultQueue();
+        MutationResult result = queue.dequeueOne();
+        Console.log("result_received", result);
 
         //any_processing
 

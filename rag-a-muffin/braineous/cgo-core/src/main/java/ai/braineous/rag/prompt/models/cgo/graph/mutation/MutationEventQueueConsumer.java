@@ -21,7 +21,12 @@ class MutationEventQueueConsumer implements QueueListener{
         Console.log("event_received", event);
 
         //derive a mutation_result
+        MutationResult result = new MutationResult();
+        result.setMutationEventId(event.getId());
+
 
         //submit a mutation_result to mutation_result_queue
+        MutationResultQueue resultQueue = MutationOrchestrator.getInstance().getResultQueue();
+        resultQueue.enqueue(result);
     }
 }

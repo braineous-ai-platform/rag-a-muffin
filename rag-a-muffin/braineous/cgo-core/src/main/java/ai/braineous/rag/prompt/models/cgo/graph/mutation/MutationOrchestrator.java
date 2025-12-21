@@ -8,6 +8,7 @@ public class MutationOrchestrator {
     private static MutationOrchestrator orch = new MutationOrchestrator();
 
     private MutationEventQueue eventQueue = MutationEventQueueImpl.getInstance();
+    private MutationResultQueue resultQueue = MutationResultQueueImpl.getInstance();
 
     private MutationOrchestrator(){
 
@@ -19,6 +20,10 @@ public class MutationOrchestrator {
 
     public MutationEventQueue getEventQueue() {
         return eventQueue;
+    }
+
+    public MutationResultQueue getResultQueue() {
+        return resultQueue;
     }
 
     public ProposalCommitListener orchestrate(Set<Proposal> proposals){

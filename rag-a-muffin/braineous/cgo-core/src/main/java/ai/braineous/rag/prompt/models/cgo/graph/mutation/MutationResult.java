@@ -50,6 +50,7 @@ public class MutationResult {
     public String toString() {
         return "MutationResult{" +
                 "id='" + id + '\'' +
+                ", mutationEventId='" + mutationEventId + '\'' +
                 ", accepted=" + accepted +
                 ", rejected=" + rejected +
                 '}';
