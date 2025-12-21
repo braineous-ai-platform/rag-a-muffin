@@ -7,9 +7,7 @@ import java.util.List;
 //callbacks to the async caller (GraphBuilder)
 public interface ProposalCommitListener {
 
-    public List<Proposal> committed();
-
-    public List<Proposal> rejected();
+    public MutationResult result();
 
     public boolean ack();
 }

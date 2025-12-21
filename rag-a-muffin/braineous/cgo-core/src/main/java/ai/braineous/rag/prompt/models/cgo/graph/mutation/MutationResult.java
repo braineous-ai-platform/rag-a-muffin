@@ -8,6 +8,8 @@ import java.util.List;
 class MutationResult {
     private String id;
 
+    private String mutationEventId;
+
     private List<Proposal> accepted = new ArrayList<>();
 
     private List<Proposal> rejected = new ArrayList<>();
@@ -34,6 +36,14 @@ class MutationResult {
 
     public void setRejected(List<Proposal> rejected) {
         this.rejected = rejected;
+    }
+
+    public String getMutationEventId() {
+        return mutationEventId;
+    }
+
+    public void setMutationEventId(String mutationEventId) {
+        this.mutationEventId = mutationEventId;
     }
 
     @Override
