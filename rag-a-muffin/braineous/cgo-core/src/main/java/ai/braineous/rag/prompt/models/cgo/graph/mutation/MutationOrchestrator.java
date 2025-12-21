@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import ai.braineous.rag.prompt.observe.Console;
 
 import java.util.Set;
 
@@ -38,7 +39,7 @@ public class MutationOrchestrator {
         return null;
     }
 
-    MutationResult receiveResultCallback(MutationResult mutationResult){
-        return null;
+    void receiveResultCallback(MutationResult mutationResult){
+        Console.log("returned_result", mutationResult);
     }
 }

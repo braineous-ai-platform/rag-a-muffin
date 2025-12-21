@@ -22,5 +22,6 @@ class MutationResultQueueConsumer implements QueueListener{
         //any_processing
 
         //submit a mutation_result to mutation_orchestrator
+        MutationOrchestrator.getInstance().receiveResultCallback(result);
     }
 }
