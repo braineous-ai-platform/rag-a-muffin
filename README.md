@@ -251,6 +251,6 @@ CGO Alpha2 contains:
 # **License & Contributions**
 
 Apache 2.0  
-Maintainer: Sohil Shah (@braineous-ai-platform)
+Maintainer: Sohil Shah (@braineous-engineering)
 
 Contributions, issues, and discussions are welcome.
