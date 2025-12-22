@@ -58,13 +58,15 @@ Start with runnable examples before reading deeper documentation.
 
 If you are new:
 
-1. **FNO application (runnable)**
+1. **[FNO application (runnable)](./rag-a-muffin/braineous/agentic-apps/fno-app/README.md)**
 
    - Start with the FNO module.
+   - After cloning the repo, from the project root:
+     `cd rag-a-muffin/braineous/agentic-apps/fno-app`
    - Run `run.sh`, then `smoke.sh`.
-   - Observe how data becomes a graph, how queries run, and how results are observed.
+   - Observe how data is ingested into a graph, how queries execute, and how results are observed.
 
-   This gives you a concrete mental model before any abstractions.
+   This provides a concrete mental model before diving into any abstractions.
 
 2. **[Chapter A — API Integration](./docs/A_API_Integration.md)**
 
