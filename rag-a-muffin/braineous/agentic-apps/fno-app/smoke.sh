@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # =================================================
-# CGO FNO v1 — smoke.sh
+# CGO FNO Alpha2 — smoke.sh
 # - macOS OOB (no python, no jq)
 # - Contract: INGEST -> QUERY -> OBSERVE
 # - Modes:
@@ -34,7 +34,7 @@ log() { if [[ "$QUIET" != "1" ]]; then echo "$@"; fi; }
 hr()  { if [[ "$QUIET" != "1" ]]; then echo "$@"; fi; }
 
 hr "================================================="
-hr " CGO FNO v1 — smoke.sh ($( [[ "$QUIET" == "1" ]] && echo "QUIET" || echo "DEV VERBOSE" ))"
+hr " CGO FNO Alpha2 — smoke.sh ($( [[ "$QUIET" == "1" ]] && echo "QUIET" || echo "DEV VERBOSE" ))"
 hr " BASE_URL=$BASE_URL"
 hr "================================================="
 

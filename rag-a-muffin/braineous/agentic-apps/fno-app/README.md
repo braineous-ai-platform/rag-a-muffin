@@ -31,9 +31,10 @@ This executes a complete black-box flow:
 - data ingestion
 - graph substrate construction
 - query execution
-- history and scoring observation
+- history observation (why_snapshot aggregates)
 
 ---
+
 ## Developer flow (high level)
 
 FNO exposes CGO through three observable phases.
@@ -149,7 +150,7 @@ start with **Chapter A — API Integration**, which explains:
 - Facts, Relationships, Rulepacks, and GraphView
 - how applications submit data and consume results
 
-👉 [Chapter A — API Integration](../../../../docs/A_API_Integration.md)
+👉 👉 See [**_CGO Documentation — Chapter A (API Integration)_** in the repository root README](../../../../README.md).
 
 Run it first.
 Then explore the code.
