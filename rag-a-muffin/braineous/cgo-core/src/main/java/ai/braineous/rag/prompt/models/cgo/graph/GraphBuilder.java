@@ -10,17 +10,27 @@ import java.util.Map;
 import java.util.Set;
 
 public class GraphBuilder {
-    private final Validator validator;
+    private static GraphBuilder graphBuilder = new GraphBuilder();
 
-    private final ProposalMonitor proposalMonitor;
+    private final Validator validator = Validator.getInstance();
+
+    private final ProposalMonitor proposalMonitor = ProposalMonitor.getInstance();
 
     // internal mutable state
     private final Map<String, Fact> nodes = new HashMap<>(); // atomic
     private final Map<String, Edge> edges = new HashMap<>(); // relational
 
-    public GraphBuilder(Validator validator, ProposalMonitor proposalMonitor) {
-        this.validator = validator;
-        this.proposalMonitor = proposalMonitor;
+    private GraphBuilder(){
+
+    }
+
+    public static GraphBuilder getInstance(){
+        return GraphBuilder.graphBuilder;
+    }
+
+    public void clear(){
+        this.nodes.clear();
+        this.edges.clear();
     }
 
     /**
@@ -31,6 +41,13 @@ public class GraphBuilder {
         if (fact == null) {
             return;
         }
+
+        //TODO: activate once mutation queue and sync issues are establised
+        /*boolean isValid = Validator.getInstance().validateInsert(fact);
+        if(!isValid){
+            return;
+        }*/
+
         upsertNode(fact);
     }
 
@@ -39,12 +56,9 @@ public class GraphBuilder {
      * On failure, graph state is unchanged.
      */
     public BindResult bind(Input input, Rulepack rulepack) {
-        Fact from = input.getFrom();   // atomic
-        Fact to   = input.getTo();     // atomic
-        Fact edgeFact = input.getEdge(); // relational-as-Fact
-
-        //make the edge relational
-        edgeFact.setMode("relational");
+        if (input == null) {
+            return new BindResult(false);
+        }
 
         //substrate validation
         BindResult result = this.validateSubstrate(input);
@@ -52,9 +66,13 @@ public class GraphBuilder {
             return result;
         }
 
+        Fact from = input.getFrom();   // atomic
+        Fact to   = input.getTo();     // atomic
+        Fact edgeFact = input.getEdge(); // relational-as-Fact
+
         if(rulepack != null) {
             //execution_phase
-            Set<Proposal> proposals = this.execute(to, from, edgeFact, rulepack);
+            Set<Proposal> proposals = this.execute(rulepack);
 
             //proposal_phase
             BindResult proposalResult = this.validateStructure(proposals);
@@ -71,9 +89,17 @@ public class GraphBuilder {
 
     //---mutation phases ----------------------------------------
     private BindResult validateSubstrate(Input input){
+        if (input == null) {
+            return new BindResult(false);
+        }
+
         Fact from = input.getFrom();   // atomic
         Fact to   = input.getTo();     // atomic
         Fact edgeFact = input.getEdge(); // relational-as-Fact
+
+        if(edgeFact == null){
+            return new BindResult(false);
+        }
 
         //make the edge relational
         edgeFact.setMode("relational");
@@ -92,7 +118,7 @@ public class GraphBuilder {
         return result;
     }
 
-    private Set<Proposal> execute(Fact from, Fact to, Fact edgeFact, Rulepack rulepack){
+    private Set<Proposal> execute(Rulepack rulepack){
         GraphView view = this.snapshot();
 
         Set<Proposal> proposals = rulepack.execute(view);
@@ -102,11 +128,21 @@ public class GraphBuilder {
 
     private BindResult validateStructure(Set<Proposal> proposals){
         BindResult bindResult = new BindResult(true);
+        if(proposals == null || proposals.isEmpty()){
+            return bindResult;
+        }
 
         ProposalContext ctx = new ProposalContext();
+        GraphSnapshot snapshot = this.snapshot();
+        ctx.setProposals(proposals);
+        ctx.setSnapshot(snapshot);
 
         //use the proposal_monitor to validate
         ctx = this.proposalMonitor.receive(ctx);
+        if(ctx == null){
+            bindResult.setOk(false);
+            return bindResult;
+        }
 
         bindResult.setOk(ctx.isValidationSuccess());
 

@@ -9,8 +9,10 @@ import java.util.Set;
 public class ProposalContext {
 
     private Set<Proposal> proposals = new HashSet<>();
-    private Set<FactValidatorRule> factValidatorRules = new HashSet<>();
-    private Set<RelationshipValidatorRule> relationshipValidatorRules = new HashSet<>();
+
+    private GraphSnapshot snapshot;
+
+
 
     private boolean validationSuccess;
 
@@ -22,21 +24,6 @@ public class ProposalContext {
         this.proposals = proposals;
     }
 
-    public Set<FactValidatorRule> getFactValidatorRules() {
-        return factValidatorRules;
-    }
-
-    public void setFactValidatorRules(Set<FactValidatorRule> factValidatorRules) {
-        this.factValidatorRules = factValidatorRules;
-    }
-
-    public Set<RelationshipValidatorRule> getRelationshipValidatorRules() {
-        return relationshipValidatorRules;
-    }
-
-    public void setRelationshipValidatorRules(Set<RelationshipValidatorRule> relationshipValidatorRules) {
-        this.relationshipValidatorRules = relationshipValidatorRules;
-    }
 
     public boolean isValidationSuccess() {
         return validationSuccess;
@@ -44,5 +31,13 @@ public class ProposalContext {
 
     public void setValidationSuccess(boolean validationSuccess) {
         this.validationSuccess = validationSuccess;
+    }
+
+    public GraphSnapshot getSnapshot() {
+        return snapshot;
+    }
+
+    public void setSnapshot(GraphSnapshot snapshot) {
+        this.snapshot = snapshot;
     }
 }

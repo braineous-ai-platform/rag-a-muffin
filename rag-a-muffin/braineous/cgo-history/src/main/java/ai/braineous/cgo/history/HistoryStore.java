@@ -4,11 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class HistoryStore {
-
+    private static HistoryStore store = new HistoryStore();
     private final List<HistoryRecord> records = new ArrayList<>();
 
-    public HistoryStore() {
+    private HistoryStore() {
     }
+
+    public static HistoryStore getInstance(){
+        return HistoryStore.store;
+    }
+    //---------------------------------------------------------
 
     public void addRecord(HistoryRecord record) {
         if (record == null) {
@@ -38,5 +43,9 @@ public class HistoryStore {
 
     public List<HistoryRecord> getAll(){
         return this.records;
+    }
+
+    public void clear(){
+        this.records.clear();
     }
 }

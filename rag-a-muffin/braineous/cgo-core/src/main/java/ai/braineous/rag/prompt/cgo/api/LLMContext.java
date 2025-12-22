@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.api;
 
+import ai.braineous.rag.prompt.models.cgo.graph.Rulepack;
 import ai.braineous.rag.prompt.services.cgo.causal.LLMFacts;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonParser;
@@ -17,18 +18,26 @@ public class LLMContext {
 
     public void build(String type, String jsonArrayStr,
             FactExtractor factExtractor,
-                      List<Relationship> relationships,
-                      List<FactValidatorRule> factValidatorRules,
-                      List<RelationshipValidatorRule> relationshipValidatorRules,
+                      RelationshipProvider relationshipProvider,
                       List<BusinessRule> businessRules) {
         this.validate(jsonArrayStr);
         try {
+            if(factExtractor == null){
+                return;
+            }
+
             List<Fact> facts = factExtractor.extract(jsonArrayStr);
+
+
+            List<Relationship> relationships = new ArrayList<>();
+            if(relationshipProvider != null){
+                relationships = relationshipProvider.provideRelationships(facts);
+            }
 
             LLMFacts llmFacts = new LLMFacts(jsonArrayStr, facts,
                     relationships,
-                    factValidatorRules,
-                    relationshipValidatorRules,
+                    List.of(),
+                    List.of(),
                     businessRules
             );
             context.put(type, llmFacts);
@@ -42,7 +51,10 @@ public class LLMContext {
 
         for (var entry : this.context.entrySet()) {
             LLMFacts llmFacts = entry.getValue();
-            facts.addAll(llmFacts.getFacts());
+            List<Fact> cour = llmFacts.getFacts();
+            if(cour != null) {
+                facts.addAll(cour);
+            }
         }
 
         return facts;
@@ -53,10 +65,30 @@ public class LLMContext {
 
         for (var entry : this.context.entrySet()) {
             LLMFacts llmFacts = entry.getValue();
-            relationships.addAll(llmFacts.getRelationships());
+            List<Relationship> cour = llmFacts.getRelationships();
+            if(cour != null) {
+                relationships.addAll(cour);
+            }
         }
 
         return relationships;
+    }
+
+    public Rulepack getRulepack(){
+        Rulepack rulepack = new Rulepack();
+
+        List<BusinessRule> rules = new ArrayList<>();
+        for (var entry : this.context.entrySet()) {
+            LLMFacts llmFacts = entry.getValue();
+            List<BusinessRule> cour = llmFacts.getBusinessRules();
+            if(cour != null) {
+                rules.addAll(cour);
+            }
+        }
+
+        rulepack.setRules(rules);
+
+        return rulepack;
     }
 
     private void validate(String jsonArrayStr) {

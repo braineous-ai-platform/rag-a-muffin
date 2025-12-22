@@ -125,6 +125,44 @@ public final class QueryExecution<T extends QueryTask> {
     public boolean hasValidationResult() {
         return hasLlmResponseValidation();
     }
+
+    //--------------------------------------------------------
+    public boolean isOk() {
+        return (promptValidation == null || promptValidation.isOk())
+                && (llmResponseValidation == null || llmResponseValidation.isOk())
+                && (domainValidation == null || domainValidation.isOk());
+    }
+
+    public String getStage() {
+        if (promptValidation != null && !promptValidation.isOk()) return "prompt_contract";
+        if (llmResponseValidation != null && !llmResponseValidation.isOk()) return "llm_response";
+        if (domainValidation != null && !domainValidation.isOk()) return "domain";
+        return "ok";
+    }
+
+    public String getStatus() {
+        return isOk() ? "OK" : "ERROR";
+    }
+
+    public ValidationResult getPrimaryValidation() {
+        if (promptValidation != null && !promptValidation.isOk()) return promptValidation;
+        if (llmResponseValidation != null && !llmResponseValidation.isOk()) return llmResponseValidation;
+        if (domainValidation != null && !domainValidation.isOk()) return domainValidation;
+        return null;
+    }
+    //---------------------------------------------------------
+    @Override
+    public String toString() {
+        return "QueryExecution{" +
+                "status=" + getStatus() +
+                ", stage=" + getStage() +
+                ", request=" + request +
+                ", rawResponse='" + rawResponse + '\'' +
+                ", promptValidation=" + promptValidation +
+                ", llmResponseValidation=" + llmResponseValidation +
+                ", domainValidation=" + domainValidation +
+                '}';
+    }
 }
 
 

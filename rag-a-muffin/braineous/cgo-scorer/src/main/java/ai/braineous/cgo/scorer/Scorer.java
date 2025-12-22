@@ -3,6 +3,7 @@ package ai.braineous.cgo.scorer;
 import ai.braineous.cgo.history.ScorerResult;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import ai.braineous.rag.prompt.observe.Console;
 
 public class Scorer {
 
@@ -25,11 +26,11 @@ public class Scorer {
     private ScorerResult calculateResult(QueryExecution execution){
         ScorerResult result = new ScorerResult();
 
-        ValidationResult prompt = execution.getPromptValidation();
+       ValidationResult prompt = execution.getPromptValidation();
         ValidationResult llm = execution.getLlmResponseValidation();
         ValidationResult domain = execution.getDomainValidation();
 
-        if(prompt == null || llm == null || domain == null){
+        if(prompt == null || llm == null){
             result.setScore(0.0d);
             return result;
         }
@@ -47,7 +48,7 @@ public class Scorer {
         }
 
         //domain failed, 0.66
-        if(!domain.isOk()){
+        if(domain != null && !domain.isOk()){
             result.setScore(0.66d);
             return result;
         }

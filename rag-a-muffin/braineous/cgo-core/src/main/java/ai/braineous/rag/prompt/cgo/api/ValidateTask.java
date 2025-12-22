@@ -2,6 +2,7 @@ package ai.braineous.rag.prompt.cgo.api;
 
 
 import ai.braineous.rag.prompt.cgo.query.QueryTask;
+import com.google.gson.JsonObject;
 
 /**
  * Domain-specific request payload for validate_flight_airports.
@@ -24,5 +25,30 @@ public final class ValidateTask implements QueryTask {
 
     public String getFactId() {
         return factId;
+    }
+
+    public static ValidateTask fromJson(JsonObject jsonObject) {
+
+        if (jsonObject == null) {
+            return null;
+        }
+
+        String description = jsonObject.has("description")
+                ? jsonObject.get("description").getAsString()
+                : null;
+
+        String factId = jsonObject.has("factId")
+                ? jsonObject.get("factId").getAsString()
+                : null;
+
+        return new ValidateTask(description, factId);
+    }
+
+    @Override
+    public String toString() {
+        return "ValidateTask{" +
+                "description='" + description + '\'' +
+                ", factId='" + factId + '\'' +
+                '}';
     }
 }

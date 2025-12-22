@@ -1,17 +1,12 @@
 package ai.braineous.cgo.llm;
 
+import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import com.google.gson.JsonObject;
 
 public class LlmClientOrchestrator implements LlmClient {
-    private final LlmAdapter adapter;
 
     public LlmClientOrchestrator() {
-        this.adapter = new OpenAILlmAdapter();
-    }
-
-    public LlmClientOrchestrator(LlmAdapter adapter) {
-        this.adapter = adapter;
     }
 
     /**
@@ -21,11 +16,10 @@ public class LlmClientOrchestrator implements LlmClient {
      * @param prompt
      */
     @Override
-    public String executePrompt(JsonObject prompt) {
-        if(prompt == null){
+    public String executePrompt(LlmAdapter adapter, JsonObject prompt) {
+        if(prompt == null || adapter == null){
             return "";
         }
-
-        return this.adapter.invokeLlm(prompt);
+        return adapter.invokeLlm(prompt);
     }
 }

@@ -1,5 +1,7 @@
 package ai.braineous.cgo.observer;
 
+import com.google.gson.JsonObject;
+
 import java.util.Objects;
 
 public final class WhySnapshot {
@@ -54,5 +56,24 @@ public final class WhySnapshot {
     @Override
     public int hashCode() {
         return Objects.hash(totalEvents, lastScore, averageScore);
+    }
+
+    public JsonObject toJson() {
+        JsonObject json = new JsonObject();
+        json.addProperty("totalEvents", totalEvents);
+
+        if (lastScore != null) {
+            json.addProperty("lastScore", lastScore);
+        } else {
+            json.add("lastScore", null);
+        }
+
+        if (averageScore != null) {
+            json.addProperty("averageScore", averageScore);
+        } else {
+            json.add("averageScore", null);
+        }
+
+        return json;
     }
 }

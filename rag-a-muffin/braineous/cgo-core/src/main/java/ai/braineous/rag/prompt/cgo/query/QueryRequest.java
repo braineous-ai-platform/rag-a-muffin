@@ -3,6 +3,7 @@ package ai.braineous.rag.prompt.cgo.query;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
+import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 
 import java.util.Objects;
 
@@ -19,6 +20,8 @@ public final class QueryRequest<T extends QueryTask> {
     private final T task;
 
     private LLMResponseValidatorRule rule;
+
+    private LlmAdapter adapter;
 
     public QueryRequest(Meta meta, GraphContext context, T task) {
         this.meta = Objects.requireNonNull(meta, "meta must not be null");
@@ -47,6 +50,26 @@ public final class QueryRequest<T extends QueryTask> {
 
     public LLMResponseValidatorRule getRule() {
         return rule;
+    }
+
+    public LlmAdapter getAdapter() {
+        return adapter;
+    }
+
+    public void setAdapter(LlmAdapter adapter) {
+        this.adapter = adapter;
+    }
+
+    @Override
+    public String toString() {
+        String adapterType = (adapter == null) ? "null" : adapter.getClass().getSimpleName();
+        return "QueryRequest{" +
+                "meta=" + meta +
+                ", context=" + context +
+                ", task=" + task +
+                ", rule=" + rule +
+                ", adapterType=" + adapterType +
+                '}';
     }
 }
 

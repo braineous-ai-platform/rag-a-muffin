@@ -1,3 +1,4 @@
 {
-  "llm_client": "ai.braineous.cgo.llm.LlmClientOrchestrator"
+  "llm_client": "ai.braineous.cgo.llm.LlmClientOrchestrator",
+  "scorer": "ai.braineous.cgo.scorer.ScoreOrchestrator"
 }

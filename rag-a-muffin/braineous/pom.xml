@@ -16,6 +16,7 @@
         <module>cgo-observer</module>
         <module>cgo-llm</module>
         <module>cgo-history</module>
+        <module>cgo-test-suite</module>
         <module>cloud</module>
         <module>agentic-apps</module>
     </modules>
