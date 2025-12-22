@@ -1,43 +1,222 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-BASE="http://127.0.0.1:8080"
-HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# =================================================
+# CGO FNO v1 — smoke.sh
+# - macOS OOB (no python, no jq)
+# - Contract: INGEST -> QUERY -> OBSERVE
+# - Modes:
+#     default: DEV VERBOSE (prints request/response bodies)
+#     QUIET=1: minimal output (CI-friendly)
+# - Overrides:
+#     BASE_URL=http://127.0.0.1:8080  (default)
+#     PORT=8080                       (optional)
+# =================================================
 
-FLIGHTS_JSON="${HERE}/flights.json"
+QUIET="${QUIET:-0}"
+BASE_URL="${BASE_URL:-http://127.0.0.1:8080}"
+PORT="${PORT:-}"
 
-echo "0) PRECHECK: flights.json"
-test -f "$FLIGHTS_JSON" || { echo "Missing: $FLIGHTS_JSON" >&2; exit 1; }
-echo "   using: $FLIGHTS_JSON"
-echo
+if [[ -n "$PORT" ]]; then
+  # If user sets PORT, replace any trailing :<digits> or append if missing.
+  if [[ "$BASE_URL" =~ :[0-9]+$ ]]; then
+    BASE_URL="${BASE_URL%:*}:$PORT"
+  else
+    BASE_URL="$BASE_URL:$PORT"
+  fi
+fi
 
-echo "1) INGEST (file payload)"
-curl -s -i -X POST "$BASE/fno/ingest" \
-  -H 'Content-Type: application/json' \
-  --data-binary "@${FLIGHTS_JSON}"
-echo
-echo
+INGEST_URL="$BASE_URL/fno/ingest"
+QUERY_URL="$BASE_URL/fno/query"
+OBSERVE_URL="$BASE_URL/fno/observe?queryKind=validate_task"
 
-echo "2) QUERY"
-curl -s -i -X POST "$BASE/fno/query" \
-  -H 'Content-Type: application/json' \
-  -d '{
-    "meta": {
-      "version": "v1",
-      "query_kind": "validate_task",
-      "description": "smoke: validate ingested graph"
-    },
-    "task": {
-      "description": "validate Flight:F102 exists post-ingest",
-      "factId": "Flight:F102"
-    },
-    "context": {
-      "nodes": {}
-    }
-  }'
-echo
-echo
+log() { if [[ "$QUIET" != "1" ]]; then echo "$@"; fi; }
+hr()  { if [[ "$QUIET" != "1" ]]; then echo "$@"; fi; }
 
-echo "3) OBSERVE"
-curl -s -i "$BASE/fno/observe?queryKind=validate_task"
-echo
+hr "================================================="
+hr " CGO FNO v1 — smoke.sh ($( [[ "$QUIET" == "1" ]] && echo "QUIET" || echo "DEV VERBOSE" ))"
+hr " BASE_URL=$BASE_URL"
+hr "================================================="
+
+TMP_DIR="$(mktemp -d)"
+trap "rm -rf $TMP_DIR" EXIT
+
+log "[smoke] temp dir: $TMP_DIR"
+log
+
+# -------------------------------------------------
+# INGEST PAYLOAD (ARRAY CONTRACT)
+# -------------------------------------------------
+cat > "$TMP_DIR/flights.array.json" <<'EOF'
+[
+  {
+    "id": "F100",
+    "origin": "AUS",
+    "dest": "DFW",
+    "dep_utc": "2025-10-22T10:00:00Z",
+    "arr_utc": "2025-10-22T11:10:00Z"
+  },
+  {
+    "id": "F102",
+    "origin": "DFW",
+    "dest": "IAH",
+    "dep_utc": "2025-10-22T12:00:00Z",
+    "arr_utc": "2025-10-22T13:10:00Z"
+  }
+]
+EOF
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- INGEST REQUEST ----------------"
+  cat "$TMP_DIR/flights.array.json"
+  echo
+fi
+
+# -------------------------------------------------
+# 1) INGEST
+# -------------------------------------------------
+INGEST_RESP="$TMP_DIR/ingest.response.txt"
+
+HTTP_CODE=$(curl -s -w "%{http_code}" -o "$INGEST_RESP" \
+  -H "Content-Type: application/json" \
+  --data-binary @"$TMP_DIR/flights.array.json" \
+  "$INGEST_URL")
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- INGEST RESPONSE (HTTP $HTTP_CODE) ----------------"
+  cat "$INGEST_RESP"
+  echo
+fi
+
+if [[ "$HTTP_CODE" != "200" ]]; then
+  echo "❌ INGEST FAILED (HTTP $HTTP_CODE)"
+  cat "$INGEST_RESP"
+  exit 1
+fi
+
+grep -q "Flight:F100" "$INGEST_RESP" || { echo "❌ missing Flight:F100"; exit 1; }
+grep -q "Airport:AUS" "$INGEST_RESP" || { echo "❌ missing Airport:AUS"; exit 1; }
+
+log "✅ ingest + graph sanity OK"
+log
+
+# -------------------------------------------------
+# QUERY PAYLOAD
+# -------------------------------------------------
+cat > "$TMP_DIR/query.request.json" <<'EOF'
+{
+  "meta": {
+    "version": "v1",
+    "query_kind": "validate_task",
+    "description": "smoke: validate ingested graph"
+  },
+  "task": {
+    "description": "validate Flight:F102 exists post-ingest",
+    "factId": "Flight:F102"
+  },
+  "context": {
+    "nodes": {}
+  }
+}
+EOF
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- QUERY REQUEST ----------------"
+  cat "$TMP_DIR/query.request.json"
+  echo
+fi
+
+# -------------------------------------------------
+# 2) QUERY
+# -------------------------------------------------
+QUERY_RESP="$TMP_DIR/query.response.json"
+
+HTTP_CODE=$(curl -s -w "%{http_code}" -o "$QUERY_RESP" \
+  -H "Content-Type: application/json" \
+  -d @"$TMP_DIR/query.request.json" \
+  "$QUERY_URL")
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- QUERY RESPONSE (HTTP $HTTP_CODE) ----------------"
+  cat "$QUERY_RESP"
+  echo
+fi
+
+if [[ "$HTTP_CODE" != "200" ]]; then
+  echo "❌ QUERY FAILED (HTTP $HTTP_CODE)"
+  cat "$QUERY_RESP"
+  exit 1
+fi
+
+log "✅ query OK (history should now exist)"
+log
+
+# -------------------------------------------------
+# 3) OBSERVE
+# -------------------------------------------------
+OBSERVE_RESP="$TMP_DIR/observe.response.json"
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- OBSERVE REQUEST ----------------"
+  echo "GET $OBSERVE_URL"
+  echo
+fi
+
+HTTP_CODE=$(curl -s -w "%{http_code}" -o "$OBSERVE_RESP" "$OBSERVE_URL")
+
+# ensure file ends with newline (mac/BSD tooling stability)
+printf "\n" >> "$OBSERVE_RESP"
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "---------------- OBSERVE RESPONSE (HTTP $HTTP_CODE) ----------------"
+  cat "$OBSERVE_RESP"
+  echo
+fi
+
+if [[ "$HTTP_CODE" != "200" ]]; then
+  echo "❌ OBSERVE FAILED (HTTP $HTTP_CODE)"
+  cat "$OBSERVE_RESP"
+  exit 1
+fi
+
+# -------------------------------------------------
+# totalEvents > 0 check (mac-safe, no python/jq)
+# -------------------------------------------------
+TOTAL_EVENTS=$(
+  tr -d '\n' < "$OBSERVE_RESP" \
+  | grep -oE '"totalEvents":[[:space:]]*[0-9]+' \
+  | head -n 1 \
+  | grep -oE '[0-9]+'
+)
+
+log "[smoke] parsed totalEvents='$TOTAL_EVENTS'"
+
+if [[ -z "${TOTAL_EVENTS}" ]]; then
+  echo "❌ could not parse totalEvents from observe response"
+  cat "$OBSERVE_RESP"
+  exit 1
+fi
+
+if [[ "${TOTAL_EVENTS}" -le 0 ]]; then
+  echo "❌ observe has no events (totalEvents=$TOTAL_EVENTS)"
+  cat "$OBSERVE_RESP"
+  exit 1
+fi
+
+log "✅ observe OK (totalEvents=$TOTAL_EVENTS)"
+log
+
+if [[ "$QUIET" != "1" ]]; then
+  echo "================================================="
+  echo " 🎉 SMOKE PASSED — BLACKBOX CONTRACT DOCUMENTED"
+  echo "================================================="
+else
+  echo "SMOKE PASSED"
+fi
+
+
+
+
+
+
+
