@@ -14,6 +14,8 @@ public class MutationResult {
 
     private List<Proposal> rejected = new ArrayList<>();
 
+    private MutationResultListener resultListener;
+
     public String getId() {
         return id;
     }
@@ -44,6 +46,14 @@ public class MutationResult {
 
     public void setMutationEventId(String mutationEventId) {
         this.mutationEventId = mutationEventId;
+    }
+
+    public MutationResultListener getResultListener() {
+        return resultListener;
+    }
+
+    public void setResultListener(MutationResultListener resultListener) {
+        this.resultListener = resultListener;
     }
 
     @Override

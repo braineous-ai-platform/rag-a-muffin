@@ -16,7 +16,10 @@ public class MutationOrchestratorTests {
         Set<Proposal> proposals = new HashSet<>();
         MutationOrchestrator orch = MutationOrchestrator.getInstance();
 
-        orch.orchestrate(proposals);
-        orch.orchestrate(proposals);
+        MutationResultListener l1 = orch.orchestrate(proposals);
+        MutationResultListener l2 = orch.orchestrate(proposals);
+
+        Console.log("l1", l1.result());
+        Console.log("l2", l2.result());
     }
 }

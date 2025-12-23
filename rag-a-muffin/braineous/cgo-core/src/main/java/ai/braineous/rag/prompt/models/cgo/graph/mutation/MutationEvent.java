@@ -19,6 +19,8 @@ class MutationEvent {
 
     private final long createdAt; //epoch
 
+    private MutationResultListener resultListener;
+
     public MutationEvent() {
         long seq = MutationEvent.nextSeq();
         this.id = MutationEvent.nextEventId(seq);
@@ -47,6 +49,14 @@ class MutationEvent {
 
     public long getCreatedAt() {
         return createdAt;
+    }
+
+    public MutationResultListener getResultListener() {
+        return resultListener;
+    }
+
+    public void setResultListener(MutationResultListener resultListener) {
+        this.resultListener = resultListener;
     }
 
     @Override

@@ -17,11 +17,11 @@ class MutationResultQueueConsumer implements QueueListener{
         //consume mutation_result from mutation_result_queue
         MutationResultQueue queue = MutationOrchestrator.getInstance().getResultQueue();
         MutationResult result = queue.dequeueOne();
-        Console.log("result_received", result);
 
         //any_processing
 
         //submit a mutation_result to mutation_orchestrator
-        MutationOrchestrator.getInstance().receiveResultCallback(result);
+        MutationResultListenerImpl resultListener = (MutationResultListenerImpl) result.getResultListener();
+        resultListener.setMutationResult(result);
     }
 }
