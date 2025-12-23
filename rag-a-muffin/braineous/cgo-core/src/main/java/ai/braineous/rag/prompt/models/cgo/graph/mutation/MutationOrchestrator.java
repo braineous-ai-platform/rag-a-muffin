@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
 
 import java.util.Set;
 
@@ -26,13 +27,13 @@ public class MutationOrchestrator {
         return resultQueue;
     }
 
-    public MutationResultListener orchestrate(Set<Proposal> proposals){
-
+    public MutationResultListener orchestrate(SnapshotHash snapshotHash, Set<Proposal> proposals){
         MutationResultListener resultListener = new MutationResultListenerImpl();
 
         //create a mutation_event from proposals
         MutationEvent event = new MutationEvent();
         event.setProposals(proposals);
+        event.setSnapshotHash(snapshotHash);
         event.setResultListener(resultListener);
 
         //submit the event to mutation_event_queue

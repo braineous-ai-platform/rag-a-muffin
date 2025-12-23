@@ -1,11 +1,15 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class MutationResult {
+    // field init helper (thread-safe)
+    private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(0L);
     private String id;
 
     private String mutationEventId;
@@ -16,12 +20,13 @@ public class MutationResult {
 
     private MutationResultListener resultListener;
 
-    public String getId() {
-        return id;
+    public MutationResult() {
+        long seq = MutationResult.nextSeq();
+        this.id = MutationResult.nextEventId(seq);
     }
 
-    public void setId(String id) {
-        this.id = id;
+    public String getId() {
+        return id;
     }
 
     public List<Proposal> getAccepted() {
@@ -64,5 +69,37 @@ public class MutationResult {
                 ", accepted=" + accepted +
                 ", rejected=" + rejected +
                 '}';
+    }
+
+    public JsonObject toJson() {
+        com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+
+        json.addProperty("id", this.id);
+        json.addProperty("mutationEventId", this.mutationEventId);
+
+        com.google.gson.JsonArray accepted = new com.google.gson.JsonArray();
+        for (Proposal p : this.accepted) {
+            accepted.add(p.getId()); // or p.toJson() later if you want depth
+        }
+        json.add("accepted", accepted);
+
+        com.google.gson.JsonArray rejected = new com.google.gson.JsonArray();
+        for (Proposal p : this.rejected) {
+            rejected.add(p.getId()); // or p.toJson() later if you want depth
+        }
+        json.add("rejected", rejected);
+
+        return json;
+    }
+
+    // call inside constructor
+    private static long nextSeq() {
+        return EVENT_SEQ.incrementAndGet();
+    }
+
+    // call inside constructor
+    private static String nextEventId(long seq) {
+        // readable + sortable-ish (by seq)
+        return "MR-" + seq;
     }
 }
