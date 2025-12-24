@@ -8,6 +8,8 @@ import java.util.Map;
 import java.util.Set;
 
 public class Proposal {
+    private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(0L);
 
     // ------------ Identity / provenance ------------
 
@@ -38,6 +40,8 @@ public class Proposal {
 
 
     public Proposal() {
+        long seq = Proposal.nextSeq();
+        this.id = Proposal.nextEventId(seq);
     }
 
     public Proposal(String id) {
@@ -86,5 +90,16 @@ public class Proposal {
 
     public void setRulepack(Rulepack rulepack) {
         this.rulepack = rulepack;
+    }
+
+    // call inside constructor
+    private static long nextSeq() {
+        return EVENT_SEQ.incrementAndGet();
+    }
+
+    // call inside constructor
+    private static String nextEventId(long seq) {
+        // readable + sortable-ish (by seq)
+        return "ME-" + seq;
     }
 }
