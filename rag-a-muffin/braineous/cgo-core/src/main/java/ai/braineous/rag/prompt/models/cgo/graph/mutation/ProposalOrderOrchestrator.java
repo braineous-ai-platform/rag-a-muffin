@@ -2,10 +2,7 @@ package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 class ProposalOrderOrchestrator {
     private static ProposalOrderOrchestrator orch = new ProposalOrderOrchestrator();
@@ -18,7 +15,11 @@ class ProposalOrderOrchestrator {
     }
 
     public Map<String, List<Proposal>> prioritize(Set<Proposal> proposals){
-        //TODO: implement_this
-        return new HashMap<>();
+        Map<String, List<Proposal>> proposalMap = new HashMap<>();
+
+        proposalMap.put("accepted", new ArrayList<>());
+        proposalMap.put("rejected", new ArrayList<>());
+
+        return proposalMap;
     }
 }

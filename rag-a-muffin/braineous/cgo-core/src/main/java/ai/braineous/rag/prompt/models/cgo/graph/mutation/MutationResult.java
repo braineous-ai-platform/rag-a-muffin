@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
 import com.google.gson.JsonObject;
 
 import java.util.ArrayList;
@@ -19,6 +20,8 @@ public class MutationResult {
     private List<Proposal> rejected = new ArrayList<>();
 
     private MutationResultListener resultListener;
+
+    private SnapshotHash snapshotHash;
 
     public MutationResult() {
         long seq = MutationResult.nextSeq();
@@ -61,6 +64,14 @@ public class MutationResult {
         this.resultListener = resultListener;
     }
 
+    public SnapshotHash getSnapshotHash() {
+        return snapshotHash;
+    }
+
+    public void setSnapshotHash(SnapshotHash snapshotHash) {
+        this.snapshotHash = snapshotHash;
+    }
+
     @Override
     public String toString() {
         return "MutationResult{" +
@@ -68,6 +79,7 @@ public class MutationResult {
                 ", mutationEventId='" + mutationEventId + '\'' +
                 ", accepted=" + accepted +
                 ", rejected=" + rejected +
+                ", snapshotHash=" + snapshotHash +
                 '}';
     }
 
@@ -75,6 +87,7 @@ public class MutationResult {
         com.google.gson.JsonObject json = new com.google.gson.JsonObject();
 
         json.addProperty("id", this.id);
+        json.addProperty("snapshotHash", this.snapshotHash.getValue());
         json.addProperty("mutationEventId", this.mutationEventId);
 
         com.google.gson.JsonArray accepted = new com.google.gson.JsonArray();
