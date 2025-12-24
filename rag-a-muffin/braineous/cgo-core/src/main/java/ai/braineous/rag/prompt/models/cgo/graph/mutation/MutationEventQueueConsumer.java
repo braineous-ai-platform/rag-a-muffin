@@ -26,7 +26,7 @@ class MutationEventQueueConsumer implements QueueListener{
 
         //ProposalOrderOrchestrator
         ProposalOrderOrchestrator poch = ProposalOrderOrchestrator.getInstance();
-        Map<String, List<Proposal>> propMap = poch.prioritize(event.getProposals());
+        Map<String, List<Proposal>> propMap = poch.prioritize(event);
 
         //derive a mutation_result
         MutationResult result = new MutationResult();

@@ -16,9 +16,7 @@ public class GraphBuilder {
 
     private final ProposalMonitor proposalMonitor = ProposalMonitor.getInstance();
 
-    // internal mutable state
-    private final Map<String, Fact> nodes = new HashMap<>(); // atomic
-    private final Map<String, Edge> edges = new HashMap<>(); // relational
+    private final GraphStore store = GraphStoreImpl.getInstance();
 
     private GraphBuilder(){
 
@@ -29,8 +27,7 @@ public class GraphBuilder {
     }
 
     public void clear(){
-        this.nodes.clear();
-        this.edges.clear();
+        store.clear();
     }
 
     /**
@@ -48,7 +45,7 @@ public class GraphBuilder {
             return;
         }*/
 
-        upsertNode(fact);
+        store.upsertNode(fact);
     }
 
     /**
@@ -87,6 +84,10 @@ public class GraphBuilder {
         return result;
     }
 
+    public GraphSnapshot snapshot() {
+        return store.snapshot();
+    }
+
     //---mutation phases ----------------------------------------
     private BindResult validateSubstrate(Input input){
         if (input == null) {
@@ -110,7 +111,7 @@ public class GraphBuilder {
         }
 
         //make sure from and to exist
-        if(nodes.get(from.getId()) == null || nodes.get(to.getId()) == null){
+        if(store.nodes().get(from.getId()) == null || store.nodes().get(to.getId()) == null){
             result.setOk(false);
             return result;
         }
@@ -119,7 +120,7 @@ public class GraphBuilder {
     }
 
     private Set<Proposal> execute(Rulepack rulepack){
-        GraphView view = this.snapshot();
+        GraphView view = store.snapshot();
 
         Set<Proposal> proposals = rulepack.execute(view);
 
@@ -133,7 +134,7 @@ public class GraphBuilder {
         }
 
         ProposalContext ctx = new ProposalContext();
-        GraphSnapshot snapshot = this.snapshot();
+        GraphSnapshot snapshot = store.snapshot();
         ctx.setProposals(proposals);
         ctx.setSnapshot(snapshot);
 
@@ -150,94 +151,8 @@ public class GraphBuilder {
     }
 
     private void mutate(Fact from, Fact to, Fact edgeFact){
-        // upsert nodes
-        upsertNode(from);
-        upsertNode(to);
-
         // upsert edge
-        upsertEdge(from, to, edgeFact);
+        store.mutate(from, to, edgeFact);
     }
     //------------------------------------------------------------------
-
-    /**
-     * Build an immutable snapshot of the current graph state.
-     */
-    public GraphSnapshot snapshot() {
-        // copy to avoid external mutation
-        Map<String, Fact> nodeCopy = new HashMap<>(nodes);
-        Map<String, Edge> edgeCopy = new HashMap<>(edges);
-        return new GraphSnapshot(nodeCopy, edgeCopy);
-    }
-    // ---------- internal helpers ----------
-    private void upsertNode(Fact fact) {
-        if (fact == null || fact.getId() == null) {
-            return;
-        }
-
-        Fact existing = nodes.get(fact.getId());
-        if (existing == null) {
-            // make sure attributes is non-null
-            if (fact.getAttributes() == null) {
-                fact.setAttributes(new HashSet<>());
-            }
-            nodes.put(fact.getId(), fact);
-        } else {
-            // merge attributes, keep id/text/mode from existing or new as you prefer
-            mergeAttributes(existing, fact);
-        }
-    }
-
-    /**
-     * Merge attributes from 'incoming' into 'target'.
-     * Id/mode/text stay as-is on the target.
-     */
-    private void mergeAttributes(Fact target, Fact incoming) {
-        if (incoming.getAttributes() == null) {
-            return;
-        }
-        if (target.getAttributes() == null) {
-            target.setAttributes(new HashSet<>());
-        }
-        target.getAttributes().addAll(incoming.getAttributes());
-    }
-
-    /**
-     * Convert a relational Fact into an Edge view.
-     */
-    private Edge toEdge(Fact from, Fact to, Fact edgeFact) {
-        Edge edge = new Edge();
-        edge.setId(edgeFact.getId());
-        edge.setText(edgeFact.getText());
-        edge.setMode(edgeFact.getMode());
-
-        // copy attributes defensively
-        Set<String> attrs = edgeFact.getAttributes();
-        if (attrs != null) {
-            edge.setAttributes(new HashSet<>(attrs));
-        }
-
-        edge.setFromFactId(from.getId());
-        edge.setToFactId(to.getId());
-
-        // default score; you can tune later
-        edge.setScore(1.0);
-
-        return edge;
-    }
-
-    private void upsertEdge(Fact from, Fact to, Fact edgeFact) {
-        if (edgeFact == null || edgeFact.getId() == null) {
-            return;
-        }
-
-        Edge existing = edges.get(edgeFact.getId());
-        if (existing == null) {
-            Edge edge = toEdge(from, to, edgeFact);
-            edges.put(edge.getId(), edge);
-        } else {
-            // merge attributes & maybe score later
-            mergeAttributes(existing, edgeFact);
-            // keep from/to as originally set; or assert they match
-        }
-    }
 }
