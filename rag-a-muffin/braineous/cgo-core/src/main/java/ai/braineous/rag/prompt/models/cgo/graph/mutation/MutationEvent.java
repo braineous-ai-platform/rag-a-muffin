@@ -7,7 +7,7 @@ import com.google.gson.JsonObject;
 import java.util.HashSet;
 import java.util.Set;
 
-class MutationEvent {
+public class MutationEvent {
     // field init helper (thread-safe)
     private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
             new java.util.concurrent.atomic.AtomicLong(0L);

@@ -50,18 +50,30 @@ public class GraphStoreImpl implements GraphStore{
         }
 
         Fact existing = nodes.get(fact.getId());
+
         if (existing == null) {
+            // defensive copy for attrs
             if (fact.getAttributes() != null) {
                 fact.setAttributes(new HashSet<>(fact.getAttributes()));
             } else {
                 fact.setAttributes(new HashSet<>());
             }
             nodes.put(fact.getId(), fact);
-        } else {
-            // merge attributes, keep id/text/mode from existing or new as you prefer
-            mergeAttributes(existing, fact);
+            return;
         }
+
+        // ✅ UPDATE semantics: overwrite payload if provided
+        if (fact.getText() != null) {
+            existing.setText(fact.getText());
+        }
+
+        // optional: if you want mode updates (usually keep stable)
+        // if (fact.getMode() != null) existing.setMode(fact.getMode());
+
+        // ✅ always merge attributes
+        mergeAttributes(existing, fact);
     }
+
 
     public void deleteNode(Fact fact){
         if (fact == null || fact.getId() == null) {

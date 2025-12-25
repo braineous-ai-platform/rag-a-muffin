@@ -72,6 +72,15 @@ public class MutationResult {
         this.snapshotHash = snapshotHash;
     }
 
+    public boolean isOk(){
+        //result is ok, if it does not have
+        //any rejections
+        if(this.rejected != null && !rejected.isEmpty()){
+            return false;
+        }
+        return true;
+    }
+
     @Override
     public String toString() {
         return "MutationResult{" +

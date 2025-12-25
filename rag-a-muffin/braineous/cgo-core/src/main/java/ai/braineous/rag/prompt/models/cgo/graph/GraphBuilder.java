@@ -1,12 +1,15 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.cgo.api.Edge;
+
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitOrchestrator;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitResult;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationOrchestrator;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationResult;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationResultListener;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class GraphBuilder {
@@ -17,6 +20,10 @@ public class GraphBuilder {
     private final ProposalMonitor proposalMonitor = ProposalMonitor.getInstance();
 
     private final GraphStore store = GraphStoreImpl.getInstance();
+
+    private final MutationOrchestrator mutationOrchestrator = MutationOrchestrator.getInstance();
+
+    private final CommitOrchestrator commitOrchestrator = CommitOrchestrator.getInstance();
 
     private GraphBuilder(){
 
@@ -57,38 +64,76 @@ public class GraphBuilder {
             return new BindResult(false);
         }
 
-        //substrate validation
-        BindResult result = this.validateSubstrate(input);
-        if (!result.isOk()) {
-            return result;
+        // substrate validation
+        BindResult substrate = this.validateSubstrate(input);
+        if (!substrate.isOk()) {
+            return substrate;
         }
 
-        Fact from = input.getFrom();   // atomic
-        Fact to   = input.getTo();     // atomic
-        Fact edgeFact = input.getEdge(); // relational-as-Fact
+        // 1️⃣ base proposal ALWAYS
+        Set<Proposal> proposals = new HashSet<>();
+        Proposal proposal = Proposal.from(input.getFrom(), input.getTo(), input.getEdge());
+        if(proposal != null) {
+            proposals.add(
+                proposal
+            );
+        }
 
-        if(rulepack != null) {
-            //execution_phase
-            Set<Proposal> proposals = this.execute(rulepack);
-
-            //proposal_phase
-            BindResult proposalResult = this.validateStructure(proposals);
-            if (!proposalResult.isOk()) {
-                return proposalResult;
+        // 2️⃣ rulepack is an overlay
+        if (rulepack != null) {
+            Set<Proposal> ruleProposals = this.execute(rulepack);
+            if (ruleProposals != null && !ruleProposals.isEmpty()) {
+                proposals.addAll(ruleProposals);
             }
         }
 
-        //mutate
-        this.mutate(from, to, edgeFact);
+        // 3️⃣ structural validation
+        BindResult structure = this.validateStructure(proposals);
+        if (!structure.isOk()) {
+            return structure;
+        }
 
-        return result;
+        // 4️⃣ mutation validation
+        MutationResult mr = this.validateMutation(proposals);
+        if (mr == null || !mr.isOk()) {
+            return new BindResult(false);
+        }
+
+        // 5️⃣ commit (single choke point)
+        CommitResult cr = this.commitMutation(mr);
+        if (cr == null || !cr.isOk()) {
+            return new BindResult(false);
+        }
+
+        return new BindResult(true);
     }
+
+
 
     public GraphSnapshot snapshot() {
         return store.snapshot();
     }
 
     //---mutation phases ----------------------------------------
+    private MutationResult validateMutation(Set<Proposal> proposals){
+        if(proposals == null || proposals.isEmpty()){
+            return null;
+        }
+
+        MutationResultListener listener = this.mutationOrchestrator.
+                orchestrate(store.snapshot().snapshotHash(), proposals);
+
+        return listener.result();
+    }
+
+
+    private CommitResult commitMutation(MutationResult mr){
+        CommitResult result = this.commitOrchestrator.orchestrate(mr);
+        return result;
+    }
+
+    //retry_next_component
+
     private BindResult validateSubstrate(Input input){
         if (input == null) {
             return new BindResult(false);
@@ -148,11 +193,6 @@ public class GraphBuilder {
         bindResult.setOk(ctx.isValidationSuccess());
 
         return bindResult;
-    }
-
-    private void mutate(Fact from, Fact to, Fact edgeFact){
-        // upsert edge
-        store.mutate(from, to, edgeFact);
     }
     //------------------------------------------------------------------
 }

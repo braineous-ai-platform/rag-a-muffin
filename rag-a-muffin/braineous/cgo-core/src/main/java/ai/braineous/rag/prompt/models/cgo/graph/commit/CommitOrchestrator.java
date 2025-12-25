@@ -12,6 +12,12 @@ import java.util.List;
 import java.util.Set;
 
 public class CommitOrchestrator {
+    private static final CommitOrchestrator orch = new CommitOrchestrator();
+
+
+    public static CommitOrchestrator getInstance(){
+        return orch;
+    }
 
     public CommitResult orchestrate(MutationResult result){
         if (result == null || result.getSnapshotHash() == null || result.getSnapshotHash().getValue() == null) {

@@ -1,9 +1,11 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.Relationship;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
@@ -46,6 +48,30 @@ public class Proposal {
 
     public Proposal(String id) {
         this.id = id;
+    }
+
+    public static Proposal from(Fact from, Fact to, Fact edge){
+        if(from == null || to == null || edge == null){
+            return null;
+        }
+        Proposal proposal = new Proposal();
+        Set<Fact> inserts = new HashSet<>();
+        Set<Fact> updates = new HashSet<>();
+        Set<Fact> deletes = new HashSet<>();
+
+        inserts.add(from);
+        inserts.add(to);
+
+        Set<Relationship> relationships = new HashSet<>();
+        Relationship relationship = new Relationship(from, to, edge);
+        relationships.add(relationship);
+
+        proposal.setInsert(inserts);
+        proposal.setUpdate(updates);
+        proposal.setDelete(deletes);
+        proposal.setEdges(relationships);
+
+        return proposal;
     }
 
     public String getId() {
