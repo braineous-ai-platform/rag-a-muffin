@@ -27,7 +27,7 @@ public class GraphBuilder {
     }
 
     public void clear(){
-        store.clear();
+        ((GraphStoreImpl)store).clear();
     }
 
     /**
@@ -111,7 +111,7 @@ public class GraphBuilder {
         }
 
         //make sure from and to exist
-        if(store.nodes().get(from.getId()) == null || store.nodes().get(to.getId()) == null){
+        if(store.snapshot().nodes().get(from.getId()) == null || store.snapshot().nodes().get(to.getId()) == null){
             result.setOk(false);
             return result;
         }
