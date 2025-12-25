@@ -7,14 +7,11 @@ import java.util.Map;
 
 public interface GraphStore {
 
-    public void clear();
     public void upsertNode(Fact fact);
 
-    public Map<String, Fact> nodes();
-
-    public Map<String, Edge> edges();
-
     public GraphSnapshot snapshot();
+
+    public void deleteNode(Fact fact);
 
     public void mutate(Fact from, Fact to, Fact edgeFact);
 }

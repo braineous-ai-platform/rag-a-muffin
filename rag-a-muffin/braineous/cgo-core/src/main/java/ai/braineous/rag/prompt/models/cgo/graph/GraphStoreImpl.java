@@ -6,7 +6,7 @@ import ai.braineous.rag.prompt.cgo.api.Fact;
 import java.util.*;
 
 public class GraphStoreImpl implements GraphStore{
-    private static GraphStoreImpl store = new GraphStoreImpl();
+    private static final GraphStoreImpl store = new GraphStoreImpl();
 
     private final Map<String, Fact> nodes = new HashMap<>(); // atomic
     private final Map<String, Edge> edges = new HashMap<>(); // relational
@@ -15,28 +15,31 @@ public class GraphStoreImpl implements GraphStore{
     }
 
     public static GraphStoreImpl getInstance(){
-        return GraphStoreImpl.store;
+        return store;
     }
     //---------------------------------------------------------
     /**
      * Build an immutable snapshot of the current graph state.
      */
     public GraphSnapshot snapshot() {
-        // copy to avoid external mutation
         Map<String, Fact> nodeCopy = new HashMap<>(nodes);
         Map<String, Edge> edgeCopy = new HashMap<>(edges);
-        return new GraphSnapshot(nodeCopy, edgeCopy);
+        return new GraphSnapshot(
+                java.util.Collections.unmodifiableMap(nodeCopy),
+                java.util.Collections.unmodifiableMap(edgeCopy)
+        );
     }
 
-    public Map<String, Fact> nodes() {
-        return nodes;
-    }
 
-    public Map<String, Edge> edges() {
-        return edges;
-    }
+    //public Map<String, Fact> nodes() {
+    //    return nodes;
+    //}
 
-    public void clear(){
+    //public Map<String, Edge> edges() {
+    //    return edges;
+    //}
+
+    void clear(){
         this.nodes.clear();
         this.edges.clear();
     }
@@ -48,8 +51,9 @@ public class GraphStoreImpl implements GraphStore{
 
         Fact existing = nodes.get(fact.getId());
         if (existing == null) {
-            // make sure attributes is non-null
-            if (fact.getAttributes() == null) {
+            if (fact.getAttributes() != null) {
+                fact.setAttributes(new HashSet<>(fact.getAttributes()));
+            } else {
                 fact.setAttributes(new HashSet<>());
             }
             nodes.put(fact.getId(), fact);
@@ -59,13 +63,40 @@ public class GraphStoreImpl implements GraphStore{
         }
     }
 
-    public void mutate(Fact from, Fact to, Fact edgeFact){
-        // upsert nodes
-        store.upsertNode(from);
-        store.upsertNode(to);
+    public void deleteNode(Fact fact){
+        if (fact == null || fact.getId() == null) {
+            return;
+        }
 
-        // upsert edge
-        store.upsertEdge(from, to, edgeFact);
+        //remove edges where this fact applies
+        Set<Edge> remove = new HashSet<>();
+        for (var entry : this.edges.entrySet()) {
+            Edge edge = entry.getValue();
+            if (edge == null) continue;
+
+            String fromId = edge.getFromFactId();
+            String toId = edge.getToFactId();
+
+            if (fact.getId().equals(fromId) || fact.getId().equals(toId)) {
+                remove.add(edge);
+            }
+        }
+        for(Edge edge: remove){
+            this.edges.remove(edge.getId());
+        }
+
+        nodes.remove(fact.getId());
+    }
+
+    public void mutate(Fact from, Fact to, Fact edgeFact){
+        if (from == null || from.getId() == null) return;
+        if (to == null || to.getId() == null) return;
+        if (edgeFact == null || edgeFact.getId() == null) return;
+
+        this.upsertNode(from);
+        this.upsertNode(to);
+        this.upsertEdge(from, to, edgeFact);
+
     }
     // ---------- internal helpers ----------
 
@@ -74,19 +105,24 @@ public class GraphStoreImpl implements GraphStore{
      * Id/mode/text stay as-is on the target.
      */
     private void mergeAttributes(Fact target, Fact incoming) {
-        if (incoming.getAttributes() == null) {
-            return;
-        }
+        if (target == null || incoming == null) return;
+        if (incoming.getAttributes() == null) return;
+
         if (target.getAttributes() == null) {
             target.setAttributes(new HashSet<>());
         }
         target.getAttributes().addAll(incoming.getAttributes());
     }
 
+
     /**
      * Convert a relational Fact into an Edge view.
      */
     private Edge toEdge(Fact from, Fact to, Fact edgeFact) {
+        if (from == null || from.getId() == null) return null;
+        if (to == null || to.getId() == null) return null;
+        if (edgeFact == null || edgeFact.getId() == null) return null;
+
         Edge edge = new Edge();
         edge.setId(edgeFact.getId());
         edge.setText(edgeFact.getText());
@@ -115,6 +151,7 @@ public class GraphStoreImpl implements GraphStore{
         Edge existing = edges.get(edgeFact.getId());
         if (existing == null) {
             Edge edge = toEdge(from, to, edgeFact);
+            if (edge == null) return;
             edges.put(edge.getId(), edge);
         } else {
             // merge attributes & maybe score later
