@@ -5,6 +5,8 @@ import ai.braineous.rag.prompt.models.cgo.graph.GraphStore;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphStoreImpl;
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
 import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitOrchestrator;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitResult;
 import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.Test;
 
@@ -270,6 +272,132 @@ public class MutationOrchestratorTests {
                 MutationOrchestrator.getInstance().orchestrate(h, java.util.Set.of(p));
 
         org.junit.jupiter.api.Assertions.assertNotNull(listener);
+    }
+
+    @Test
+    void mutation_then_commit_happy_path_applies_change() {
+        Console.log("test.start", "MutationOrchestrator+CommitOrchestrator.happy_path");
+
+        GraphStore store = GraphStoreImpl.getInstance();
+        String before = store.snapshot().snapshotHash().getValue();
+        Console.log("store.snapshotHash.before", before);
+
+        // Base snapshot for mutation
+        SnapshotHash h = store.snapshot().snapshotHash();
+
+        // Build one proposal that will change graph
+        Proposal p = new Proposal();
+        ensureProposalCollections(p);
+
+        String id = "Test:Node:MutationCommit:" + System.nanoTime();
+        Fact f = new Fact(id, "{ \"id\":\"" + id + "\", \"kind\":\"Test\" }");
+        f.setMode("atomic");
+        p.getInsert().add(f);
+
+        // Run mutation
+        MutationResultListener listener =
+                MutationOrchestrator.getInstance().orchestrate(h, java.util.Set.of(p));
+
+        assertNotNull(listener);
+        MutationResult mr = listener.result();
+        assertNotNull(mr);
+        assertNotNull(mr.getSnapshotHash());
+        assertNotNull(mr.getSnapshotHash().getValue());
+
+        Console.log("mutation.snapshotHash", mr.getSnapshotHash().getValue());
+        Console.log("mutation.accepted.size", String.valueOf(mr.getAccepted().size()));
+
+        // Commit mutation result
+        CommitResult cr = new CommitOrchestrator().orchestrate(mr);
+        Console.log("commit.ok", String.valueOf(cr.isOk()));
+
+        org.junit.jupiter.api.Assertions.assertTrue(cr.isOk(), "commit must succeed on fresh mutation result");
+
+        // Store must change (we inserted a new node id)
+        String after = store.snapshot().snapshotHash().getValue();
+        Console.log("store.snapshotHash.after", after);
+
+        org.junit.jupiter.api.Assertions.assertNotEquals(before.trim(), after.trim(), "snapshot must change after commit");
+        Console.log("test.pass", "MutationOrchestrator+CommitOrchestrator.happy_path");
+    }
+
+    /**
+     * This test verifies stale replay behavior across Mutation + Commit:
+     *
+     * Scenario:
+     * 1) Create MutationResult MR0 from snapshot S0 (fresh at that time)
+     * 2) Perform an intervening commit that advances the store to S1
+     * 3) Attempt to commit MR0 (still anchored to S0)
+     *
+     * Expected:
+     * - Intervening commit succeeds
+     * - MR0 commit is rejected with ok=false due to snapshot mismatch (stale proposal)
+     *
+     * Why this matters:
+     * - Proves optimistic concurrency safety across subsystems
+     * - Prevents lost updates when multiple mutations race
+     */
+    @Test
+    void mutation_result_becomes_stale_if_graph_changes_before_commit() {
+        Console.log("test.start", "Mutation+Commit.stale_after_intervening_commit");
+
+        GraphStore store = GraphStoreImpl.getInstance();
+        CommitOrchestrator commitOrch = new CommitOrchestrator();
+
+        // ---------- Build MR0 off snapshot S0 ----------
+        SnapshotHash s0 = store.snapshot().snapshotHash();
+        String h0 = s0.getValue();
+        Console.log("store.snapshotHash.S0", h0);
+
+        Proposal p0 = new Proposal();
+        ensureProposalCollections(p0);
+
+        String id0 = "Test:Node:Stale0:" + System.nanoTime();
+        Fact f0 = new Fact(id0, "{ \"id\":\"" + id0 + "\", \"kind\":\"Test\" }");
+        f0.setMode("atomic");
+        p0.getInsert().add(f0);
+
+        MutationResult mr0 =
+                MutationOrchestrator.getInstance()
+                        .orchestrate(s0, java.util.Set.of(p0))
+                        .result();
+
+        assertNotNull(mr0);
+        assertNotNull(mr0.getSnapshotHash());
+        assertEquals(h0, mr0.getSnapshotHash().getValue(), "mr0 must be anchored to S0");
+
+        Console.log("mr0.snapshotHash", mr0.getSnapshotHash().getValue());
+
+        // ---------- Intervening commit: mutate store to S1 ----------
+        SnapshotHash s0b = store.snapshot().snapshotHash(); // must match current store
+        Proposal p1 = new Proposal();
+        ensureProposalCollections(p1);
+
+        String id1 = "Test:Node:Intervene1:" + System.nanoTime();
+        Fact f1 = new Fact(id1, "{ \"id\":\"" + id1 + "\", \"kind\":\"Test\" }");
+        f1.setMode("atomic");
+        p1.getInsert().add(f1);
+
+        MutationResult mr1 =
+                MutationOrchestrator.getInstance()
+                        .orchestrate(s0b, java.util.Set.of(p1))
+                        .result();
+
+        CommitResult c1 = commitOrch.orchestrate(mr1);
+        Console.log("intervening.commit.ok", String.valueOf(c1.isOk()));
+        assertTrue(c1.isOk(), "intervening commit must succeed");
+
+        String h1 = store.snapshot().snapshotHash().getValue();
+        Console.log("store.snapshotHash.S1", h1);
+        assertNotEquals(h0.trim(), h1.trim(), "store must advance to S1 after intervening commit");
+
+        // ---------- Now attempt to commit MR0 (stale) ----------
+        CommitResult c0 = commitOrch.orchestrate(mr0);
+        Console.log("stale.commit.ok", String.valueOf(c0.isOk()));
+
+        assertFalse(c0.isOk(), "stale mutation result must be rejected");
+
+        Console.log("test.pass", "Mutation+Commit.stale_after_intervening_commit");
     }
 
 

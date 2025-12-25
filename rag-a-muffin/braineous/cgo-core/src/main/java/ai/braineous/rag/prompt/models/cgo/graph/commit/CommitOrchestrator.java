@@ -57,7 +57,7 @@ public class CommitOrchestrator {
             if (accepted == null || accepted.isEmpty()) return false;
             if (accepted.size() != 1) return false;
 
-            Proposal proposal = accepted.getFirst();
+            Proposal proposal = accepted.get(0);
             if (proposal == null) return false;
 
             Set<Fact> inserts = proposal.getInsert();
