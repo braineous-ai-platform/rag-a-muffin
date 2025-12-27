@@ -94,7 +94,7 @@ public class GraphBuilder {
         }
 
         // 4️⃣ mutation validation
-        MutationResult mr = this.validateMutation(proposals);
+        MutationResult mr = this.validateMutation(input, rulepack, proposals);
         if (mr == null || !mr.isOk()) {
             return new BindResult(false);
         }
@@ -115,13 +115,17 @@ public class GraphBuilder {
     }
 
     //---mutation phases ----------------------------------------
-    private MutationResult validateMutation(Set<Proposal> proposals){
+    private MutationResult validateMutation(Input input, Rulepack rulepack, Set<Proposal> proposals){
         if(proposals == null || proposals.isEmpty()){
             return null;
         }
 
         MutationResultListener listener = this.mutationOrchestrator.
-                orchestrate(store.snapshot().snapshotHash(), proposals);
+                orchestrate(
+                        store.snapshot().snapshotHash(),
+                        input,
+                        rulepack,
+                        proposals);
 
         return listener.result();
     }
@@ -131,8 +135,6 @@ public class GraphBuilder {
         CommitResult result = this.commitOrchestrator.orchestrate(mr);
         return result;
     }
-
-    //retry_next_component
 
     private BindResult validateSubstrate(Input input){
         if (input == null) {
@@ -168,6 +170,9 @@ public class GraphBuilder {
         GraphView view = store.snapshot();
 
         Set<Proposal> proposals = rulepack.execute(view);
+        for(Proposal proposal:proposals){
+            proposal.setRulepack(rulepack);
+        }
 
         return proposals;
     }

@@ -15,6 +15,9 @@ public class MutationResult {
 
     private String mutationEventId;
 
+    private MutationEvent event;
+
+
     private List<Proposal> accepted = new ArrayList<>();
 
     private List<Proposal> rejected = new ArrayList<>();
@@ -70,6 +73,14 @@ public class MutationResult {
 
     public void setSnapshotHash(SnapshotHash snapshotHash) {
         this.snapshotHash = snapshotHash;
+    }
+
+    public MutationEvent getEvent() {
+        return event;
+    }
+
+    public void setEvent(MutationEvent event) {
+        this.event = event;
     }
 
     public boolean isOk(){

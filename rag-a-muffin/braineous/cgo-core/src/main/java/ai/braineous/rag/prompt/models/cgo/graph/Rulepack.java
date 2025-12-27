@@ -11,6 +11,15 @@ import java.util.List;
 import java.util.Set;
 
 public class Rulepack {
+    private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(0L);
+
+    private final String id;
+
+    public Rulepack(){
+        long seq = nextSeq();
+        this.id = nextEventId(seq);
+    }
     private List<BusinessRule> rules = new ArrayList<>();
 
     public List<BusinessRule> getRules() {
@@ -44,5 +53,16 @@ public class Rulepack {
         }
 
         return proposals;
+    }
+
+    // call inside constructor
+    private static long nextSeq() {
+        return EVENT_SEQ.incrementAndGet();
+    }
+
+    // call inside constructor
+    private static String nextEventId(long seq) {
+        // readable + sortable-ish (by seq)
+        return "ME-" + seq;
     }
 }

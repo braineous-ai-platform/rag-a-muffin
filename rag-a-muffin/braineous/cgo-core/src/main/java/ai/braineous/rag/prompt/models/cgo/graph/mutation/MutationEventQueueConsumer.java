@@ -35,6 +35,7 @@ class MutationEventQueueConsumer implements QueueListener{
         result.setAccepted(propMap.get("accepted"));
         result.setRejected(propMap.get("rejected"));
         result.setSnapshotHash(event.getSnapshotHash());
+        result.setEvent(event);
 
 
         //submit a mutation_result to mutation_result_queue

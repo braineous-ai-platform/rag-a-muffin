@@ -16,8 +16,6 @@ public class Proposal {
     // ------------ Identity / provenance ------------
 
     private String id;             // UUID for this proposal
-    private String ruleId;         // which rule generated it (if any)
-    private String rulepackId;     // which rulepack / pipeline
     private ProposalSource source; // RULE / LLM / USER / SYSTEM
     private Rulepack rulepack;
 
@@ -42,8 +40,8 @@ public class Proposal {
 
 
     public Proposal() {
-        long seq = Proposal.nextSeq();
-        this.id = Proposal.nextEventId(seq);
+        long seq = nextSeq();
+        this.id = nextEventId(seq);
     }
 
     public Proposal(String id) {

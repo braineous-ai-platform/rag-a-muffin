@@ -1,6 +1,8 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
+import ai.braineous.rag.prompt.models.cgo.graph.Input;
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import ai.braineous.rag.prompt.models.cgo.graph.Rulepack;
 import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
 import com.google.gson.JsonObject;
 
@@ -13,6 +15,9 @@ public class MutationEvent {
             new java.util.concurrent.atomic.AtomicLong(0L);
 
     private final String id;
+
+    private Input input;
+    private Rulepack rulepack;
 
     private Set<Proposal> proposals = new HashSet<>();
 
@@ -60,13 +65,32 @@ public class MutationEvent {
         this.resultListener = resultListener;
     }
 
+    public Input getInput() {
+        return input;
+    }
+
+    public void setInput(Input input) {
+        this.input = input;
+    }
+
+    public Rulepack getRulepack() {
+        return rulepack;
+    }
+
+    public void setRulepack(Rulepack rulepack) {
+        this.rulepack = rulepack;
+    }
+
     @Override
     public String toString() {
         return "MutationEvent{" +
                 "id='" + id + '\'' +
+                ", input=" + input +
+                ", rulepack=" + rulepack +
                 ", proposals=" + proposals +
                 ", snapshotHash=" + snapshotHash +
                 ", createdAt=" + createdAt +
+                ", resultListener=" + resultListener +
                 '}';
     }
 

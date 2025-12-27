@@ -1,10 +1,7 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
-import ai.braineous.rag.prompt.models.cgo.graph.GraphStore;
-import ai.braineous.rag.prompt.models.cgo.graph.GraphStoreImpl;
-import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
-import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
+import ai.braineous.rag.prompt.models.cgo.graph.*;
 import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitOrchestrator;
 import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitResult;
 import ai.braineous.rag.prompt.observe.Console;
@@ -29,8 +26,8 @@ public class MutationOrchestratorTests {
         SnapshotHash s1 = new SnapshotHash("1");
         SnapshotHash s2 = new SnapshotHash("2");
 
-        MutationResultListener l1 = orch.orchestrate(s1, proposals);
-        MutationResultListener l2 = orch.orchestrate(s2, proposals);
+        MutationResultListener l1 = orch.orchestrate(s1, new Input(), new Rulepack(), proposals);
+        MutationResultListener l2 = orch.orchestrate(s2,new Input(), new Rulepack(), proposals);
 
         Console.log("l1", l1.result());
         Console.log("l2", l2.result());
@@ -42,7 +39,7 @@ public class MutationOrchestratorTests {
         MutationOrchestrator orch = MutationOrchestrator.getInstance();
 
         SnapshotHash s1 = new SnapshotHash("1");
-        MutationResultListener l1 = orch.orchestrate(s1, proposals);
+        MutationResultListener l1 = orch.orchestrate(s1, new Input(), new Rulepack(), proposals);
 
         assertNotNull(l1, "listener must not be null");
         assertNotNull(l1.result(), "listener.result() must not be null after orchestrate");
@@ -54,7 +51,7 @@ public class MutationOrchestratorTests {
         MutationOrchestrator orch = MutationOrchestrator.getInstance();
 
         SnapshotHash s1 = new SnapshotHash("1");
-        MutationResultListener l1 = orch.orchestrate(s1, proposals);
+        MutationResultListener l1 = orch.orchestrate(s1, new Input(), new Rulepack(), proposals);
 
         assertNotNull(l1.result());
         assertNotNull(l1.result().getSnapshotHash(), "result snapshot hash must not be null");
@@ -67,7 +64,7 @@ public class MutationOrchestratorTests {
         MutationOrchestrator orch = MutationOrchestrator.getInstance();
 
         SnapshotHash s1 = new SnapshotHash("1");
-        MutationResultListener l1 = orch.orchestrate(s1, proposals);
+        MutationResultListener l1 = orch.orchestrate(s1, new Input(), new Rulepack(), proposals);
 
         assertNotNull(l1.result());
         assertNotNull(l1.result().getAccepted(), "accepted must never be null");
@@ -79,8 +76,8 @@ public class MutationOrchestratorTests {
         Set<Proposal> proposals = new HashSet<>();
         MutationOrchestrator orch = MutationOrchestrator.getInstance();
 
-        MutationResultListener l1 = orch.orchestrate(new SnapshotHash("1"), proposals);
-        MutationResultListener l2 = orch.orchestrate(new SnapshotHash("2"), proposals);
+        MutationResultListener l1 = orch.orchestrate(new SnapshotHash("1"), new Input(), new Rulepack(), proposals);
+        MutationResultListener l2 = orch.orchestrate(new SnapshotHash("2"),new Input(), new Rulepack(),  proposals);
 
         assertNotNull(l1.result());
         assertNotNull(l2.result());
@@ -269,7 +266,7 @@ public class MutationOrchestratorTests {
         p.getInsert().add(f);
 
         MutationResultListener listener =
-                MutationOrchestrator.getInstance().orchestrate(h, java.util.Set.of(p));
+                MutationOrchestrator.getInstance().orchestrate(h, new Input(), new Rulepack(), java.util.Set.of(p));
 
         org.junit.jupiter.api.Assertions.assertNotNull(listener);
     }
@@ -296,7 +293,7 @@ public class MutationOrchestratorTests {
 
         // Run mutation
         MutationResultListener listener =
-                MutationOrchestrator.getInstance().orchestrate(h, java.util.Set.of(p));
+                MutationOrchestrator.getInstance().orchestrate(h, new Input(), new Rulepack(), java.util.Set.of(p));
 
         assertNotNull(listener);
         MutationResult mr = listener.result();
@@ -359,7 +356,7 @@ public class MutationOrchestratorTests {
 
         MutationResult mr0 =
                 MutationOrchestrator.getInstance()
-                        .orchestrate(s0, java.util.Set.of(p0))
+                        .orchestrate(s0, new Input(), new Rulepack(), java.util.Set.of(p0))
                         .result();
 
         assertNotNull(mr0);
@@ -380,7 +377,7 @@ public class MutationOrchestratorTests {
 
         MutationResult mr1 =
                 MutationOrchestrator.getInstance()
-                        .orchestrate(s0b, java.util.Set.of(p1))
+                        .orchestrate(s0b, new Input(), new Rulepack(), java.util.Set.of(p1))
                         .result();
 
         CommitResult c1 = commitOrch.orchestrate(mr1);
@@ -429,7 +426,7 @@ public class MutationOrchestratorTests {
 
         p.getInsert().add(f);
 
-        MutationOrchestrator.getInstance().orchestrate(h, java.util.Set.of(p));
+        MutationOrchestrator.getInstance().orchestrate(h,new Input(), new Rulepack(), java.util.Set.of(p));
     }
 
 
