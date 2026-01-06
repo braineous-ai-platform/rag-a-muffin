@@ -41,6 +41,11 @@ public class FileBackedConfigService implements ConfigService{
         return (v == null) ? null : v.trim();
     }
 
+    @Override
+    public void setProperty(String key, String value) {
+        this.props.setProperty(key, value);
+    }
+
     //----------------------------------------------------------------
     private boolean isSpecKey(String key){
         if(key == null) return false;
