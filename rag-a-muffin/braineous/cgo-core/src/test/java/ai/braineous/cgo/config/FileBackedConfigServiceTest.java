@@ -15,7 +15,7 @@ class FileBackedConfigServiceTest {
 
     @Test
     void loads_defaults_from_classpath() {
-        ConfigService config = FileBackedConfigService.getInstance();
+        ConfigService config = new FileBackedConfigService();
 
         assertEquals("local", config.getProperty("dd.env"));
         assertEquals("8080", config.getProperty("dd.http.port"));
@@ -34,7 +34,7 @@ class FileBackedConfigServiceTest {
 
         System.setProperty("dd.config", ddProps.toString());
         try {
-            ConfigService config = FileBackedConfigService.getInstance();
+            ConfigService config = new FileBackedConfigService();
 
             assertEquals("test", config.getProperty("dd.env"));
             assertEquals("false", config.getProperty("dd.feature.replay.enabled"));

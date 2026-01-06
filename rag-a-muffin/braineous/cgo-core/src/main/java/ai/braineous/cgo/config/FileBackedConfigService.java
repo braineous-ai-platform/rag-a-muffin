@@ -16,10 +16,6 @@ public class FileBackedConfigService implements ConfigService{
         this.loadProps();
     }
 
-    public static FileBackedConfigService getInstance(){
-        return new FileBackedConfigService();
-    }
-
     public String getProperty(String key){
         if(key == null) return null;
         String k = key.trim();
