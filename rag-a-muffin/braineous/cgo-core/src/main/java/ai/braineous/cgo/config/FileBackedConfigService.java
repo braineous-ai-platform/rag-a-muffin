@@ -43,6 +43,14 @@ public class FileBackedConfigService implements ConfigService{
 
     @Override
     public void setProperty(String key, String value) {
+        if(key == null ||
+                value == null ||
+                key.trim().length() == 0 ||
+                value.trim().length() == 0
+        ) return;
+
+        if(!isSpecKey(key)) return;
+
         this.props.setProperty(key, value);
     }
 
