@@ -73,12 +73,35 @@ public class FileBackedConfigService implements ConfigService{
 
     private void loadDefaultProps() {
         Properties loaded = new Properties();
+
+        // 1) File system override (Docker mount)
+        String path = System.getenv("DD_CONFIG_PATH");
+        if (path == null || path.trim().isEmpty()) {
+            path = "/default.dd.properties";
+        }
+
+        java.io.File f = new java.io.File(path);
+        if (f.exists() && f.isFile()) {
+            try (java.io.InputStream in = new java.io.FileInputStream(f)) {
+                loaded.load(in);
+                this.defaultProps = loaded;
+                return;
+            } catch (Exception ignore) {
+                // fall through to classpath
+            }
+        }
+
+        // 2) Classpath fallback (dev / jar defaults)
         try (java.io.InputStream in =
                      FileBackedConfigService.class.getResourceAsStream("/dd-default.properties")) {
             if (in != null) loaded.load(in);
         } catch (Exception ignore) {}
+
         this.defaultProps = loaded;
+
+        ai.braineous.rag.prompt.observe.Console.log("dd_default_props_count", "" + this.defaultProps.size());
     }
+
 
 
 
