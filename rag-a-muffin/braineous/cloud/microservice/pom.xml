@@ -17,7 +17,7 @@
     </build>
 
     <parent>
-        <groupId>ai.braineous</groupId>
+        <groupId>io.github.braineous-ai-platform</groupId>
         <artifactId>cloud</artifactId>
         <version>1.0.0</version>
         <relativePath>..</relativePath>
@@ -28,7 +28,7 @@
 
     <dependencies>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-core</artifactId>
             <version>${project.version}</version>
         </dependency>

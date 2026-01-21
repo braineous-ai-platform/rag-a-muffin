@@ -16,34 +16,34 @@
         </plugins>
     </build>
 
-    <groupId>ai.braineous</groupId>
+    <groupId>io.github.braineous-ai-platform</groupId>
     <artifactId>cgo-test-suite</artifactId>
     <version>1.0.0</version>
     <packaging>jar</packaging>
 
     <dependencies>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-scorer</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-observer</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-llm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-history</artifactId>
             <version>${project.version}</version>
         </dependency>
