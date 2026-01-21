@@ -1,19 +1,21 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.Relationship;
 
 import java.time.Instant;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 
 public class Proposal {
+    private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
+            new java.util.concurrent.atomic.AtomicLong(0L);
 
     // ------------ Identity / provenance ------------
 
     private String id;             // UUID for this proposal
-    private String ruleId;         // which rule generated it (if any)
-    private String rulepackId;     // which rulepack / pipeline
     private ProposalSource source; // RULE / LLM / USER / SYSTEM
     private Rulepack rulepack;
 
@@ -38,10 +40,36 @@ public class Proposal {
 
 
     public Proposal() {
+        long seq = nextSeq();
+        this.id = nextEventId(seq);
     }
 
     public Proposal(String id) {
         this.id = id;
+    }
+
+    public static Proposal from(Fact from, Fact to, Fact edge){
+        if(from == null || to == null || edge == null){
+            return null;
+        }
+        Proposal proposal = new Proposal();
+        Set<Fact> inserts = new HashSet<>();
+        Set<Fact> updates = new HashSet<>();
+        Set<Fact> deletes = new HashSet<>();
+
+        inserts.add(from);
+        inserts.add(to);
+
+        Set<Relationship> relationships = new HashSet<>();
+        Relationship relationship = new Relationship(from, to, edge);
+        relationships.add(relationship);
+
+        proposal.setInsert(inserts);
+        proposal.setUpdate(updates);
+        proposal.setDelete(deletes);
+        proposal.setEdges(relationships);
+
+        return proposal;
     }
 
     public String getId() {
@@ -86,5 +114,16 @@ public class Proposal {
 
     public void setRulepack(Rulepack rulepack) {
         this.rulepack = rulepack;
+    }
+
+    // call inside constructor
+    private static long nextSeq() {
+        return EVENT_SEQ.incrementAndGet();
+    }
+
+    // call inside constructor
+    private static String nextEventId(long seq) {
+        // readable + sortable-ish (by seq)
+        return "ME-" + seq;
     }
 }

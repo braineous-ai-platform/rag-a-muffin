@@ -1,12 +1,15 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
-import ai.braineous.rag.prompt.cgo.api.Edge;
+
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.GraphView;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitOrchestrator;
+import ai.braineous.rag.prompt.models.cgo.graph.commit.CommitResult;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationOrchestrator;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationResult;
+import ai.braineous.rag.prompt.models.cgo.graph.mutation.MutationResultListener;
 
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Map;
 import java.util.Set;
 
 public class GraphBuilder {
@@ -16,9 +19,11 @@ public class GraphBuilder {
 
     private final ProposalMonitor proposalMonitor = ProposalMonitor.getInstance();
 
-    // internal mutable state
-    private final Map<String, Fact> nodes = new HashMap<>(); // atomic
-    private final Map<String, Edge> edges = new HashMap<>(); // relational
+    private final GraphStore store = GraphStoreImpl.getInstance();
+
+    private final MutationOrchestrator mutationOrchestrator = MutationOrchestrator.getInstance();
+
+    private final CommitOrchestrator commitOrchestrator = CommitOrchestrator.getInstance();
 
     private GraphBuilder(){
 
@@ -29,8 +34,7 @@ public class GraphBuilder {
     }
 
     public void clear(){
-        this.nodes.clear();
-        this.edges.clear();
+        ((GraphStoreImpl)store).clear();
     }
 
     /**
@@ -48,7 +52,7 @@ public class GraphBuilder {
             return;
         }*/
 
-        upsertNode(fact);
+        store.upsertNode(fact);
     }
 
     /**
@@ -60,34 +64,78 @@ public class GraphBuilder {
             return new BindResult(false);
         }
 
-        //substrate validation
-        BindResult result = this.validateSubstrate(input);
-        if (!result.isOk()) {
-            return result;
+        // substrate validation
+        BindResult substrate = this.validateSubstrate(input);
+        if (!substrate.isOk()) {
+            return substrate;
         }
 
-        Fact from = input.getFrom();   // atomic
-        Fact to   = input.getTo();     // atomic
-        Fact edgeFact = input.getEdge(); // relational-as-Fact
+        // 1️⃣ base proposal ALWAYS
+        Set<Proposal> proposals = new HashSet<>();
+        Proposal proposal = Proposal.from(input.getFrom(), input.getTo(), input.getEdge());
+        if(proposal != null) {
+            proposals.add(
+                proposal
+            );
+        }
 
-        if(rulepack != null) {
-            //execution_phase
-            Set<Proposal> proposals = this.execute(rulepack);
-
-            //proposal_phase
-            BindResult proposalResult = this.validateStructure(proposals);
-            if (!proposalResult.isOk()) {
-                return proposalResult;
+        // 2️⃣ rulepack is an overlay
+        if (rulepack != null) {
+            Set<Proposal> ruleProposals = this.execute(rulepack);
+            if (ruleProposals != null && !ruleProposals.isEmpty()) {
+                proposals.addAll(ruleProposals);
             }
         }
 
-        //mutate
-        this.mutate(from, to, edgeFact);
+        // 3️⃣ structural validation
+        BindResult structure = this.validateStructure(proposals);
+        if (!structure.isOk()) {
+            return structure;
+        }
 
-        return result;
+        // 4️⃣ mutation validation
+        MutationResult mr = this.validateMutation(input, rulepack, proposals);
+        if (mr == null || !mr.isOk()) {
+            return new BindResult(false);
+        }
+
+        // 5️⃣ commit (single choke point)
+        CommitResult cr = this.commitMutation(mr);
+        if (cr == null || !cr.isOk()) {
+            return new BindResult(false);
+        }
+
+        return new BindResult(true);
+    }
+
+
+
+    public GraphSnapshot snapshot() {
+        return store.snapshot();
     }
 
     //---mutation phases ----------------------------------------
+    private MutationResult validateMutation(Input input, Rulepack rulepack, Set<Proposal> proposals){
+        if(proposals == null || proposals.isEmpty()){
+            return null;
+        }
+
+        MutationResultListener listener = this.mutationOrchestrator.
+                orchestrate(
+                        store.snapshot().snapshotHash(),
+                        input,
+                        rulepack,
+                        proposals);
+
+        return listener.result();
+    }
+
+
+    private CommitResult commitMutation(MutationResult mr){
+        CommitResult result = this.commitOrchestrator.orchestrate(mr);
+        return result;
+    }
+
     private BindResult validateSubstrate(Input input){
         if (input == null) {
             return new BindResult(false);
@@ -110,7 +158,7 @@ public class GraphBuilder {
         }
 
         //make sure from and to exist
-        if(nodes.get(from.getId()) == null || nodes.get(to.getId()) == null){
+        if(store.snapshot().nodes().get(from.getId()) == null || store.snapshot().nodes().get(to.getId()) == null){
             result.setOk(false);
             return result;
         }
@@ -119,9 +167,12 @@ public class GraphBuilder {
     }
 
     private Set<Proposal> execute(Rulepack rulepack){
-        GraphView view = this.snapshot();
+        GraphView view = store.snapshot();
 
         Set<Proposal> proposals = rulepack.execute(view);
+        for(Proposal proposal:proposals){
+            proposal.setRulepack(rulepack);
+        }
 
         return proposals;
     }
@@ -133,7 +184,7 @@ public class GraphBuilder {
         }
 
         ProposalContext ctx = new ProposalContext();
-        GraphSnapshot snapshot = this.snapshot();
+        GraphSnapshot snapshot = store.snapshot();
         ctx.setProposals(proposals);
         ctx.setSnapshot(snapshot);
 
@@ -148,96 +199,5 @@ public class GraphBuilder {
 
         return bindResult;
     }
-
-    private void mutate(Fact from, Fact to, Fact edgeFact){
-        // upsert nodes
-        upsertNode(from);
-        upsertNode(to);
-
-        // upsert edge
-        upsertEdge(from, to, edgeFact);
-    }
     //------------------------------------------------------------------
-
-    /**
-     * Build an immutable snapshot of the current graph state.
-     */
-    public GraphSnapshot snapshot() {
-        // copy to avoid external mutation
-        Map<String, Fact> nodeCopy = new HashMap<>(nodes);
-        Map<String, Edge> edgeCopy = new HashMap<>(edges);
-        return new GraphSnapshot(nodeCopy, edgeCopy);
-    }
-    // ---------- internal helpers ----------
-    private void upsertNode(Fact fact) {
-        if (fact == null || fact.getId() == null) {
-            return;
-        }
-
-        Fact existing = nodes.get(fact.getId());
-        if (existing == null) {
-            // make sure attributes is non-null
-            if (fact.getAttributes() == null) {
-                fact.setAttributes(new HashSet<>());
-            }
-            nodes.put(fact.getId(), fact);
-        } else {
-            // merge attributes, keep id/text/mode from existing or new as you prefer
-            mergeAttributes(existing, fact);
-        }
-    }
-
-    /**
-     * Merge attributes from 'incoming' into 'target'.
-     * Id/mode/text stay as-is on the target.
-     */
-    private void mergeAttributes(Fact target, Fact incoming) {
-        if (incoming.getAttributes() == null) {
-            return;
-        }
-        if (target.getAttributes() == null) {
-            target.setAttributes(new HashSet<>());
-        }
-        target.getAttributes().addAll(incoming.getAttributes());
-    }
-
-    /**
-     * Convert a relational Fact into an Edge view.
-     */
-    private Edge toEdge(Fact from, Fact to, Fact edgeFact) {
-        Edge edge = new Edge();
-        edge.setId(edgeFact.getId());
-        edge.setText(edgeFact.getText());
-        edge.setMode(edgeFact.getMode());
-
-        // copy attributes defensively
-        Set<String> attrs = edgeFact.getAttributes();
-        if (attrs != null) {
-            edge.setAttributes(new HashSet<>(attrs));
-        }
-
-        edge.setFromFactId(from.getId());
-        edge.setToFactId(to.getId());
-
-        // default score; you can tune later
-        edge.setScore(1.0);
-
-        return edge;
-    }
-
-    private void upsertEdge(Fact from, Fact to, Fact edgeFact) {
-        if (edgeFact == null || edgeFact.getId() == null) {
-            return;
-        }
-
-        Edge existing = edges.get(edgeFact.getId());
-        if (existing == null) {
-            Edge edge = toEdge(from, to, edgeFact);
-            edges.put(edge.getId(), edge);
-        } else {
-            // merge attributes & maybe score later
-            mergeAttributes(existing, edgeFact);
-            // keep from/to as originally set; or assert they match
-        }
-    }
 }

@@ -1,23 +1,31 @@
 package ai.braineous.rag.prompt.models.cgo.graph.mutation;
 
+import ai.braineous.rag.prompt.models.cgo.graph.Input;
 import ai.braineous.rag.prompt.models.cgo.graph.Proposal;
+import ai.braineous.rag.prompt.models.cgo.graph.Rulepack;
+import ai.braineous.rag.prompt.models.cgo.graph.SnapshotHash;
 import com.google.gson.JsonObject;
 
 import java.util.HashSet;
 import java.util.Set;
 
-class MutationEvent {
+public class MutationEvent {
     // field init helper (thread-safe)
     private static final java.util.concurrent.atomic.AtomicLong EVENT_SEQ =
             new java.util.concurrent.atomic.AtomicLong(0L);
 
     private final String id;
 
+    private Input input;
+    private Rulepack rulepack;
+
     private Set<Proposal> proposals = new HashSet<>();
 
-    private String snapshotHash;
+    private SnapshotHash snapshotHash;
 
     private final long createdAt; //epoch
+
+    private MutationResultListener resultListener;
 
     public MutationEvent() {
         long seq = MutationEvent.nextSeq();
@@ -37,11 +45,11 @@ class MutationEvent {
         this.proposals = proposals;
     }
 
-    public String getSnapshotHash() {
+    public SnapshotHash getSnapshotHash() {
         return snapshotHash;
     }
 
-    public void setSnapshotHash(String snapshotHash) {
+    public void setSnapshotHash(SnapshotHash snapshotHash) {
         this.snapshotHash = snapshotHash;
     }
 
@@ -49,13 +57,40 @@ class MutationEvent {
         return createdAt;
     }
 
+    public MutationResultListener getResultListener() {
+        return resultListener;
+    }
+
+    public void setResultListener(MutationResultListener resultListener) {
+        this.resultListener = resultListener;
+    }
+
+    public Input getInput() {
+        return input;
+    }
+
+    public void setInput(Input input) {
+        this.input = input;
+    }
+
+    public Rulepack getRulepack() {
+        return rulepack;
+    }
+
+    public void setRulepack(Rulepack rulepack) {
+        this.rulepack = rulepack;
+    }
+
     @Override
     public String toString() {
         return "MutationEvent{" +
                 "id='" + id + '\'' +
+                ", input=" + input +
+                ", rulepack=" + rulepack +
                 ", proposals=" + proposals +
-                ", snapshotHash='" + snapshotHash + '\'' +
+                ", snapshotHash=" + snapshotHash +
                 ", createdAt=" + createdAt +
+                ", resultListener=" + resultListener +
                 '}';
     }
 
@@ -63,7 +98,7 @@ class MutationEvent {
         com.google.gson.JsonObject json = new com.google.gson.JsonObject();
 
         json.addProperty("id", this.id);
-        json.addProperty("snapshotHash", this.snapshotHash);
+        json.addProperty("snapshotHash", this.snapshotHash.getValue());
         json.addProperty("createdAt", this.createdAt);
 
         com.google.gson.JsonArray props = new com.google.gson.JsonArray();
@@ -74,8 +109,6 @@ class MutationEvent {
 
         return json;
     }
-
-
 
     // call inside constructor
     private static long nextSeq() {

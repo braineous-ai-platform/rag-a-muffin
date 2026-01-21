@@ -25,7 +25,6 @@ public class ProposalValidator {
         for(Proposal proposal: proposals){
             boolean assertion = this.validate(snapshot,proposal);
             assertions.add(assertion);
-            break;
         }
 
         result = !assertions.contains(false);
@@ -44,27 +43,35 @@ public class ProposalValidator {
         Set<Relationship> relationships = proposal.getEdges();
 
         //validate inserts
-        for(Fact fact:inserts){
-            boolean assertion = validator.validateInsert(fact);
-            assertions.add(assertion);
+        if(inserts != null) {
+            for (Fact fact : inserts) {
+                boolean assertion = validator.validateInsert(fact);
+                assertions.add(assertion);
+            }
         }
 
         //validate updates
-        for(Fact fact:updates){
-            boolean assertion = validator.validateUpdate(snapshot, fact);
-            assertions.add(assertion);
+        if(updates != null) {
+            for (Fact fact : updates) {
+                boolean assertion = validator.validateUpdate(snapshot, fact);
+                assertions.add(assertion);
+            }
         }
 
         //validate deletes
-        for(Fact fact:deletes){
-            boolean assertion = validator.validateDelete(fact);
-            assertions.add(assertion);
+        if(deletes != null) {
+            for (Fact fact : deletes) {
+                boolean assertion = validator.validateDelete(fact);
+                assertions.add(assertion);
+            }
         }
 
         //validate relationships
-        for(Relationship relationship:relationships){
-            boolean assertion = validator.validateRelationship(snapshot, relationship);
-            assertions.add(assertion);
+        if(relationships != null) {
+            for (Relationship relationship : relationships) {
+                boolean assertion = validator.validateRelationship(snapshot, relationship);
+                assertions.add(assertion);
+            }
         }
 
         result = !assertions.contains(false);

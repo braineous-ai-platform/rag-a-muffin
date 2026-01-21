@@ -62,9 +62,9 @@
     </build>
 
     <parent>
-        <groupId>ai.braineous</groupId>
+        <groupId>io.github.braineous-ai-platform</groupId>
         <artifactId>agentic-apps</artifactId>
-        <version>1.0.0-SNAPSHOT</version>
+        <version>1.0.0</version>
         <relativePath>..</relativePath>
     </parent>
 
@@ -97,22 +97,22 @@
 
     <dependencies>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-core</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-llm</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-scorer</artifactId>
             <version>${project.version}</version>
         </dependency>
         <dependency>
-            <groupId>ai.braineous</groupId>
+            <groupId>io.github.braineous-ai-platform</groupId>
             <artifactId>cgo-observer</artifactId>
             <version>${project.version}</version>
         </dependency>

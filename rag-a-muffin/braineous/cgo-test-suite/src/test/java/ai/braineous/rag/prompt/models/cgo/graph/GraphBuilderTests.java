@@ -1,15 +1,21 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.api.GraphView;
 import ai.braineous.rag.prompt.models.cgo.graph.data.FNOFactExtractors;
 import ai.braineous.rag.prompt.observe.Console;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.Function;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+// NOTE: one-proposal-only acceptance.
+// Overlay proposals are NOT merged in this mode.
+// Tests must not assume overlay application.
 public class GraphBuilderTests {
 
     @BeforeEach
@@ -522,5 +528,175 @@ public class GraphBuilderTests {
         assertEquals(3, snap.nodes().size());
         assertEquals(1, snap.edges().size());
     }
+
+    @Test
+    void bind_is_idempotent_on_missing_delete_and_state_matches_base_only() {
+        Console.log("test.start", "GraphBuilder.bind.idempotent_delete_noop");
+
+        GraphBuilder gb = GraphBuilder.getInstance();
+        gb.clear();
+
+        Fact from = new Fact("Airport:AUS", "{ \"id\":\"Airport:AUS\", \"kind\":\"Airport\" }");
+        from.setMode("atomic");
+        gb.addNode(from);
+
+        Fact to = new Fact("Airport:DFW", "{ \"id\":\"Airport:DFW\", \"kind\":\"Airport\" }");
+        to.setMode("atomic");
+        gb.addNode(to);
+
+        Fact edge = new Fact("Edge:AUS_DFW", "{ \"id\":\"Edge:AUS_DFW\", \"kind\":\"Connection\" }");
+        edge.setMode("relational");
+
+        Input input = new Input();
+        input.setFrom(from);
+        input.setTo(to);
+        input.setEdge(edge);
+
+        // baseline: bind with NO rulepack
+        BindResult base = gb.bind(input, null);
+        assertNotNull(base);
+        assertTrue(base.isOk(), "baseline bind should succeed");
+
+        GraphSnapshot afterBase = gb.snapshot();
+        String baseHash = afterBase.snapshotHash().getValue();
+        int baseNodes = afterBase.nodes().size();
+        int baseEdges = afterBase.edges().size();
+
+        // now: same bind but with rulepack that tries ghost delete
+        Rulepack ghostDelete = new Rulepack() {
+            @Override
+            public Set<Proposal> execute(GraphView view) {
+                Set<Proposal> proposals = new HashSet<>();
+
+                Fact ghost = new Fact("Ghost:DOES_NOT_EXIST", "{ \"id\":\"Ghost:DOES_NOT_EXIST\" }");
+                ghost.setMode("atomic");
+
+                Proposal p = new Proposal();
+                Set<Fact> deletes = new HashSet<>();
+                deletes.add(ghost);
+                p.setDelete(deletes);
+
+                proposals.add(p);
+                return proposals;
+            }
+        };
+
+        BindResult withNoopDelete = gb.bind(input, ghostDelete);
+        assertNotNull(withNoopDelete);
+        assertTrue(withNoopDelete.isOk(), "bind should still succeed (idempotent delete)");
+
+        GraphSnapshot afterNoop = gb.snapshot();
+
+        assertEquals(baseHash, afterNoop.snapshotHash().getValue(),
+                "ghost delete must be a no-op (state same as base-only)");
+        assertEquals(baseNodes, afterNoop.nodes().size(),
+                "node count must match base-only");
+        assertEquals(baseEdges, afterNoop.edges().size(),
+                "edge count must match base-only");
+    }
+
+    @Test
+    void bind_fails_when_rulepack_updates_missing_fact_and_state_unchanged() {
+        Console.log("test.start", "GraphBuilder.bind.fail_on_missing_update");
+
+        GraphBuilder gb = GraphBuilder.getInstance();
+        gb.clear();
+
+        // Nodes to satisfy substrate
+        Fact from = new Fact("Airport:AUS", "{ \"id\":\"Airport:AUS\", \"kind\":\"Airport\" }");
+        from.setMode("atomic");
+        gb.addNode(from);
+
+        Fact to = new Fact("Airport:DFW", "{ \"id\":\"Airport:DFW\", \"kind\":\"Airport\" }");
+        to.setMode("atomic");
+        gb.addNode(to);
+
+        Fact edge = new Fact("Edge:AUS_DFW", "{ \"id\":\"Edge:AUS_DFW\", \"kind\":\"Connection\" }");
+        edge.setMode("relational");
+
+        Input input = new Input();
+        input.setFrom(from);
+        input.setTo(to);
+        input.setEdge(edge);
+
+        // Pre-state
+        GraphSnapshot before = gb.snapshot();
+        String beforeHash = before.snapshotHash().getValue();
+        int beforeNodes = before.nodes().size();
+        int beforeEdges = before.edges().size();
+
+        // Rulepack proposes an UPDATE to a missing fact -> must hard fail
+        Rulepack badUpdate = new Rulepack() {
+            @Override
+            public Set<Proposal> execute(GraphView view) {
+                Set<Proposal> proposals = new HashSet<>();
+
+                Fact missing = new Fact("Flight:F999", "{ \"id\":\"Flight:F999\", \"kind\":\"Flight\", \"status\":\"delayed\" }");
+                missing.setMode("atomic");
+
+                Proposal p = new Proposal();
+                Set<Fact> updates = new HashSet<>();
+                updates.add(missing);
+                p.setUpdate(updates);
+
+                proposals.add(p);
+                return proposals;
+            }
+        };
+
+        BindResult result = gb.bind(input, badUpdate);
+
+        assertNotNull(result);
+        assertFalse(result.isOk(), "update on missing fact must hard fail");
+
+        GraphSnapshot after = gb.snapshot();
+        assertEquals(beforeHash, after.snapshotHash().getValue(), "state must remain unchanged on failed bind");
+        assertEquals(beforeNodes, after.nodes().size(), "node count unchanged");
+        assertEquals(beforeEdges, after.edges().size(), "edge count unchanged");
+    }
+
+    @Test
+    void snapshot_doesFactExist_false_for_missing_fact() {
+        GraphBuilder gb = GraphBuilder.getInstance();
+        gb.clear();
+
+        Fact existing = new Fact("Flight:F100", "{ \"id\":\"Flight:F100\", \"kind\":\"Flight\" }");
+        existing.setMode("atomic");
+        gb.addNode(existing);
+
+        GraphSnapshot snap = gb.snapshot();
+
+        Fact missing = new Fact("Flight:F999", "{ \"id\":\"Flight:F999\", \"kind\":\"Flight\" }");
+        missing.setMode("atomic");
+
+        assertFalse(snap.doesFactExist(missing), "missing fact must not exist");
+    }
+
+    @Test
+    void upsertNode_overwrites_text_when_fact_exists() {
+        Console.log("test.start", "GraphStore.upsertNode.overwrite_text");
+
+        GraphBuilder gb = GraphBuilder.getInstance();
+        gb.clear();
+
+        Fact v1 = new Fact("Flight:F100", "{ \"id\":\"Flight:F100\", \"kind\":\"Flight\", \"status\":\"on_time\" }");
+        v1.setMode("atomic");
+        gb.addNode(v1);
+
+        String before = gb.snapshot().nodes().get("Flight:F100").getText();
+        Console.log("before.text", before);
+
+        Fact v2 = new Fact("Flight:F100", "{ \"id\":\"Flight:F100\", \"kind\":\"Flight\", \"status\":\"delayed\" }");
+        v2.setMode("atomic");
+        gb.addNode(v2);
+
+        Fact got = gb.snapshot().nodes().get("Flight:F100");
+        assertNotNull(got);
+
+        Console.log("after.text", got.getText());
+        assertTrue(got.getText() != null && got.getText().contains("delayed"),
+                "upsertNode(update) must overwrite authoritative text payload");
+    }
+
 
 }

@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
 
     <!-- Keep groupId/version consistent with your root pom -->
-    <groupId>ai.braineous</groupId>
+    <groupId>io.github.braineous-ai-platform</groupId>
     <artifactId>braineous</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
 
     <modules>
