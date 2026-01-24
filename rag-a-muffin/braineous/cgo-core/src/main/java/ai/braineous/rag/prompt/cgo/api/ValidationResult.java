@@ -1,5 +1,7 @@
 package ai.braineous.rag.prompt.cgo.api;
 
+import com.google.gson.*;
+
 import java.util.Collections;
 import java.util.Map;
 
@@ -208,5 +210,187 @@ public final class ValidationResult {
                 ", metadata=" + metadata +
                 '}';
     }
+
+    //---------------------------------------
+    public JsonObject toJson() {
+
+        JsonObject out = new JsonObject();
+
+        out.addProperty("ok", this.ok);
+
+        if (this.code != null) {
+            out.addProperty("code", this.code);
+        } else {
+            out.add("code", null);
+        }
+
+        if (this.message != null) {
+            out.addProperty("message", this.message);
+        } else {
+            out.add("message", null);
+        }
+
+        if (this.stage != null) {
+            out.addProperty("stage", this.stage);
+        } else {
+            out.add("stage", null);
+        }
+
+        if (this.anchorId != null) {
+            out.addProperty("anchorId", this.anchorId);
+        } else {
+            out.add("anchorId", null);
+        }
+
+        // metadata (optional)
+        if (this.metadata != null && !this.metadata.isEmpty()) {
+            JsonObject meta = new JsonObject();
+
+            for (java.util.Map.Entry<String, Object> e : this.metadata.entrySet()) {
+                String key = e.getKey();
+                Object val = e.getValue();
+
+                if (key == null) {
+                    continue;
+                }
+
+                meta.add(key, toJsonValue(val));
+            }
+
+            out.add("metadata", meta);
+        } else {
+            out.add("metadata", null);
+        }
+
+        return out;
+    }
+
+    public String toJsonString() {
+        return toJson().toString();
+    }
+
+    private static JsonElement toJsonValue(Object val) {
+
+        if (val == null) {
+            return JsonNull.INSTANCE;
+        }
+
+        if (val instanceof String) {
+            return new JsonPrimitive((String) val);
+        }
+
+        if (val instanceof Number) {
+            return new JsonPrimitive((Number) val);
+        }
+
+        if (val instanceof Boolean) {
+            return new JsonPrimitive(((Boolean) val).booleanValue());
+        }
+
+        if (val instanceof Character) {
+            return new JsonPrimitive(String.valueOf(val));
+        }
+
+        // arrays / lists of strings (common + safe)
+        if (val instanceof java.util.Collection) {
+            JsonArray arr = new JsonArray();
+            for (Object o : (java.util.Collection) val) {
+                if (o == null) {
+                    arr.add(JsonNull.INSTANCE);
+                } else {
+                    arr.add(String.valueOf(o));
+                }
+            }
+            return arr;
+        }
+
+        // fallback: opaque string
+        return new JsonPrimitive(String.valueOf(val));
+    }
+
+    public static ValidationResult fromJson(JsonObject json) {
+
+        if (json == null) {
+            throw new IllegalArgumentException("ValidationResult JSON cannot be null");
+        }
+
+        boolean ok = false;
+        if (json.has("ok") && !json.get("ok").isJsonNull()) {
+            ok = json.get("ok").getAsBoolean();
+        }
+
+        String code = null;
+        if (json.has("code") && !json.get("code").isJsonNull()) {
+            code = json.get("code").getAsString();
+        }
+
+        String message = null;
+        if (json.has("message") && !json.get("message").isJsonNull()) {
+            message = json.get("message").getAsString();
+        }
+
+        String stage = null;
+        if (json.has("stage") && !json.get("stage").isJsonNull()) {
+            stage = json.get("stage").getAsString();
+        }
+
+        String anchorId = null;
+        if (json.has("anchorId") && !json.get("anchorId").isJsonNull()) {
+            anchorId = json.get("anchorId").getAsString();
+        }
+
+        java.util.Map<String, Object> metadata = null;
+        if (json.has("metadata") && !json.get("metadata").isJsonNull() && json.get("metadata").isJsonObject()) {
+            JsonObject metaObj = json.getAsJsonObject("metadata");
+            metadata = new java.util.HashMap<>();
+
+            for (java.util.Map.Entry<String, JsonElement> e : metaObj.entrySet()) {
+                metadata.put(e.getKey(), fromJsonValue(e.getValue()));
+            }
+        }
+
+        return ValidationResult.createInternal(ok, code, message, stage, anchorId, metadata);
+    }
+
+    private static Object fromJsonValue(JsonElement el) {
+
+        if (el == null || el.isJsonNull()) {
+            return null;
+        }
+
+        if (el.isJsonPrimitive()) {
+            com.google.gson.JsonPrimitive p = el.getAsJsonPrimitive();
+
+            if (p.isBoolean()) {
+                return Boolean.valueOf(p.getAsBoolean());
+            }
+
+            if (p.isNumber()) {
+                // keep as String-safe Number? use Double to avoid surprises
+                return p.getAsNumber();
+            }
+
+            return p.getAsString();
+        }
+
+        if (el.isJsonArray()) {
+            java.util.List<String> list = new java.util.ArrayList<>();
+            for (JsonElement item : el.getAsJsonArray()) {
+                if (item == null || item.isJsonNull()) {
+                    list.add(null);
+                } else if (item.isJsonPrimitive()) {
+                    list.add(item.getAsString());
+                } else {
+                    list.add(item.toString());
+                }
+            }
+            return list;
+        }
+
+        // objects/other → opaque string
+        return el.toString();
+    }
+
+
 }
 

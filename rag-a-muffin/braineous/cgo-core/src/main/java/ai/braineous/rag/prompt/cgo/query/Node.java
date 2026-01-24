@@ -42,21 +42,70 @@ public final class Node {
         return mode;
     }
 
+    @Override
+    public String toString() {
+        return "Node{" +
+                "id='" + id + '\'' +
+                ", text='" + text + '\'' +
+                ", attributes=" + attributes +
+                ", mode=" + mode +
+                '}';
+    }
+
+    //--------------------------------------
+    public JsonObject toJson() {
+
+        JsonObject out = new JsonObject();
+
+        if (this.id != null) {
+            out.addProperty("id", this.id);
+        } else {
+            out.add("id", null);
+        }
+
+        if (this.text != null) {
+            out.addProperty("text", this.text);
+        } else {
+            out.add("text", null);
+        }
+
+        JsonArray attrs = new JsonArray();
+        for (String attr : this.attributes) {
+            if (attr != null) {
+                attrs.add(attr);
+            }
+        }
+        out.add("attributes", attrs);
+
+        if (this.mode != null) {
+            out.addProperty("mode", this.mode.name());
+        } else {
+            out.add("mode", null);
+        }
+
+        return out;
+    }
+
+    public String toJsonString() {
+        return toJson().toString();
+    }
+
     public static Node fromJson(JsonObject jsonObject) {
 
         if (jsonObject == null) {
             return null;
         }
 
-        String id = jsonObject.has("id")
-                ? jsonObject.get("id").getAsString()
-                : null;
+        String id = null;
+        if (jsonObject.has("id") && !jsonObject.get("id").isJsonNull()) {
+            id = jsonObject.get("id").getAsString();
+        }
 
-        String text = jsonObject.has("text")
-                ? jsonObject.get("text").getAsString()
-                : null;
+        String text = null;
+        if (jsonObject.has("text") && !jsonObject.get("text").isJsonNull()) {
+            text = jsonObject.get("text").getAsString();
+        }
 
-        // attributes (optional, default empty)
         List<String> attributes = new ArrayList<>();
         if (jsonObject.has("attributes") && jsonObject.get("attributes").isJsonArray()) {
             JsonArray attrArray = jsonObject.getAsJsonArray("attributes");
@@ -67,11 +116,10 @@ public final class Node {
             }
         }
 
-        // mode (default RELATIONAL if missing / unknown)
         Mode mode = Mode.RELATIONAL;
-        if (jsonObject.has("mode")) {
+        if (jsonObject.has("mode") && !jsonObject.get("mode").isJsonNull()) {
             try {
-                mode = Mode.valueOf(jsonObject.get("mode").getAsString().toUpperCase());
+                mode = Mode.valueOf(jsonObject.get("mode").getAsString());
             } catch (IllegalArgumentException ignored) {
                 // keep default
             }
@@ -80,13 +128,5 @@ public final class Node {
         return new Node(id, text, attributes, mode);
     }
 
-    @Override
-    public String toString() {
-        return "Node{" +
-                "id='" + id + '\'' +
-                ", text='" + text + '\'' +
-                ", attributes=" + attributes +
-                ", mode=" + mode +
-                '}';
-    }
+
 }

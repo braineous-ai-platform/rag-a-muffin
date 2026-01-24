@@ -4,6 +4,7 @@ import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
+import com.google.gson.JsonObject;
 
 import java.util.Objects;
 
@@ -71,5 +72,86 @@ public final class QueryRequest<T extends QueryTask> {
                 ", adapterType=" + adapterType +
                 '}';
     }
+
+    //---------------------------------------------------------
+    public JsonObject toJson() {
+
+        JsonObject out = new JsonObject();
+
+        // ---- meta ----
+        out.add("meta", this.meta.toJson());
+
+        // ---- context ----
+        out.add("context", this.context.toJson());
+
+        // ---- task ----
+        out.add("task", this.task.toJson());
+        out.addProperty("taskType", this.task.getClass().getName());
+
+        // ---- rule (optional, identity only) ----
+        if (this.rule != null) {
+            out.addProperty("rule", this.rule.getClass().getName());
+        } else {
+            out.add("rule", null);
+        }
+
+        // ---- adapter (optional, identity only) ----
+        if (this.adapter != null) {
+            out.addProperty("adapter", this.adapter.getClass().getName());
+        } else {
+            out.add("adapter", null);
+        }
+
+        return out;
+    }
+
+    public String toJsonString() {
+        return toJson().toString();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static QueryRequest<?> fromJson(JsonObject json) {
+
+        if (json == null) {
+            throw new IllegalArgumentException("QueryRequest JSON cannot be null");
+        }
+
+        // ---- meta ----
+        Meta meta = Meta.fromJson(json.getAsJsonObject("meta"));
+
+        // ---- context ----
+        GraphContext context = GraphContext.fromJson(json.getAsJsonObject("context"));
+
+        // ---- task ----
+        JsonObject taskJson = json.getAsJsonObject("task");
+        String taskType = json.get("taskType").getAsString();
+
+        QueryTask task;
+        try {
+            Class<?> taskClass = Class.forName(taskType);
+            task = (QueryTask) taskClass
+                    .getMethod("fromJson", JsonObject.class)
+                    .invoke(null, taskJson);
+        } catch (Exception e) {
+            throw new IllegalStateException("Failed to rehydrate QueryTask: " + taskType, e);
+        }
+
+        QueryRequest<?> req = new QueryRequest<>(meta, context, task);
+
+        // ---- rule (identity only) ----
+        if (json.has("rule") && !json.get("rule").isJsonNull()) {
+            // resolved later by pipeline wiring
+            // leave as null here intentionally
+        }
+
+        // ---- adapter (identity only) ----
+        if (json.has("adapter") && !json.get("adapter").isJsonNull()) {
+            // resolved later by pipeline wiring
+            // leave as null here intentionally
+        }
+
+        return req;
+    }
+
 }
 

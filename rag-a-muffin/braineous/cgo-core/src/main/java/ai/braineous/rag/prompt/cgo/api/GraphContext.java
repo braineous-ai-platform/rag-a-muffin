@@ -17,9 +17,44 @@ public final class GraphContext {
         return nodes;
     }
 
+    @Override
+    public String toString() {
+        return "GraphContext{" +
+                "nodes=" + nodes +
+                '}';
+    }
+
+    //------------------------------------
+    public JsonObject toJson() {
+
+        JsonObject out = new JsonObject();
+        JsonObject nodesObj = new JsonObject();
+
+        for (Map.Entry<String, Node> entry : this.nodes.entrySet()) {
+
+            String key = entry.getKey();
+            Node node = entry.getValue();
+
+            if (key != null && node != null) {
+                nodesObj.add(key, node.toJson());
+            }
+        }
+
+        out.add("nodes", nodesObj);
+        return out;
+    }
+
+    public String toJsonString() {
+        return toJson().toString();
+    }
+
     public static GraphContext fromJson(JsonObject jsonObject) {
 
-        if (jsonObject == null || !jsonObject.has("nodes") || !jsonObject.get("nodes").isJsonObject()) {
+        if (jsonObject == null) {
+            return new GraphContext(Map.of());
+        }
+
+        if (!jsonObject.has("nodes") || !jsonObject.get("nodes").isJsonObject()) {
             return new GraphContext(Map.of());
         }
 
@@ -27,26 +62,22 @@ public final class GraphContext {
         Map<String, Node> nodeMap = new java.util.HashMap<>();
 
         for (Map.Entry<String, com.google.gson.JsonElement> entry : nodesObj.entrySet()) {
-            if (entry.getValue().isJsonObject()) {
-                JsonObject nodeJson = entry.getValue().getAsJsonObject();
 
-                // assume Node has a static factory
-                Node node = Node.fromJson(nodeJson);
+            if (!entry.getValue().isJsonObject()) {
+                continue;
+            }
 
-                if (node != null) {
-                    nodeMap.put(entry.getKey(), node);
-                }
+            JsonObject nodeJson = entry.getValue().getAsJsonObject();
+            Node node = Node.fromJson(nodeJson);
+
+            if (node != null) {
+                nodeMap.put(entry.getKey(), node);
             }
         }
 
         return new GraphContext(nodeMap);
     }
 
-    @Override
-    public String toString() {
-        return "GraphContext{" +
-                "nodes=" + nodes +
-                '}';
-    }
+
 }
 

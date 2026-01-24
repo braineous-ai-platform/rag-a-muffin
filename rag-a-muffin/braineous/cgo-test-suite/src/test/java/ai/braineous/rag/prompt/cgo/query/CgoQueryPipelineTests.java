@@ -682,6 +682,442 @@ class CgoQueryPipelineTests {
 
         assertEquals(before + 2, after, "Pipeline should append two history records for two executes");
     }
+
+    @Test
+    void execute_withCoreValidator_error_shouldNotInvokeDomainRule() {
+
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "core fail skips domain rule");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // Domain rule with call counter (must NOT run)
+        final java.util.concurrent.atomic.AtomicInteger ruleCalls = new java.util.concurrent.atomic.AtomicInteger(0);
+        LLMResponseValidatorRule rule = raw -> {
+            ruleCalls.incrementAndGet();
+            return ValidationResult.ok("domain_rule_validation");
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        String raw = "malformed-or-contract-violating-response";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        ValidationResult coreError = ValidationResult.error(
+                "CONTRACT_VIOLATION",
+                "core validator failed",
+                "LLM_RESPONSE_VALIDATION",
+                null
+        );
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(coreError);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("ruleCalls", ruleCalls.get());
+        jsonObject.addProperty("coreValidationOk", execution.getLlmResponseValidation() != null && execution.getLlmResponseValidation().isOk());
+        jsonObject.addProperty("domainValidationPresent", execution.getDomainValidation() != null);
+        Console.log("UT:CgoQueryPipeline.core_fail_skips_domain", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertEquals(0, ruleCalls.get(), "Domain rule must not run when core validation fails");
+        org.junit.jupiter.api.Assertions.assertNotNull(execution.getLlmResponseValidation());
+        org.junit.jupiter.api.Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
+        org.junit.jupiter.api.Assertions.assertNull(execution.getDomainValidation(), "domainValidation must be null when rule never ran");
+    }
+
+    @Test
+    void execute_withDomainRule_error_shouldNotInvokeScorer() throws Exception {
+
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "domain fail skips scorer");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // Domain rule that FAILS
+        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.error("DOMAIN_RULE_ERROR", "domain rule failed", "domain_rule_validation", null);
+            }
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        String raw = "{\"some\":\"response\"}";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // Core validator OK (so domain rule runs and fails)
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // scorer stub with call counter
+        final java.util.concurrent.atomic.AtomicInteger scorerCalls = new java.util.concurrent.atomic.AtomicInteger(0);
+        ScorerClient scorer = new ScorerClient() {
+            @Override
+            public void orchestrate(QueryExecution execution) {
+                scorerCalls.incrementAndGet();
+                Console.log("UT:ScorerClient.orchestrate", "called");
+            }
+        };
+
+        // inject scorerClient via reflection (core untouched)
+        java.lang.reflect.Field f = CgoQueryPipeline.class.getDeclaredField("scorerClient");
+        f.setAccessible(true);
+        f.set(pipeline, scorer);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("scorerCalls", scorerCalls.get());
+        jsonObject.addProperty("domainOk", execution.getDomainValidation() != null && execution.getDomainValidation().isOk());
+        Console.log("UT:CgoQueryPipeline.domain_fail_skips_scorer", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertNotNull(execution.getDomainValidation());
+        org.junit.jupiter.api.Assertions.assertFalse(execution.getDomainValidation().isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(0, scorerCalls.get(), "Scorer must not run when domain validation fails");
+    }
+
+    @Test
+    void execute_withCoreValidator_error_shouldNotInvokeScorer() throws Exception {
+
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "core fail skips scorer");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // rule exists but must NOT run due to core failure
+        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.ok("domain_rule_validation");
+            }
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        String raw = "malformed-or-contract-violating-response";
+        FakeLlmClient llmClient = new FakeLlmClient(raw);
+
+        // Core validator FAILS
+        ValidationResult coreError = ValidationResult.error(
+                "CONTRACT_VIOLATION",
+                "core validator failed",
+                "LLM_RESPONSE_VALIDATION",
+                null
+        );
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(coreError);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // scorer stub with call counter
+        final java.util.concurrent.atomic.AtomicInteger scorerCalls = new java.util.concurrent.atomic.AtomicInteger(0);
+        ScorerClient scorer = new ScorerClient() {
+            @Override
+            public void orchestrate(QueryExecution execution) {
+                scorerCalls.incrementAndGet();
+                Console.log("UT:ScorerClient.orchestrate", "called");
+            }
+        };
+
+        // inject scorerClient via reflection
+        java.lang.reflect.Field f = CgoQueryPipeline.class.getDeclaredField("scorerClient");
+        f.setAccessible(true);
+        f.set(pipeline, scorer);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("scorerCalls", scorerCalls.get());
+        jsonObject.addProperty("coreOk", execution.getLlmResponseValidation() != null && execution.getLlmResponseValidation().isOk());
+        Console.log("UT:CgoQueryPipeline.core_fail_skips_scorer", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertNotNull(execution.getLlmResponseValidation());
+        org.junit.jupiter.api.Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(0, scorerCalls.get(), "Scorer must not run when core validation fails");
+    }
+
+    @Test
+    void execute_allOk_shouldInvokeScorer_once_with_same_execution_instance() throws Exception {
+
+        // arrange
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "all ok scorer call");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // domain rule OK
+        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.ok("domain_rule_validation");
+            }
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        // prompt builder with prompt validator OK (optional, but keeps phase present)
+        PhaseResultValidator okPromptValidator = new PhaseResultValidator() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.ok("prompt_contract_validation");
+            }
+        };
+
+        PromptBuilder promptBuilder = new PromptBuilder(
+                new SimpleResponseContractRegistry(),
+                okPromptValidator
+        );
+
+        String rawResponse = "{\"result\":{\"status\":\"VALID\"}}";
+        FakeLlmClient llmClient = new FakeLlmClient(rawResponse);
+
+        // core validator OK
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // scorer stub captures execution
+        final java.util.concurrent.atomic.AtomicInteger scorerCalls = new java.util.concurrent.atomic.AtomicInteger(0);
+        final java.util.concurrent.atomic.AtomicReference<QueryExecution> seen = new java.util.concurrent.atomic.AtomicReference<>(null);
+
+        ScorerClient scorer = new ScorerClient() {
+            @Override
+            public void orchestrate(QueryExecution execution) {
+                scorerCalls.incrementAndGet();
+                seen.set(execution);
+                Console.log("UT:ScorerClient.orchestrate", "called");
+            }
+        };
+
+        // inject scorerClient via reflection
+        java.lang.reflect.Field f = CgoQueryPipeline.class.getDeclaredField("scorerClient");
+        f.setAccessible(true);
+        f.set(pipeline, scorer);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        // observe
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("scorerCalls", scorerCalls.get());
+        jsonObject.addProperty("sameInstance", seen.get() == execution);
+        Console.log("UT:CgoQueryPipeline.all_ok_scorer_called", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertEquals(1, scorerCalls.get(), "Scorer must be invoked exactly once on happy path");
+        org.junit.jupiter.api.Assertions.assertSame(execution, seen.get(), "Scorer must see the same QueryExecution instance returned by pipeline");
+        org.junit.jupiter.api.Assertions.assertTrue(execution.isOk());
+        org.junit.jupiter.api.Assertions.assertEquals("ok", execution.getStage());
+        org.junit.jupiter.api.Assertions.assertEquals("OK", execution.getStatus());
+    }
+
+    @Test
+    void execute_allOk_shouldInvokeScorer_andAppendHistoryRecord() {
+
+        Console.log("test_start", "execute_allOk_shouldInvokeScorer_andAppendHistoryRecord");
+
+        // arrange
+        ai.braineous.cgo.history.HistoryStore store = ai.braineous.cgo.history.HistoryStore.getInstance();
+        store.clear();
+
+        int before = store.getAll().size();
+        Console.log("history_before", before);
+
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "scorer mandatory");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // domain rule OK
+        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.ok("domain_rule_validation");
+            }
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        String rawResponse = "{\"result\":{\"status\":\"VALID\"}}";
+        FakeLlmClient llmClient = new FakeLlmClient(rawResponse);
+
+        // core validator OK
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        int after = store.getAll().size();
+        Console.log("history_after", after);
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("historyDelta", after - before);
+        jsonObject.addProperty("executionOk", execution != null && execution.isOk());
+        Console.log("UT:CgoQueryPipeline.scorer_mandatory_history", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertNotNull(execution);
+        org.junit.jupiter.api.Assertions.assertTrue(execution.isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(before + 1, after,
+                "Scorer is mandatory and must append exactly one History record for a single execute()");
+    }
+
+    @Test
+    void execute_domainRuleFails_shouldNotAppendHistoryRecord() {
+
+        Console.log("test_start", "execute_domainRuleFails_shouldNotAppendHistoryRecord");
+
+        // arrange
+        ai.braineous.cgo.history.HistoryStore store = ai.braineous.cgo.history.HistoryStore.getInstance();
+        store.clear();
+
+        int before = store.getAll().size();
+        Console.log("history_before", before);
+
+        String factId = "Flight:F100";
+
+        Meta meta = new Meta("v1", "validate_flight_airports", "domain fail skips scorer");
+        ValidateTask task = new ValidateTask("validate flight airports", factId);
+
+        Node node = new Node(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                java.util.List.of(),
+                Node.Mode.RELATIONAL
+        );
+
+        GraphContext context = new GraphContext(java.util.Map.of(factId, node));
+
+        // domain rule FAIL
+        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.error("DOMAIN_RULE_ERROR", "domain rule failed", "domain_rule_validation", null);
+            }
+        };
+
+        QueryRequest<ValidateTask> request =
+                QueryRequests.validateTask(meta, task, context, factId, rule);
+        request.setAdapter(new FakeLlmAdapter());
+
+        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+
+        String rawResponse = "{\"result\":{\"status\":\"VALID\"}}";
+        FakeLlmClient llmClient = new FakeLlmClient(rawResponse);
+
+        // core validator OK so rule runs and fails
+        ValidationResult okCoreValidation = ValidationResult.ok("LLM_RESPONSE_VALIDATION");
+        FakePhaseResultValidator coreValidator = new FakePhaseResultValidator(okCoreValidation);
+
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+
+        // act
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        int after = store.getAll().size();
+        Console.log("history_after", after);
+
+        JsonObject jsonObject = new JsonObject();
+        jsonObject.addProperty("historyDelta", after - before);
+        jsonObject.addProperty("domainOk", execution.getDomainValidation() != null && execution.getDomainValidation().isOk());
+        Console.log("UT:CgoQueryPipeline.domain_fail_history_unchanged", jsonObject.toString());
+
+        // assert
+        org.junit.jupiter.api.Assertions.assertNotNull(execution);
+        org.junit.jupiter.api.Assertions.assertNotNull(execution.getDomainValidation());
+        org.junit.jupiter.api.Assertions.assertFalse(execution.getDomainValidation().isOk());
+        org.junit.jupiter.api.Assertions.assertEquals(before, after,
+                "History must NOT change when domain rule fails (scorer should not run)");
+    }
+
+
+
+
+
+
     ////--------------------------------------------------------------------------
     private static final class CountingLlmClient implements LlmClient {
         int callCount = 0;

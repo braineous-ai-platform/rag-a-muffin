@@ -324,6 +324,13 @@ public class ScoreOrchestratorTests {
         public String getDescription() {
             return description;
         }
+
+        @Override
+        public JsonObject toJson() {
+            JsonObject json = new JsonObject();
+            json.addProperty("description", this.description);
+            return json;
+        }
     }
 
     // ---- test double: returns a fixed sequence of scores -----------------
