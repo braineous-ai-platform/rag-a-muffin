@@ -3,7 +3,7 @@ package ai.braineous.cgo.history;
 import java.util.ArrayList;
 import java.util.List;
 
-public class HistoryStore {
+public class HistoryStore implements Store{
     private static HistoryStore store = new HistoryStore();
     private final List<HistoryRecord> records = new ArrayList<>();
 
@@ -15,6 +15,7 @@ public class HistoryStore {
     }
     //---------------------------------------------------------
 
+    @Override
     public void addRecord(HistoryRecord record) {
         if (record == null) {
             return;
@@ -22,6 +23,7 @@ public class HistoryStore {
         this.records.add(record);
     }
 
+    @Override
     public HistoryView findHistory(String queryKind) {
         HistoryView view = new HistoryView();
 
@@ -41,6 +43,7 @@ public class HistoryStore {
         return view;
     }
 
+    @Override
     public List<HistoryRecord> getAll(){
         return this.records;
     }

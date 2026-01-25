@@ -1,6 +1,7 @@
 package ai.braineous.cgo.history;
 
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
+import com.google.gson.JsonObject;
 
 import java.util.Objects;
 
@@ -60,5 +61,50 @@ public final class HistoryRecord {
                 ", result=" + result +
                 '}';
     }
+
+    //---------------------------------------------------------
+    public com.google.gson.JsonObject toJson() {
+
+        com.google.gson.JsonObject out = new com.google.gson.JsonObject();
+
+        if (this.queryExecution != null) {
+            out.add("queryExecution", this.queryExecution.toJson());
+        } else {
+            out.add("queryExecution", null);
+        }
+
+        if (this.result != null) {
+            out.add("result", this.result.toJson());
+        } else {
+            out.add("result", null);
+        }
+
+        return out;
+    }
+
+    public static HistoryRecord fromJson(com.google.gson.JsonObject json) {
+
+        if (json == null) {
+            throw new IllegalArgumentException("HistoryRecord JSON cannot be null");
+        }
+
+        ai.braineous.rag.prompt.cgo.api.QueryExecution<?> queryExecution = null;
+        if (json.has("queryExecution") && !json.get("queryExecution").isJsonNull()) {
+            queryExecution = ai.braineous.rag.prompt.cgo.api.QueryExecution.fromJson(
+                    json.getAsJsonObject("queryExecution")
+            );
+        }
+
+        ScorerResult result = null;
+        if (json.has("result") && !json.get("result").isJsonNull()) {
+            result = ScorerResult.fromJson(
+                    json.getAsJsonObject("result")
+            );
+        }
+
+        return new HistoryRecord(queryExecution, result);
+    }
+
+
 }
 

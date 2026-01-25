@@ -27,7 +27,13 @@
             <artifactId>cgo-core</artifactId>
             <version>${project.version}</version>
         </dependency>
-        <!-- later: spring-boot-starter-web etc. -->
+
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.11.1</version>
+        </dependency>
+
 
         <!-- Test only -->
         <dependency>
