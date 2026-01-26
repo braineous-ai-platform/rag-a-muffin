@@ -124,6 +124,7 @@ public class LlmClientOrchestratorTests {
 
         // KEY: pass null llmClient so pipeline uses pipeline.json wiring
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
+        pipeline.setInMemoryMode(true);
 
         // act
         QueryExecution<ValidateTask> execution = pipeline.execute(request);

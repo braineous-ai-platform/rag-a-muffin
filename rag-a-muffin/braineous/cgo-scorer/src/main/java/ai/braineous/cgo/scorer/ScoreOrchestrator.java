@@ -9,6 +9,8 @@ import ai.braineous.rag.prompt.cgo.api.ScorerClient;
 public class ScoreOrchestrator implements ScorerClient {
     private Scorer scorer;
 
+    private HistoryStore historyStore;
+
     public ScoreOrchestrator() {
         this(new Scorer());
     }
@@ -16,14 +18,22 @@ public class ScoreOrchestrator implements ScorerClient {
     // package-private for tests
     ScoreOrchestrator(Scorer scorer) {
         this.scorer = scorer;
+        this.historyStore = this.findHistoryStore();
     }
 
+    void setHistoryStore(HistoryStore historyStore) {
+        this.historyStore = historyStore;
+    }
 
     @Override
     public void orchestrate(QueryExecution queryExecution){
         if(queryExecution == null){
             //fail-silently;
             return;
+        }
+
+        if(queryExecution.isInMemoryMode()){
+            this.historyStore = HistoryStore.getInstance();
         }
 
         ScorerContext ctx = new ScorerContext(queryExecution);
@@ -42,10 +52,18 @@ public class ScoreOrchestrator implements ScorerClient {
         try {
             if (record != null) ;
             {
-                HistoryStore.getInstance().addRecord(record);
+                this.historyStore.addRecord(record);
             }
         }catch (Exception e){
             //fail-silently
         }
     }
+
+    //----------------------------------------------------
+
+    private HistoryStore findHistoryStore(){
+
+        return null;
+    }
+
 }

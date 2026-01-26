@@ -37,6 +37,7 @@ public class ScoreOrchestratorTests {
         Console.log("test_start", "orchestrate_withNullQueryExecution_shouldNotAddHistoryRecord");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
 
+
         // act
         orchestrator.orchestrate(null);
 
@@ -54,6 +55,7 @@ public class ScoreOrchestratorTests {
         // arrange
         Console.log("test_start", "orchestrate_withValidExecution_shouldAppendHistoryRecord");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+        orchestrator.setHistoryStore(store);
 
         int before = store.getAll().size();
         Console.log("history_size_before", before);
@@ -84,6 +86,7 @@ public class ScoreOrchestratorTests {
         // arrange
         Console.log("test_start", "orchestrate_whenCalledMultipleTimes_shouldAppendMultipleHistoryRecords");
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+        orchestrator.setHistoryStore(store);
 
         int before = store.getAll().size();
         Console.log("history_size_before", before);
@@ -116,6 +119,7 @@ public class ScoreOrchestratorTests {
         // arrange
         SequenceScorer sequenceScorer = new SequenceScorer(expectedScores);
         ScoreOrchestrator orchestrator = new ScoreOrchestrator(sequenceScorer);
+        orchestrator.setHistoryStore(HistoryStore.getInstance());
 
         // act – 4 calls
         orchestrator.orchestrate(createHappyPathExecution());
@@ -192,6 +196,7 @@ public class ScoreOrchestratorTests {
         int before = store.getAll().size();
 
         // act
+        pipeline.setInMemoryMode(true);
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
         // assert pipeline basics
@@ -219,6 +224,7 @@ public class ScoreOrchestratorTests {
         Console.log("history_before", before);
 
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+        orchestrator.setHistoryStore(store);
 
         // act
         orchestrator.orchestrate(null);
@@ -238,6 +244,7 @@ public class ScoreOrchestratorTests {
         store.clear();
 
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+        orchestrator.setHistoryStore(store);
 
         QueryExecution<DummyTask> e1 = createHappyPathExecution();
         QueryExecution<DummyTask> e2 = createHappyPathExecution();
@@ -271,6 +278,7 @@ public class ScoreOrchestratorTests {
         store.clear();
 
         ScoreOrchestrator orchestrator = new ScoreOrchestrator();
+        orchestrator.setHistoryStore(store);
 
         // Build an execution with empty rawResponse (still recorded)
         Meta meta = new Meta("v1", "test_query_kind", "result must exist");

@@ -44,6 +44,8 @@ public final class QueryExecution<T extends QueryTask> {
      */
     private ValidationResult domainValidation;
 
+    private boolean inMemoryMode = false;
+
     // ---- Constructors --------------------------------------------------------
 
     public QueryExecution(QueryRequest<T> request) {
@@ -151,6 +153,15 @@ public final class QueryExecution<T extends QueryTask> {
         if (domainValidation != null && !domainValidation.isOk()) return domainValidation;
         return null;
     }
+
+    public boolean isInMemoryMode() {
+        return inMemoryMode;
+    }
+
+    public void setInMemoryMode(boolean inMemoryMode) {
+        this.inMemoryMode = inMemoryMode;
+    }
+
     //---------------------------------------------------------
     @Override
     public String toString() {

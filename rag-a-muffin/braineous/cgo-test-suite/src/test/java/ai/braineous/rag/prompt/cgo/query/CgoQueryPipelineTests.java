@@ -668,6 +668,7 @@ class CgoQueryPipelineTests {
 
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
+        pipeline.setInMemoryMode(true);
 
         // act
         QueryExecution<ValidateTask> e1 = pipeline.execute(request);
@@ -1028,6 +1029,7 @@ class CgoQueryPipelineTests {
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
 
         // act
+        pipeline.setInMemoryMode(true);
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
         int after = store.getAll().size();

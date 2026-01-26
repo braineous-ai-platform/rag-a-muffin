@@ -32,6 +32,10 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PhaseResultValidator llmResponseValidator;
 
+    private boolean inMemoryMode = false; //not-in-memory by default
+
+
+
     public CgoQueryPipeline(PromptBuilder promptBuilder) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = null;
@@ -53,6 +57,10 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     public ScorerClient getScorerClient() {
         return scorerClient;
+    }
+
+    public void setInMemoryMode(boolean inMemoryMode) {
+        this.inMemoryMode = inMemoryMode;
     }
 
     @Override
@@ -112,6 +120,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
                 domainValidation);
 
         //integrate_scorer
+        execution.setInMemoryMode(this.inMemoryMode);
         this.score(execution);
 
 

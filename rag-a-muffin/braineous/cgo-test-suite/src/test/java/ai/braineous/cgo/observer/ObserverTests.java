@@ -90,6 +90,7 @@ class ObserverTests {
 
         PromptBuilder promptBuilder = new PromptBuilder();
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
+        pipeline.setInMemoryMode(true);
 
         // act
         QueryExecution<ValidateTask> exec = pipeline.execute(request);
@@ -168,6 +169,7 @@ class ObserverTests {
                 new PromptBuilder();
         CgoQueryPipeline pipeline =
                 new CgoQueryPipeline(promptBuilder);
+        pipeline.setInMemoryMode(true);
 
         pipeline.execute(request);
 
