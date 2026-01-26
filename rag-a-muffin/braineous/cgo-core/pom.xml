@@ -47,6 +47,12 @@
             <version>2.0.17</version>
         </dependency>
 
+        <dependency>
+            <groupId>org.mongodb</groupId>
+            <artifactId>mongodb-driver-sync</artifactId>
+            <version>4.11.1</version>
+        </dependency>
+
         <!-- Test only -->
         <dependency>
             <groupId>org.junit.jupiter</groupId>
