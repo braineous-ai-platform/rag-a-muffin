@@ -3,13 +3,17 @@ package ai.braineous.cgo.scorer;
 import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.cgo.history.ScorerResult;
+import ai.braineous.cgo.history.Store;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ScorerClient;
+import ai.braineous.rag.prompt.utils.Resources;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 
 public class ScoreOrchestrator implements ScorerClient {
     private Scorer scorer;
 
-    private HistoryStore historyStore;
+    private Store historyStore;
 
     public ScoreOrchestrator() {
         this(new Scorer());
@@ -50,7 +54,7 @@ public class ScoreOrchestrator implements ScorerClient {
 
     private void storeRecord(HistoryRecord record){
         try {
-            if (record != null) ;
+            if (record != null)
             {
                 this.historyStore.addRecord(record);
             }
@@ -61,9 +65,32 @@ public class ScoreOrchestrator implements ScorerClient {
 
     //----------------------------------------------------
 
-    private HistoryStore findHistoryStore(){
+    private Store findHistoryStore(){
+        try {
+            if (this.historyStore != null) {
+                return this.historyStore;
+            }
 
-        return null;
+            synchronized (this) {
+                if (this.historyStore != null) {   // <-- add this
+                    return this.historyStore;
+                }
+
+                //otherwise use the core-cgo-llm-orchestrator
+                String pipelineStr = Resources.getResource("pipeline.json");
+                JsonObject pipeLineJson = JsonParser.parseString(pipelineStr).getAsJsonObject();
+
+                String storeStr = pipeLineJson.get("history_store").getAsString();
+                Store store = (Store) Thread.currentThread().getContextClassLoader().
+                        loadClass(storeStr).getDeclaredConstructor().newInstance();
+                this.historyStore = store;
+
+                return this.historyStore;
+            }
+        }catch (Exception e){
+            e.printStackTrace();
+            throw new IllegalStateException("Failed to resolve ScorerClient from pipeline.json", e);
+        }
     }
 
 }

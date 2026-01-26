@@ -1,21 +1,37 @@
 package ai.braineous.cgo.history;
 
 import com.google.gson.JsonObject;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoCollection;
-import com.mongodb.client.MongoDatabase;
+import com.mongodb.ClientSessionOptions;
+import com.mongodb.client.*;
+import com.mongodb.connection.ClusterDescription;
 import org.bson.Document;
+import org.bson.conversions.Bson;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import static com.mongodb.client.model.Filters.eq;
+import com.mongodb.client.MongoClients;
 
 public class MongoHistoryStore implements Store {
 
-    private final MongoClient mongoClient;
-    private final String dbName;
-    private final String collectionName;
+    public static final String DEFAULT_DB_NAME = "cgo";
+    public static final String DEFAULT_COLLECTION_NAME = "history_store";
+
+    private MongoClient mongoClient;
+    private String dbName;
+    private String collectionName;
+
+    public MongoHistoryStore() {
+        this.dbName = DEFAULT_DB_NAME;
+        this.collectionName = DEFAULT_COLLECTION_NAME;
+
+        // TEMP hardcode for IT/local. Refactor back into pipeline.json later.
+        String connectionString = "mongodb://localhost:27017";
+
+        this.mongoClient = MongoClients.create(connectionString);
+    }
+
 
     public MongoHistoryStore(MongoClient mongoClient, String dbName, String collectionName) {
         if (mongoClient == null) {
@@ -30,6 +46,10 @@ public class MongoHistoryStore implements Store {
         this.mongoClient = mongoClient;
         this.dbName = dbName;
         this.collectionName = collectionName;
+    }
+
+    public void setMongoClient(MongoClient mongoClient) {
+        this.mongoClient = mongoClient;
     }
 
     @Override
