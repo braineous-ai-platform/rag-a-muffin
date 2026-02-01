@@ -3,11 +3,15 @@ package ai.braineous.rag.prompt.cgo.api;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import com.google.gson.JsonObject;
 
-import java.util.Map;
+import java.util.*;
 
 public final class GraphContext {
 
-    private final Map<String, Node> nodes;
+    private Map<String, Node> nodes;
+
+    public GraphContext() {
+        this.nodes = new HashMap<>();
+    }
 
     public GraphContext(Map<String, Node> nodes) {
         this.nodes = Map.copyOf(nodes);
@@ -23,6 +27,9 @@ public final class GraphContext {
                 "nodes=" + nodes +
                 '}';
     }
+
+    //---------------------------------------
+
 
     //------------------------------------
     public JsonObject toJson() {
@@ -76,6 +83,43 @@ public final class GraphContext {
         }
 
         return new GraphContext(nodeMap);
+    }
+
+    //---------------------------------
+    public void addFact(Fact fact) {
+
+        if (fact == null) {
+            return;
+        }
+
+        String id = fact.getId();
+        if (id == null) {
+            return;
+        }
+        id = id.trim();
+        if (id.isEmpty()) {
+            return;
+        }
+
+        if (this.nodes == null) {
+            return;
+        }
+
+        String text = fact.getText();
+        if (text == null) {
+            text = "";
+        }
+
+        Node.Mode mode = Node.Mode.ATOMIC;
+
+        Node node = new Node(
+                id,
+                text,
+                new ArrayList<>(),
+                mode
+        );
+
+        this.nodes.put(id, node);
     }
 
 

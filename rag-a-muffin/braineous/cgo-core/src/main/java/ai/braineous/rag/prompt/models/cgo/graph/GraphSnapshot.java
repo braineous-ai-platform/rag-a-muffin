@@ -6,6 +6,7 @@ import ai.braineous.rag.prompt.cgo.api.GraphView;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -106,5 +107,128 @@ public class GraphSnapshot implements GraphView {
 
 
         return false;
+    }
+
+    //--------------------------------------
+    public Fact findFact(String factId) {
+
+        if (factId == null) {
+            return null;
+        }
+
+        String wanted = factId.trim();
+        if (wanted.isEmpty()) {
+            return null;
+        }
+
+        if (this.nodes == null || this.nodes.isEmpty()) {
+            return null;
+        }
+
+        for (var entry : this.nodes.entrySet()) {
+            Fact fact = entry.getValue();
+            if (fact == null) {
+                continue;
+            }
+
+            String id = fact.getId();
+            if (id == null) {
+                continue;
+            }
+
+            if (id.trim().equals(wanted)) {
+                return fact;
+            }
+        }
+
+        return null;
+    }
+
+
+    public List<Fact> findNeighbors(String factId) {
+
+        List<Fact> facts = new ArrayList<>();
+
+        if (factId == null) {
+            return facts;
+        }
+
+        String wanted = factId.trim();
+        if (wanted.isEmpty()) {
+            return facts;
+        }
+
+        Fact anchor = this.findFact(wanted);
+        if (anchor == null) {
+            return facts;
+        }
+
+        String anchorId = anchor.getId();
+        if (anchorId == null) {
+            return facts;
+        }
+
+        anchorId = anchorId.trim();
+        if (anchorId.isEmpty()) {
+            return facts;
+        }
+
+        if (this.edges == null || this.edges.isEmpty()) {
+            return facts;
+        }
+
+        java.util.LinkedHashSet<String> seen = new java.util.LinkedHashSet<String>();
+
+        for (var entry : this.edges.entrySet()) {
+
+            Edge edge = entry.getValue();
+            if (edge == null) {
+                continue;
+            }
+
+            String fromId = edge.getFromFactId();
+            String toId = edge.getToFactId();
+
+            if (fromId == null || toId == null) {
+                continue;
+            }
+
+            String from = fromId.trim();
+            if (from.isEmpty()) {
+                continue;
+            }
+
+            if (!from.equals(anchorId)) {
+                continue;
+            }
+
+            String to = toId.trim();
+            if (to.isEmpty()) {
+                continue;
+            }
+
+            if (seen.contains(to)) {
+                continue;
+            }
+
+            Fact neighbor = this.findFact(to);
+            if (neighbor == null) {
+                continue;
+            }
+
+            String neighborId = neighbor.getId();
+            if (neighborId == null) {
+                continue;
+            }
+
+            if (neighborId.trim().isEmpty()) {
+                continue;
+            }
+
+            seen.add(to);
+            facts.add(neighbor);
+        }
+
+        return facts;
     }
 }
