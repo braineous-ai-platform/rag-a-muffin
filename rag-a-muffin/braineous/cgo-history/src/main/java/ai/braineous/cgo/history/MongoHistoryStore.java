@@ -32,6 +32,12 @@ public class MongoHistoryStore implements Store {
         this.mongoClient = MongoClients.create(connectionString);
     }
 
+    public MongoHistoryStore(MongoClient mongoClient) {
+        this.mongoClient = mongoClient;
+        this.dbName = DEFAULT_DB_NAME;
+        this.collectionName = DEFAULT_COLLECTION_NAME;
+    }
+
 
     public MongoHistoryStore(MongoClient mongoClient, String dbName, String collectionName) {
         if (mongoClient == null) {

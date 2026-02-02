@@ -13,7 +13,7 @@ public final class QueryRequests {
             GraphContext context,
             String factId
     ) {
-        return new QueryRequest<>(meta, context, task);
+        return new QueryRequest<>(meta, context, task, factId);
     }
 
     public static QueryRequest<ValidateTask> validateTask(
@@ -21,6 +21,23 @@ public final class QueryRequests {
             ValidateTask task,
             GraphContext context,
             String factId,
+            LLMResponseValidatorRule rule
+    ) {
+        return new QueryRequest<>(meta, context, task, factId, rule);
+    }
+
+    public static QueryRequest<ValidateTask> validateTask(
+            Meta meta,
+            ValidateTask task,
+            GraphContext context
+    ) {
+        return new QueryRequest<>(meta, context, task);
+    }
+
+    public static QueryRequest<ValidateTask> validateTask(
+            Meta meta,
+            ValidateTask task,
+            GraphContext context,
             LLMResponseValidatorRule rule
     ) {
         return new QueryRequest<>(meta, context, task, rule);

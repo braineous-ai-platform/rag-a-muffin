@@ -20,6 +20,8 @@ public final class QueryRequest<T extends QueryTask> {
     private final GraphContext context;
     private final T task;
 
+    private String factId;
+
     private LLMResponseValidatorRule rule;
 
     private LlmAdapter adapter;
@@ -30,10 +32,26 @@ public final class QueryRequest<T extends QueryTask> {
         this.task = Objects.requireNonNull(task, "task must not be null");
     }
 
+
+    public QueryRequest(Meta meta, GraphContext context, T task, String factId) {
+        this.meta = Objects.requireNonNull(meta, "meta must not be null");
+        this.context = Objects.requireNonNull(context, "context must not be null");
+        this.task = Objects.requireNonNull(task, "task must not be null");
+        this.factId = factId;
+    }
+
     public QueryRequest(Meta meta, GraphContext context, T task, LLMResponseValidatorRule rule) {
         this.meta = meta;
         this.context = context;
         this.task = task;
+        this.rule = rule;
+    }
+
+    public QueryRequest(Meta meta, GraphContext context, T task, String factId, LLMResponseValidatorRule rule) {
+        this.meta = meta;
+        this.context = context;
+        this.task = task;
+        this.factId = factId;
         this.rule = rule;
     }
 
@@ -61,11 +79,45 @@ public final class QueryRequest<T extends QueryTask> {
         this.adapter = adapter;
     }
 
+    public String getFactId() {
+        return factId;
+    }
+
+    public void setFactId(String factId) {
+        this.factId = factId;
+    }
+
+    public String safeQueryKind() {
+        if (this.meta == null) {
+            return null;
+        }
+        return safe(this.meta.getQueryKind());
+    }
+
+    public String safeFactId() {
+        if (this.factId == null || this.factId.trim().isBlank()) {
+            return null;
+        }
+        return safe(this.factId);
+    }
+    private static String safe(String s) {
+        if (s == null) {
+            return null;
+        }
+        String t = s.trim();
+        if (t.isEmpty()) {
+            return null;
+        }
+        return t;
+    }
+
+
     @Override
     public String toString() {
         String adapterType = (adapter == null) ? "null" : adapter.getClass().getSimpleName();
         return "QueryRequest{" +
                 "meta=" + meta +
+                ", factId = " + this.factId +
                 ", context=" + context +
                 ", task=" + task +
                 ", rule=" + rule +
@@ -77,6 +129,8 @@ public final class QueryRequest<T extends QueryTask> {
     public JsonObject toJson() {
 
         JsonObject out = new JsonObject();
+
+        out.addProperty("factId", this.factId);
 
         // ---- meta ----
         out.add("meta", this.meta.toJson());
@@ -116,6 +170,11 @@ public final class QueryRequest<T extends QueryTask> {
             throw new IllegalArgumentException("QueryRequest JSON cannot be null");
         }
 
+        String factId = null;
+        if(json.has("fact_id") && !json.get("fact_id").isJsonNull()){
+            factId = json.get("fact_id").getAsString();
+        }
+
         // ---- meta ----
         Meta meta = Meta.fromJson(json.getAsJsonObject("meta"));
 
@@ -136,7 +195,7 @@ public final class QueryRequest<T extends QueryTask> {
             throw new IllegalStateException("Failed to rehydrate QueryTask: " + taskType, e);
         }
 
-        QueryRequest<?> req = new QueryRequest<>(meta, context, task);
+        QueryRequest<?> req = new QueryRequest<>(meta, context,task, factId);
 
         // ---- rule (identity only) ----
         if (json.has("rule") && !json.get("rule").isJsonNull()) {
