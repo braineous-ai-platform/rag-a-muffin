@@ -1,7 +1,9 @@
 package ai.braineous.rag.prompt.models.cgo.graph;
 
+import ai.braineous.cgo.config.CGOSystemConfig;
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import com.mongodb.client.MongoClient;
 
 import java.util.*;
 
@@ -11,7 +13,14 @@ public class GraphStoreImpl implements GraphStore{
     private final Map<String, Fact> nodes = new HashMap<>(); // atomic
     private final Map<String, Edge> edges = new HashMap<>(); // relational
 
+    //MongoStore
+    private MongoClient mongoClient;
+    private GraphStoreMongo mongoStore;
+
     private GraphStoreImpl() {
+        String mongoDbUri = CGOSystemConfig.resolveMongoDBUri();
+        mongoClient = com.mongodb.client.MongoClients.create(mongoDbUri);
+        mongoStore = new GraphStoreMongo(mongoClient);
     }
 
     public static GraphStoreImpl getInstance(){
@@ -22,12 +31,15 @@ public class GraphStoreImpl implements GraphStore{
      * Build an immutable snapshot of the current graph state.
      */
     public GraphSnapshot snapshot() {
-        Map<String, Fact> nodeCopy = new HashMap<>(nodes);
+        /*Map<String, Fact> nodeCopy = new HashMap<>(nodes);
         Map<String, Edge> edgeCopy = new HashMap<>(edges);
         return new GraphSnapshot(
                 java.util.Collections.unmodifiableMap(nodeCopy),
                 java.util.Collections.unmodifiableMap(edgeCopy)
-        );
+        );*/
+
+
+        return mongoStore.snapshot();
     }
 
 
@@ -45,7 +57,7 @@ public class GraphStoreImpl implements GraphStore{
     }
 
     public void upsertNode(Fact fact) {
-        if (fact == null || fact.getId() == null) {
+        /*if (fact == null || fact.getId() == null) {
             return;
         }
 
@@ -71,12 +83,15 @@ public class GraphStoreImpl implements GraphStore{
         // if (fact.getMode() != null) existing.setMode(fact.getMode());
 
         // ✅ always merge attributes
-        mergeAttributes(existing, fact);
+        mergeAttributes(existing, fact);*/
+
+
+        mongoStore.upsertNode(fact);
     }
 
 
     public void deleteNode(Fact fact){
-        if (fact == null || fact.getId() == null) {
+        /*if (fact == null || fact.getId() == null) {
             return;
         }
 
@@ -97,17 +112,23 @@ public class GraphStoreImpl implements GraphStore{
             this.edges.remove(edge.getId());
         }
 
-        nodes.remove(fact.getId());
+        nodes.remove(fact.getId());*/
+
+
+        mongoStore.deleteNode(fact);
     }
 
     public void mutate(Fact from, Fact to, Fact edgeFact){
-        if (from == null || from.getId() == null) return;
+        /*if (from == null || from.getId() == null) return;
         if (to == null || to.getId() == null) return;
         if (edgeFact == null || edgeFact.getId() == null) return;
 
         this.upsertNode(from);
         this.upsertNode(to);
-        this.upsertEdge(from, to, edgeFact);
+        this.upsertEdge(from, to, edgeFact);*/
+
+
+        mongoStore.mutate(from, to, edgeFact);
 
     }
     // ---------- internal helpers ----------
