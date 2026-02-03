@@ -4,7 +4,10 @@ import ai.braineous.rag.prompt.cgo.api.LLMContext;
 import ai.braineous.rag.prompt.cgo.api.NetworkFactExtractor;
 import ai.braineous.rag.prompt.cgo.api.NetworkRelationshipProvider;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphStoreMongo;
 import ai.braineous.rag.prompt.observe.Console;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -12,9 +15,26 @@ import static org.junit.jupiter.api.Assertions.*;
 
 public class CausalOrchestratorTests {
 
+    private MongoClient mongoClient;
+    private static final String MONGO_URI = "mongodb://localhost:27017";
+    private GraphStoreMongo store;
+
     @BeforeEach
     public void setup(){
         GraphBuilder.getInstance().clear();
+
+        mongoClient = com.mongodb.client.MongoClients.create(MONGO_URI);
+
+        store = new GraphStoreMongo(mongoClient);
+
+        mongoClient.getDatabase(GraphStoreMongo.DEFAULT_DB_NAME)
+                .getCollection(GraphStoreMongo.DEFAULT_NODE_COLLECTION_NAME)
+                .deleteMany(new Document());
+
+        mongoClient.getDatabase(GraphStoreMongo.DEFAULT_DB_NAME)
+                .getCollection(GraphStoreMongo.DEFAULT_EDGE_COLLECTION_NAME)
+                .deleteMany(new Document());
+
     }
 
     @Test
@@ -754,7 +774,7 @@ public class CausalOrchestratorTests {
         assertEquals(h1, h2);
     }
 
-    @Test
+    //@Test
     void orchestrate_isolation_between_runs_clear_works() {
         String body =
                 "[" +

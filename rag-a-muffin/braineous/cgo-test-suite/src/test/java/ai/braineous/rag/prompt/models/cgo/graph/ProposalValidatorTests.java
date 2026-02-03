@@ -5,6 +5,8 @@ import ai.braineous.rag.prompt.cgo.api.FactValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Relationship;
 import ai.braineous.rag.prompt.cgo.api.RelationshipValidatorRule;
 import ai.braineous.rag.prompt.observe.Console;
+import com.mongodb.client.MongoClient;
+import org.bson.Document;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -17,9 +19,26 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ProposalValidatorTests {
 
+    private MongoClient mongoClient;
+    private static final String MONGO_URI = "mongodb://localhost:27017";
+    private GraphStoreMongo store;
+
     @BeforeEach
-    void setup() {
+    public void setup(){
         GraphBuilder.getInstance().clear();
+
+        mongoClient = com.mongodb.client.MongoClients.create(MONGO_URI);
+
+        store = new GraphStoreMongo(mongoClient);
+
+        mongoClient.getDatabase(GraphStoreMongo.DEFAULT_DB_NAME)
+                .getCollection(GraphStoreMongo.DEFAULT_NODE_COLLECTION_NAME)
+                .deleteMany(new Document());
+
+        mongoClient.getDatabase(GraphStoreMongo.DEFAULT_DB_NAME)
+                .getCollection(GraphStoreMongo.DEFAULT_EDGE_COLLECTION_NAME)
+                .deleteMany(new Document());
+
     }
 
     @Test
