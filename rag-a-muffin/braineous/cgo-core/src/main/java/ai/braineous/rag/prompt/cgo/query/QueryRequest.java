@@ -126,21 +126,39 @@ public final class QueryRequest<T extends QueryTask> {
     }
 
     //---------------------------------------------------------
+    public String toJsonString() {
+        return toJson().toString();
+    }
+
+    @SuppressWarnings("unchecked")
+
+
     public JsonObject toJson() {
 
         JsonObject out = new JsonObject();
 
-        out.addProperty("factId", this.factId);
+        // ---- factId ----
+        String fid = safe(this.factId);
+        if (fid != null) {
+            out.addProperty("factId", fid);
+        } else {
+            out.add("factId", null);
+        }
 
         // ---- meta ----
-        out.add("meta", this.meta.toJson());
+        out.add("meta", (this.meta != null) ? this.meta.toJson() : null);
 
         // ---- context ----
-        out.add("context", this.context.toJson());
+        out.add("context", (this.context != null) ? this.context.toJson() : null);
 
         // ---- task ----
-        out.add("task", this.task.toJson());
-        out.addProperty("taskType", this.task.getClass().getName());
+        if (this.task != null) {
+            out.add("task", this.task.toJson());
+            out.addProperty("taskType", this.task.getClass().getName());
+        } else {
+            out.add("task", null);
+            out.add("taskType", null);
+        }
 
         // ---- rule (optional, identity only) ----
         if (this.rule != null) {
@@ -159,10 +177,6 @@ public final class QueryRequest<T extends QueryTask> {
         return out;
     }
 
-    public String toJsonString() {
-        return toJson().toString();
-    }
-
     @SuppressWarnings("unchecked")
     public static QueryRequest<?> fromJson(JsonObject json) {
 
@@ -170,9 +184,14 @@ public final class QueryRequest<T extends QueryTask> {
             throw new IllegalArgumentException("QueryRequest JSON cannot be null");
         }
 
+        // ---- factId ----
         String factId = null;
-        if(json.has("fact_id") && !json.get("fact_id").isJsonNull()){
-            factId = json.get("fact_id").getAsString();
+        try {
+            if (json.has("factId") && !json.get("factId").isJsonNull()) {
+                factId = safe(json.get("factId").getAsString());
+            }
+        } catch (RuntimeException re) {
+            factId = null;
         }
 
         // ---- meta ----
@@ -183,7 +202,18 @@ public final class QueryRequest<T extends QueryTask> {
 
         // ---- task ----
         JsonObject taskJson = json.getAsJsonObject("task");
-        String taskType = json.get("taskType").getAsString();
+        String taskType = null;
+        try {
+            if (json.has("taskType") && !json.get("taskType").isJsonNull()) {
+                taskType = safe(json.get("taskType").getAsString());
+            }
+        } catch (RuntimeException re) {
+            taskType = null;
+        }
+
+        if (taskType == null) {
+            throw new IllegalStateException("Failed to rehydrate QueryTask: taskType missing");
+        }
 
         QueryTask task;
         try {
@@ -195,22 +225,12 @@ public final class QueryRequest<T extends QueryTask> {
             throw new IllegalStateException("Failed to rehydrate QueryTask: " + taskType, e);
         }
 
-        QueryRequest<?> req = new QueryRequest<>(meta, context,task, factId);
+        QueryRequest<?> req = new QueryRequest(meta, context, task, factId);
 
-        // ---- rule (identity only) ----
-        if (json.has("rule") && !json.get("rule").isJsonNull()) {
-            // resolved later by pipeline wiring
-            // leave as null here intentionally
-        }
-
-        // ---- adapter (identity only) ----
-        if (json.has("adapter") && !json.get("adapter").isJsonNull()) {
-            // resolved later by pipeline wiring
-            // leave as null here intentionally
-        }
-
+        // rule/adapter identities are intentionally ignored here (wired later)
         return req;
     }
+
 
 }
 
