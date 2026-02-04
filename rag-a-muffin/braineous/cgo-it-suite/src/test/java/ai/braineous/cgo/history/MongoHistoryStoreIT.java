@@ -13,6 +13,7 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
+import java.time.Instant;
 import java.util.List;
 
 @QuarkusTest
@@ -287,7 +288,192 @@ public class MongoHistoryStoreIT {
         org.junit.jupiter.api.Assertions.assertEquals("Flight:F999", vt.getFactId());
     }
 
+    @Test
+    void upsertPending_overwrites_for_same_factId() {
+        Console.log("IT", "MongoHistoryStoreIT.upsertPending_overwrites_for_same_factId");
 
+        String dbName = "cgo_it";
+        String collection = "history_upsert_pending_factid_only";
+
+        MongoHistoryStore store = new MongoHistoryStore(mongoClient, dbName, collection);
+        store.clear();
+
+        // --- record 1 ---
+        Meta meta1 = new Meta("v1", "TEST_QUERY", "IT");
+        GraphContext ctx1 = new GraphContext(java.util.Map.of());
+        ValidateTask task1 = new ValidateTask("IT task", "Flight:F900");
+        QueryRequest<ValidateTask> req1 = new QueryRequest<ValidateTask>(meta1, ctx1, task1);
+        QueryExecution<ValidateTask> exec1 = new QueryExecution<ValidateTask>(req1);
+
+        HistoryRecord r1 = new HistoryRecord(exec1, null);
+        r1.markPending(Instant.parse("2026-02-04T12:00:00Z"));
+
+        store.upsertPending(r1);
+
+        org.junit.jupiter.api.Assertions.assertEquals(1, store.getAll().size());
+
+        HistoryRecord latest1 = store.findLatest("Flight:F900");
+        org.junit.jupiter.api.Assertions.assertNotNull(latest1);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.PENDING, latest1.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(Instant.parse("2026-02-04T12:00:00Z"), latest1.getUpdatedAt());
+
+        // --- record 2 (same factId, newer updatedAt) ---
+        Meta meta2 = new Meta("v1", "TEST_QUERY", "IT");
+        GraphContext ctx2 = new GraphContext(java.util.Map.of());
+        ValidateTask task2 = new ValidateTask("IT task", "Flight:F900");
+        QueryRequest<ValidateTask> req2 = new QueryRequest<ValidateTask>(meta2, ctx2, task2);
+        QueryExecution<ValidateTask> exec2 = new QueryExecution<ValidateTask>(req2);
+
+        HistoryRecord r2 = new HistoryRecord(exec2, null);
+        r2.markPending(Instant.parse("2026-02-04T12:00:10Z"));
+
+        store.upsertPending(r2);
+
+        // still one doc, but overwritten to newest
+        org.junit.jupiter.api.Assertions.assertEquals(1, store.getAll().size());
+
+        HistoryRecord latest2 = store.findLatest("Flight:F900");
+        org.junit.jupiter.api.Assertions.assertNotNull(latest2);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.PENDING, latest2.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals(Instant.parse("2026-02-04T12:00:10Z"), latest2.getUpdatedAt());
+    }
+
+    @Test
+    void markAccepted_sets_status_accepted_and_commitId_for_factId() {
+        Console.log("IT", "MongoHistoryStoreIT.markAccepted_sets_status_accepted_and_commitId_for_factId");
+
+        String dbName = "cgo_it";
+        String collection = "history_markAccepted_factid_only";
+
+        MongoHistoryStore store = new MongoHistoryStore(mongoClient, dbName, collection);
+        store.clear();
+
+        Meta meta = new Meta("v1", "TEST_QUERY", "IT");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+
+        ValidateTask task = new ValidateTask("IT task", "Flight:F901");
+        QueryRequest<ValidateTask> req = new QueryRequest<ValidateTask>(meta, ctx, task);
+        QueryExecution<ValidateTask> exec = new QueryExecution<ValidateTask>(req);
+
+        HistoryRecord pending = new HistoryRecord(exec, null);
+        pending.markPending(Instant.parse("2026-02-04T12:00:00Z"));
+
+        store.upsertPending(pending);
+
+        HistoryRecord before = store.findLatest("Flight:F901");
+        org.junit.jupiter.api.Assertions.assertNotNull(before);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.PENDING, before.getStatus());
+        org.junit.jupiter.api.Assertions.assertNull(before.getApprovedCommitId());
+
+        // executionId ignored in store; pass factId to keep it boring
+        store.markAccepted("Flight:F901", "Flight:F901", "c-901");
+
+        HistoryRecord after = store.findLatest("Flight:F901");
+        org.junit.jupiter.api.Assertions.assertNotNull(after);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.ACCEPTED, after.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("c-901", after.getApprovedCommitId());
+        org.junit.jupiter.api.Assertions.assertNotNull(after.getUpdatedAt());
+    }
+
+    @Test
+    void findByStatus_filters_by_factId_and_status() {
+        Console.log("IT", "MongoHistoryStoreIT.findByStatus_filters_by_factId_and_status");
+
+        String dbName = "cgo_it";
+        String collection = "history_findByStatus_factid_only";
+
+        MongoHistoryStore store = new MongoHistoryStore(mongoClient, dbName, collection);
+        store.clear();
+
+        Meta meta = new Meta("v1", "TEST_QUERY", "IT");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+
+        ValidateTask task = new ValidateTask("IT task", "Flight:F902");
+        QueryRequest<ValidateTask> req = new QueryRequest<ValidateTask>(meta, ctx, task);
+        QueryExecution<ValidateTask> exec = new QueryExecution<ValidateTask>(req);
+
+        HistoryRecord pending = new HistoryRecord(exec, null);
+        pending.markPending(Instant.parse("2026-02-04T12:00:00Z"));
+        store.upsertPending(pending);
+
+        java.util.List<HistoryRecord> pendingList =
+                store.findByStatus("Flight:F902", HistoryStatus.PENDING);
+        org.junit.jupiter.api.Assertions.assertEquals(1, pendingList.size());
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.PENDING, pendingList.get(0).getStatus());
+
+        java.util.List<HistoryRecord> acceptedList =
+                store.findByStatus("Flight:F902", HistoryStatus.ACCEPTED);
+        org.junit.jupiter.api.Assertions.assertEquals(0, acceptedList.size());
+
+        store.markAccepted("Flight:F902", "Flight:F902", "c-902");
+
+        java.util.List<HistoryRecord> pendingAfter =
+                store.findByStatus("Flight:F902", HistoryStatus.PENDING);
+        org.junit.jupiter.api.Assertions.assertEquals(0, pendingAfter.size());
+
+        java.util.List<HistoryRecord> acceptedAfter =
+                store.findByStatus("Flight:F902", HistoryStatus.ACCEPTED);
+        org.junit.jupiter.api.Assertions.assertEquals(1, acceptedAfter.size());
+        org.junit.jupiter.api.Assertions.assertEquals("c-902", acceptedAfter.get(0).getApprovedCommitId());
+    }
+
+    @Test
+    void findLatest_when_missing_returns_null_then_returns_latest_for_factId() {
+        Console.log("IT", "MongoHistoryStoreIT.findLatest_when_missing_returns_null_then_returns_latest_for_factId");
+
+        String dbName = "cgo_it";
+        String collection = "history_findLatest_missing_then_present";
+
+        MongoHistoryStore store = new MongoHistoryStore(mongoClient, dbName, collection);
+        store.clear();
+
+        org.junit.jupiter.api.Assertions.assertEquals(null, store.findLatest("Flight:F903"));
+
+        Meta meta = new Meta("v1", "TEST_QUERY", "IT");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+
+        ValidateTask task = new ValidateTask("IT task", "Flight:F903");
+        QueryRequest<ValidateTask> req = new QueryRequest<ValidateTask>(meta, ctx, task);
+        QueryExecution<ValidateTask> exec = new QueryExecution<ValidateTask>(req);
+
+        HistoryRecord pending = new HistoryRecord(exec, null);
+        pending.markPending(Instant.parse("2026-02-04T12:00:00Z"));
+        store.upsertPending(pending);
+
+        HistoryRecord latest1 = store.findLatest("Flight:F903");
+        org.junit.jupiter.api.Assertions.assertNotNull(latest1);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.PENDING, latest1.getStatus());
+
+        store.markAccepted("Flight:F903", "Flight:F903", "c-903");
+
+        HistoryRecord latest2 = store.findLatest("Flight:F903");
+        org.junit.jupiter.api.Assertions.assertNotNull(latest2);
+        org.junit.jupiter.api.Assertions.assertEquals(HistoryStatus.ACCEPTED, latest2.getStatus());
+        org.junit.jupiter.api.Assertions.assertEquals("c-903", latest2.getApprovedCommitId());
+    }
+
+    @Test
+    void markAccepted_when_fact_missing_is_noop() {
+        Console.log("IT", "MongoHistoryStoreIT.markAccepted_when_fact_missing_is_noop");
+
+        String dbName = "cgo_it";
+        String collection = "history_markAccepted_missing_noop";
+
+        MongoHistoryStore store = new MongoHistoryStore(mongoClient, dbName, collection);
+        store.clear();
+
+        // sanity: empty store
+        org.junit.jupiter.api.Assertions.assertEquals(0, store.getAll().size());
+
+        // attempt to accept a fact that does not exist
+        store.markAccepted("Flight:F9999", "Flight:F9999", "c-9999");
+
+        // still empty — markAccepted must not create records
+        org.junit.jupiter.api.Assertions.assertEquals(0, store.getAll().size());
+
+        // findLatest should remain null
+        org.junit.jupiter.api.Assertions.assertEquals(null, store.findLatest("Flight:F9999"));
+    }
 
     ///---------------------
     private HistoryRecord newRecord(String queryKind) {

@@ -48,7 +48,30 @@ public class HistoryStore implements Store{
         return this.records;
     }
 
+
     public void clear(){
         this.records.clear();
     }
+
+    //-----------------------------------------------------------
+    @Override
+    public void upsertPending(HistoryRecord record) {
+
+    }
+
+    @Override
+    public void markAccepted(String factId, String executionId, String commitId) {
+
+    }
+
+    @Override
+    public List<HistoryRecord> findByStatus(String factId, HistoryStatus status) {
+        return null;
+    }
+
+    @Override
+    public HistoryRecord findLatest(String factId) {
+        return null;
+    }
+
 }
