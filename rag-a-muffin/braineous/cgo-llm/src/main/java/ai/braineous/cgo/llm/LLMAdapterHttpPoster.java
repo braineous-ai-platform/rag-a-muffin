@@ -11,11 +11,13 @@ public class LLMAdapterHttpPoster {
 
     public HttpCallResult post(String endpoint, String jsonBody) throws Exception {
 
-        // TODO: integrate with config_service
         String base = "http://127.0.0.1:8000";
         String url = base + "/" + endpoint;
 
-        java.net.http.HttpClient client = java.net.http.HttpClient.newHttpClient();
+        java.net.http.HttpClient client =
+                java.net.http.HttpClient.newBuilder()
+                        .version(java.net.http.HttpClient.Version.HTTP_1_1)
+                        .build();
 
         Console.log("__________llm_adapter_url_______", url);
         Console.log("____payload____", jsonBody);

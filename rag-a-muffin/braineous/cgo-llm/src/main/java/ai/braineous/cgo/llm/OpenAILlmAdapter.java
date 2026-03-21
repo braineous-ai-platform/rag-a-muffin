@@ -20,35 +20,31 @@ public class OpenAILlmAdapter extends LlmAdapter {
     }
 
     @Override
-    public String invokeLlm(QueryRequest queryRequest, JsonObject prompt){
+    public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
         try {
-            String response = null;
+            JsonObject adapterRequest = new JsonObject();
+            adapterRequest.addProperty("requestId", queryRequest.getRequestId());
+            adapterRequest.addProperty("queryKind", queryRequest.getMeta().getQueryKind());
 
-            //invoke LLM - stub for now
-            //response = "{\"result\":{\"status\":\"VALID\"}}";
+            // llm_query
+            adapterRequest.add("llmQuery", prompt);
 
-            response = """
-                    {
-                      "result": {
-                        "ok": true,
-                        "code": "response.contract.ok",
-                        "message": "VALID",
-                        "stage": "llm_response_validation",
-                        "anchorId": null,
-                        "metadata": { "adapter": "fake" }
-                      }
-                    }
-                    """;
+            Console.log("llm_adapter_request", adapterRequest);
 
-            //TODO: call llm-adapter, just wiring test
-            //print result as Console.log. but keep
-            //contract same for now, to aboid
-            //updtream regressions at the top
             String endpoint = "invoke";
-            HttpCallResult result = this.poster.post(endpoint, prompt.toString());
+            HttpCallResult result = this.poster.post(endpoint, adapterRequest.toString());
             Console.log("llm_adapter_response", result);
 
-            return response;
+            if (result == null) {
+                throw new IllegalStateException("llm-adapter returned null HttpCallResult");
+            }
+
+            int status = result.getStatusCode();
+            if (status < 200 || status >= 300) {
+                throw new IllegalStateException("llm-adapter call failed with status: " + status);
+            }
+
+            return result.getBody();
         }catch(Exception e){
             throw new RuntimeException(e);
         }

@@ -64,6 +64,10 @@ public final class QueryRequest<T extends QueryTask> {
         return meta;
     }
 
+    public void setMeta(Meta meta) {
+        this.meta = meta;
+    }
+
     public GraphContext getContext() {
         return context;
     }

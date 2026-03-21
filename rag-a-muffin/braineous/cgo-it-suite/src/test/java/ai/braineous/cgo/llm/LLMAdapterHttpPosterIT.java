@@ -6,19 +6,34 @@ import org.junit.jupiter.api.Test;
 
 public class LLMAdapterHttpPosterIT {
 
-    //@Test
-    void poster_calls_fastapi_invoke_endpoint() throws Exception {
+    @Test
+    void poster_posts_exact_literal_json_to_invoke() throws Exception {
+        String jsonBody = """
+            {
+              "requestId": "1",
+              "queryKind": "reroute_passengers",
+              "llmQuery": {
+                "model": "llama3",
+                "prompt": "Why is the sky blue?",
+                "stream": false
+              }
+            }
+            """;
+
+        Console.log("IT:LLMAdapterHttpPoster.literal_payload", jsonBody);
 
         LLMAdapterHttpPoster poster = new LLMAdapterHttpPoster();
+        HttpCallResult result = poster.post("invoke", jsonBody);
 
-        String payload = "{\"prompt\":{}}";
-        Console.log("payload", payload);
-
-        HttpCallResult result = poster.post("invoke", payload);
-        Console.log("http_response", result);
+        Console.log("IT:LLMAdapterHttpPoster.literal_result", result.toString());
 
         Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.getStatusCode() >= 200);
-        Assertions.assertTrue(result.getStatusCode() < 300);
+
+        int status = result.getStatusCode();
+        Assertions.assertTrue(status >= 200 && status < 300);
+
+        String body = result.getBody();
+        Assertions.assertNotNull(body);
+        Assertions.assertFalse(body.trim().isEmpty());
     }
 }

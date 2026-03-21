@@ -18,9 +18,13 @@ public class LlmClientOrchestrator implements LlmClient {
      */
     @Override
     public String executePrompt(LlmAdapter adapter, QueryRequest queryRequest, JsonObject prompt) {
-        if(prompt == null || adapter == null){
+        if(prompt == null || adapter == null || queryRequest == null){
             return "";
         }
+
+        //ensure execution identity
+        queryRequest.generateRequestId();
+
         return adapter.invokeLlm(queryRequest, prompt);
     }
 }
