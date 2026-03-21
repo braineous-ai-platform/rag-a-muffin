@@ -70,7 +70,7 @@ class ObserverTests {
 
         request.setAdapter(new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
                 Console.log("fake_adapter_invoked", prompt == null ? "prompt=null" : "prompt=ok");
                 return """
                 {
@@ -147,7 +147,7 @@ class ObserverTests {
 
         request.setAdapter(new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest,JsonObject prompt) {
                 Console.log("fake_adapter_invoked", "ok");
                 return """
                 {

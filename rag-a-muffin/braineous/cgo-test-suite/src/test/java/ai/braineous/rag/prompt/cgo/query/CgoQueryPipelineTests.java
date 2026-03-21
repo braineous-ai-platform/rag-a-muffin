@@ -648,7 +648,7 @@ class CgoQueryPipelineTests {
 
         request.setAdapter(new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest,JsonObject prompt) {
                 Console.log("fake_adapter_invoked", "ok");
                 return """
                 {
@@ -1126,7 +1126,7 @@ class CgoQueryPipelineTests {
         JsonObject lastPrompt;
 
         @Override
-        public String executePrompt(LlmAdapter adapter,JsonObject prompt) {
+        public String executePrompt(LlmAdapter adapter, QueryRequest queryRequest,JsonObject prompt) {
             callCount++;
             lastPrompt = prompt;
             Console.log("LLM Prompt (CountingLlmClient)", prompt);
@@ -1163,7 +1163,7 @@ class CgoQueryPipelineTests {
     private static class FakeLlmAdapter extends LlmAdapter{
 
         @Override
-        public String invokeLlm(JsonObject prompt) {
+        public String invokeLlm(QueryRequest queryRequest,JsonObject prompt) {
             return "STUBBED";
         }
     }

@@ -394,7 +394,7 @@ public class ScoreOrchestratorTests {
     private static class FakeLlmAdapter extends LlmAdapter{
 
         @Override
-        public String invokeLlm(JsonObject prompt) {
+        public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
             return "STUBBED";
         }
     }

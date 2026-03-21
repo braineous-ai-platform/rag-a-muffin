@@ -16,15 +16,18 @@ import java.util.Objects;
  */
 public final class QueryRequest<T extends QueryTask> {
 
-    private final Meta meta;
-    private final GraphContext context;
-    private final T task;
+    private Meta meta;
+    private GraphContext context;
+    private T task;
 
     private String factId;
 
     private LLMResponseValidatorRule rule;
 
     private LlmAdapter adapter;
+
+    public QueryRequest() {
+    }
 
     public QueryRequest(Meta meta, GraphContext context, T task) {
         this.meta = Objects.requireNonNull(meta, "meta must not be null");

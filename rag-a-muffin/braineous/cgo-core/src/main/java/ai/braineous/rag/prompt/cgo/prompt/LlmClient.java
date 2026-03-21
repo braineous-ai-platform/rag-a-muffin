@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.cgo.prompt;
 
 import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
+import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import com.google.gson.JsonObject;
 
 /**
@@ -15,6 +16,6 @@ public interface LlmClient {
      * Execute the given prompt JSON and return the raw response as a String.
      * Response parsing/mapping will be handled in a later phase.
      */
-    String executePrompt(LlmAdapter adapter,JsonObject prompt);
+    String executePrompt(LlmAdapter adapter, QueryRequest queryRequest, JsonObject prompt);
 }
 

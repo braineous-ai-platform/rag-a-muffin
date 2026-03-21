@@ -90,6 +90,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         LlmClient client = this.findLlmClient();
         rawResponse = client.executePrompt(
                 adapter,
+                request,
                 prompt);
 
         // 2a) Global/core LLM response validation (if configured)

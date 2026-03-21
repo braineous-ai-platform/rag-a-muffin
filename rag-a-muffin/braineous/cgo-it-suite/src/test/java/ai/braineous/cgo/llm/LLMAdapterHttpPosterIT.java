@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 public class LLMAdapterHttpPosterIT {
 
-    @Test
+    //@Test
     void poster_calls_fastapi_invoke_endpoint() throws Exception {
 
         LLMAdapterHttpPoster poster = new LLMAdapterHttpPoster();

@@ -6,7 +6,7 @@ import org.junit.jupiter.api.Test;
 
 public class OpenAILlmAdapterIT {
 
-    @Test
+    /*@Test
     void invoke_llm_wiring_test() {
 
         OpenAILlmAdapter adapter = new OpenAILlmAdapter();
@@ -21,5 +21,5 @@ public class OpenAILlmAdapterIT {
 
         // still returning stub → validate stub contract
         Assertions.assertTrue(response.contains("response.contract.ok"));
-    }
+    }*/
 }

@@ -1,6 +1,7 @@
 package ai.braineous.cgo.llm;
 
 import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
+import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
 
@@ -19,7 +20,7 @@ public class OpenAILlmAdapter extends LlmAdapter {
     }
 
     @Override
-    public String invokeLlm(JsonObject prompt){
+    public String invokeLlm(QueryRequest queryRequest, JsonObject prompt){
         try {
             String response = null;
 

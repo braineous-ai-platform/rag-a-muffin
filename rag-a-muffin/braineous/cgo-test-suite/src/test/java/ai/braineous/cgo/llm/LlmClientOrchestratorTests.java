@@ -24,18 +24,18 @@ public class LlmClientOrchestratorTests {
 
         LlmClientOrchestrator orchestrator = new LlmClientOrchestrator();
 
-        String r1 = orchestrator.executePrompt(null, new JsonObject());
+        String r1 = orchestrator.executePrompt(null,null, new JsonObject());
         Console.log("result_null_adapter", r1);
 
         String r2 = orchestrator.executePrompt(new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
                 return "SHOULD_NOT_HAPPEN";
             }
-        }, null);
+        }, null, null);
         Console.log("result_null_prompt", r2);
 
-        String r3 = orchestrator.executePrompt(null, null);
+        String r3 = orchestrator.executePrompt(null, null, null);
         Console.log("result_both_null", r3);
 
         assertEquals("", r1, "When adapter is null, should return empty string");
@@ -53,7 +53,7 @@ public class LlmClientOrchestratorTests {
 
         LlmAdapter adapter = new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
                 calls[0]++;
                 Console.log("adapter_invoked", "calls=" + calls[0] + ", promptNull=" + (prompt == null));
                 return "{\"result\":{\"status\":\"VALID\"}}";
@@ -63,7 +63,7 @@ public class LlmClientOrchestratorTests {
         JsonObject prompt = new JsonObject();
         prompt.addProperty("ping", "pong");
 
-        String raw = orchestrator.executePrompt(adapter, prompt);
+        String raw = orchestrator.executePrompt(adapter, null, prompt);
 
         Console.log("raw_response", raw);
         Console.log("adapter_calls", calls[0]);
@@ -103,7 +103,7 @@ public class LlmClientOrchestratorTests {
         // Fake adapter returns deterministic response; LlmClientOrchestrator delegates to adapter
         request.setAdapter(new LlmAdapter() {
             @Override
-            public String invokeLlm(JsonObject prompt) {
+            public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
                 Console.log("fake_adapter_invoked", prompt == null ? "prompt=null" : "prompt=ok");
                 return """
                 {
