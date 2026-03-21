@@ -454,6 +454,71 @@ public class QueryRequestToJsonTest {
         org.junit.jupiter.api.Assertions.assertNull(primary);
     }
 
+    @Test
+    void requestId_generate_is_idempotent_and_non_null() {
+
+        // Arrange
+        Meta meta = new Meta("v1", "validate_fact", "requestId test");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+        ValidateTask task = new ValidateTask("validate this fact", "Flight:F100");
+
+        QueryRequest<ValidateTask> req = new QueryRequest<>(meta, ctx, task);
+
+        // Act
+        String id1 = req.generateRequestId();
+        String id2 = req.generateRequestId();
+
+        JsonObject json = new JsonObject();
+        json.addProperty("id1", id1);
+        json.addProperty("id2", id2);
+        Console.log("UT:QueryRequest.requestId:idempotent", json);
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNotNull(id1);
+        org.junit.jupiter.api.Assertions.assertEquals(id1, id2);
+    }
+
+    @Test
+    void requestId_initially_null_before_generation() {
+
+        // Arrange
+        Meta meta = new Meta("v1", "validate_fact", "requestId null test");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+        ValidateTask task = new ValidateTask("validate this fact", "Flight:F100");
+
+        QueryRequest<ValidateTask> req = new QueryRequest<>(meta, ctx, task);
+
+        Console.log("UT:QueryRequest.requestId:initial", (req.getRequestId() == null) ? "null" : req.getRequestId());
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertNull(req.getRequestId());
+    }
+
+    @Test
+    void requestId_roundtrip_preserved_in_json() {
+
+        // Arrange
+        Meta meta = new Meta("v1", "validate_fact", "requestId json test");
+        GraphContext ctx = new GraphContext(java.util.Map.of());
+        ValidateTask task = new ValidateTask("validate this fact", "Flight:F100");
+
+        QueryRequest<ValidateTask> original = new QueryRequest<>(meta, ctx, task);
+        String id = original.generateRequestId();
+
+        JsonObject json = original.toJson();
+        Console.log("UT:QueryRequest.requestId:json", json);
+
+        // Act
+        QueryRequest<?> rehydrated = QueryRequest.fromJson(json);
+
+        JsonObject out = new JsonObject();
+        out.addProperty("originalId", id);
+        out.addProperty("rehydratedId", rehydrated.getRequestId());
+        Console.log("UT:QueryRequest.requestId:rehydrated", out);
+
+        // Assert
+        org.junit.jupiter.api.Assertions.assertEquals(id, rehydrated.getRequestId());
+    }
 
 }
 

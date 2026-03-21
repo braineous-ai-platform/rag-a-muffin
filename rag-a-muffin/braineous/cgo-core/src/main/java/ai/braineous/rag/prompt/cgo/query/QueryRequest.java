@@ -7,6 +7,7 @@ import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import com.google.gson.JsonObject;
 
 import java.util.Objects;
+import java.util.UUID;
 
 /**
  * API-level request submitted to QueryPipeline.
@@ -16,6 +17,7 @@ import java.util.Objects;
  */
 public final class QueryRequest<T extends QueryTask> {
 
+    private String requestId;
     private Meta meta;
     private GraphContext context;
     private T task;
@@ -114,12 +116,26 @@ public final class QueryRequest<T extends QueryTask> {
         return t;
     }
 
+    //--------generate requestId only when pipeline_components reach the LLMClient phase
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public String generateRequestId() {
+        if (this.requestId != null) {
+            return this.requestId;
+        }
+        this.requestId = UUID.randomUUID().toString();
+        return this.requestId;
+    }
+
 
     @Override
     public String toString() {
         String adapterType = (adapter == null) ? "null" : adapter.getClass().getSimpleName();
         return "QueryRequest{" +
                 "meta=" + meta +
+                ", requestId = " + this.requestId +
                 ", factId = " + this.factId +
                 ", context=" + context +
                 ", task=" + task +
@@ -139,6 +155,14 @@ public final class QueryRequest<T extends QueryTask> {
     public JsonObject toJson() {
 
         JsonObject out = new JsonObject();
+
+        //requestId--------
+        String rid = safe(this.requestId);
+        if(rid != null){
+            out.addProperty("requestId", rid);
+        }else{
+            out.add("requestId", null);
+        }
 
         // ---- factId ----
         String fid = safe(this.factId);
@@ -187,6 +211,15 @@ public final class QueryRequest<T extends QueryTask> {
             throw new IllegalArgumentException("QueryRequest JSON cannot be null");
         }
 
+        String requestId = null;
+        try {
+            if (json.has("requestId") && !json.get("requestId").isJsonNull()) {
+                requestId = safe(json.get("requestId").getAsString());
+            }
+        } catch (RuntimeException re) {
+            requestId = null;
+        }
+
         // ---- factId ----
         String factId = null;
         try {
@@ -229,6 +262,9 @@ public final class QueryRequest<T extends QueryTask> {
         }
 
         QueryRequest<?> req = new QueryRequest(meta, context, task, factId);
+        if(requestId != null){
+            req.requestId = requestId;
+        }
 
         // rule/adapter identities are intentionally ignored here (wired later)
         return req;
