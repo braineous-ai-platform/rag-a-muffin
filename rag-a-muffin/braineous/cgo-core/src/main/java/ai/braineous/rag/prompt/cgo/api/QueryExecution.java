@@ -46,6 +46,8 @@ public final class QueryExecution<T extends QueryTask> {
 
     private boolean inMemoryMode = false;
 
+    private LLMResponse llmResponse;
+
     // ---- Constructors --------------------------------------------------------
 
     public QueryExecution(QueryRequest<T> request) {
@@ -127,6 +129,14 @@ public final class QueryExecution<T extends QueryTask> {
     @Deprecated
     public boolean hasValidationResult() {
         return hasLlmResponseValidation();
+    }
+
+    public LLMResponse getLlmResponse() {
+        return llmResponse;
+    }
+
+    public void setLlmResponse(LLMResponse llmResponse) {
+        this.llmResponse = llmResponse;
     }
 
     //--------------------------------------------------------
@@ -219,6 +229,13 @@ public final class QueryExecution<T extends QueryTask> {
         out.addProperty("stage", getStage());
         out.addProperty("ok", isOk());
 
+        //-----llm_response-----------------------------------------
+        if(this.llmResponse != null){
+            out.add("llmResponse", this.llmResponse.toJson());
+        }else{
+            out.add("llmResponse", null);
+        }
+
         return out;
     }
 
@@ -261,7 +278,19 @@ public final class QueryExecution<T extends QueryTask> {
             domainValidation = ValidationResult.fromJson(json.getAsJsonObject("domainValidation"));
         }
 
+        //---llmResponse-------------------------------------
+        LLMResponse llmResponse = null;
+        if (json.has("llmResponse") && !json.get("llmResponse").isJsonNull()) {
+            llmResponse = LLMResponse.fromJson(
+                    json.getAsJsonObject("llmResponse").toString(),
+                    LLMResponse.class
+            );
+        }
+
+
         QueryExecution<?> exec = new QueryExecution(req, rawResponse, promptValidation, llmResponseValidation, domainValidation);
+        exec.setLlmResponse(llmResponse);
+
         return exec;
     }
 
