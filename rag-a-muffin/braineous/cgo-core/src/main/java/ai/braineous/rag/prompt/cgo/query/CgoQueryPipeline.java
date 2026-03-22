@@ -67,66 +67,60 @@ public final class CgoQueryPipeline implements QueryPipeline {
     public <T extends QueryTask> QueryExecution<T> execute(QueryRequest<T> request) {
         Objects.requireNonNull(request, "request must not be null");
 
-        LlmAdapter adapter =  request.getAdapter();
+        LlmAdapter adapter = request.getAdapter();
         Objects.requireNonNull(adapter,
                 "Missing LlmAdapter on QueryRequest. Adapter must be explicit (cost guard).");
 
-
-        // 1) Build prompt from meta + task + graph context + response contract
         PromptRequestOutput requestOutput = promptBuilder.generateRequestPrompt(request);
         JsonObject prompt = requestOutput.getRequestOutput();
 
-        // 1b) Fail-fast if prompt contract validation failed
         ValidationResult promptValidation = requestOutput.getValidationResult();
         if (promptValidation != null && !promptValidation.isOk()) {
-            // Prompt is invalid; do NOT call LLM. Surface this as the pipeline's ValidationResult.
-            // We store it in the LLM validation slot; the stage identifies that this came
-            // from the prompt contract phase ("prompt_contract_validation").
-            return new QueryExecution<>(request, null, promptValidation, null, null);
+            return new QueryExecution<T>(request, null, promptValidation, null, null);
         }
 
-        // 2) Call LLM
-        String rawResponse = null;
         LlmClient client = this.findLlmClient();
-        rawResponse = client.executePrompt(
-                adapter,
-                request,
-                prompt);
+        String rawResponse = client.executePrompt(adapter, request, prompt);
 
-        // 2a) Global/core LLM response validation (if configured)
+        LLMResponse llmResponse = this.createLlmResponse(request, prompt, rawResponse);
+
         ValidationResult responseValidation = null;
         if (this.llmResponseValidator != null) {
             responseValidation = llmResponseValidator.validate(rawResponse);
             if (responseValidation != null && !responseValidation.isOk()) {
-                // Core response contract failed; return with this ValidationResult
-                return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, null);
+                QueryExecution<T> failedExecution =
+                        new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, null);
+                failedExecution.setLlmResponse(llmResponse);
+                failedExecution.setInMemoryMode(this.inMemoryMode);
+                this.score(failedExecution);
+                return failedExecution;
             }
         }
 
-        // 2b) Per-request LLM response rule (API-level, from QueryRequest)
         LLMResponseValidatorRule rule = request.getRule();
         ValidationResult domainValidation = null;
         if (rule != null) {
             domainValidation = rule.validate(rawResponse);
             if (domainValidation != null && !domainValidation.isOk()) {
-                // Per-request rule failed; return with this ValidationResult
-                return new QueryExecution<>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+                QueryExecution<T> failedExecution =
+                        new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+                failedExecution.setLlmResponse(llmResponse);
+                failedExecution.setInMemoryMode(this.inMemoryMode);
+                this.score(failedExecution);
+                return failedExecution;
             }
         }
 
-        QueryExecution execution = new QueryExecution<>(request,
-                rawResponse,
-                promptValidation,
-                responseValidation,
-                domainValidation);
+        JsonObject parsedResponse = this.parseLlmResponse(rawResponse);
 
-        //integrate_scorer
+        QueryExecution<T> execution =
+                new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+
+        execution.setLlmResponse(llmResponse);
         execution.setInMemoryMode(this.inMemoryMode);
+
         this.score(execution);
 
-
-        // 4) Wrap into a generic QueryExecution; domain decides how to map rawResponse → domain DTO
-        // Domain-level validation is not performed here yet, so domainValidation = null.
         return execution;
     }
     //--------------------------------------------------------------------------------------
@@ -188,6 +182,28 @@ public final class CgoQueryPipeline implements QueryPipeline {
     private void score(QueryExecution execution){
         ScorerClient scorer = this.findScorerClient();
         scorer.orchestrate(execution);
+    }
+
+    private <T extends QueryTask> LLMResponse createLlmResponse(
+            QueryRequest<T> request,
+            JsonObject prompt,
+            String rawResponse) {
+
+        LLMRequest llmRequest = new LLMRequest();
+        llmRequest.setQueryRequest(request);
+        llmRequest.setLlmQuery(prompt);
+
+        LLMResponse llmResponse = new LLMResponse();
+        llmResponse.setLlmRequest(llmRequest);
+        llmResponse.setRawResponse(rawResponse);
+        llmResponse.setSuccess(true);
+
+        return llmResponse;
+    }
+
+    private JsonObject parseLlmResponse(String rawResponse) {
+        LLMResponseParser parser = new LLMResponseParser();
+        return parser.parse(rawResponse);
     }
 }
 
