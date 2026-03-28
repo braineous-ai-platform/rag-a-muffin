@@ -1,16 +1,14 @@
 package ai.braineous.rag.prompt.cgo.querygen;
 
+import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
-import ai.braineous.rag.prompt.cgo.prompt.ResponseContractRegistry;
-import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
-import ai.braineous.rag.prompt.cgo.querygen.model.FieldValue;
 import com.google.gson.JsonObject;
 
 /**
- *  {
+ * {
  *   "type": "validation_result",
  *   "description": "Deterministic response contract derived from selected fields.",
  *   "schema": {
@@ -25,17 +23,9 @@ import com.google.gson.JsonObject;
  *   }
  * }
  */
-
 public class ResponseContractFieldGenerator implements FieldGenerator {
 
-    private final ResponseContractRegistry registry;
-
     public ResponseContractFieldGenerator() {
-        this.registry = new SimpleResponseContractRegistry();
-    }
-
-    public ResponseContractFieldGenerator(ResponseContractRegistry registry) {
-        this.registry = registry;
     }
 
     @Override
@@ -51,11 +41,27 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
 
     @Override
     public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request) {
-        /*JsonObject responseContract =
-                registry.responseContractFor(request.getMeta().getQueryKind());
+        ValidateTask task = (ValidateTask) request.getTask();
 
-        FieldValue fieldValue =
-                new FieldValue(fieldDefinition.getName(), responseContract.toString());
+        JsonObject responseContract = new JsonObject();
+        responseContract.addProperty("type", "validation_result");
+        responseContract.addProperty("description", "Deterministic response contract derived from selected fields.");
+
+        JsonObject schema = new JsonObject();
+        JsonObject result = new JsonObject();
+        JsonObject fields = new JsonObject();
+
+        if (task != null && task.getRequestedFields() != null) {
+            for (String requestedField : task.getRequestedFields()) {
+                if (requestedField != null) {
+                    fields.addProperty(requestedField, "string");
+                }
+            }
+        }
+
+        result.add("fields", fields);
+        schema.add("result", result);
+        responseContract.add("schema", schema);
 
         ValidationResult validationResult =
                 new ValidationResult(
@@ -67,7 +73,6 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
                         null
                 );
 
-        return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);*/
-        return null;
+        return new FieldGenerationResult(fieldDefinition, responseContract, validationResult);
     }
 }
