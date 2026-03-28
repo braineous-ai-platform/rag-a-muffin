@@ -7,9 +7,9 @@ import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
-public class LlmInstructionsFieldGenerator implements FieldGenerator {
+public class LlmTraceInstructionsFieldGenerator implements FieldGenerator {
 
-    public LlmInstructionsFieldGenerator() {
+    public LlmTraceInstructionsFieldGenerator() {
     }
 
     @Override
@@ -20,7 +20,7 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         if (fieldDefinition.getName() == null) {
             return false;
         }
-        return "llm_instructions".equals(fieldDefinition.getName());
+        return "llm_trace_instructions".equals(fieldDefinition.getName());
     }
 
     @Override
@@ -28,23 +28,21 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         JsonObject fieldValue = new JsonObject();
         JsonArray instructions = new JsonArray();
 
-        instructions.add("Return exactly one JSON object.");
-        instructions.add("Use response_contract.schema.result.fields to construct the result object.");
-        instructions.add("Place all generated result values under the result field.");
-        instructions.add("Do not modify the response_contract section.");
-        instructions.add("Do not add any fields not defined in response_contract.schema.result.fields.");
-        instructions.add("Do not remove any fields defined in response_contract.schema.result.fields.");
-        instructions.add("Do not rename any fields.");
-        instructions.add("Set every returned field value as a string.");
-        instructions.add("If a value cannot be determined, return an empty string for that field.");
-        instructions.add("Do not include natural language outside the JSON object.");
+        instructions.add("Use llm_trace.schema.trace.fields to construct the trace object.");
+        instructions.add("Place all generated trace values under the trace field.");
+        instructions.add("Do not modify the llm_trace section.");
+        instructions.add("Do not add any trace fields not defined in llm_trace.schema.trace.fields.");
+        instructions.add("Do not remove any trace fields defined in llm_trace.schema.trace.fields.");
+        instructions.add("Do not rename any trace fields.");
+        instructions.add("Set every trace field value as a string.");
+        instructions.add("If a trace value cannot be determined, return an empty string for that field.");
 
         fieldValue.add("instructions", instructions);
 
         ValidationResult validationResult =
                 new ValidationResult(
                         true,
-                        "field.llm_instructions.ok",
+                        "field.llm_trace_instructions.ok",
                         "VALID",
                         "field_generation",
                         fieldDefinition.getName(),

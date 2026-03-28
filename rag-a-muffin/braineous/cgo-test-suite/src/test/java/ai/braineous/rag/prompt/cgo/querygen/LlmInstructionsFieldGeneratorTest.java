@@ -76,9 +76,11 @@ public class LlmInstructionsFieldGeneratorTest {
         JsonObject expected = new JsonObject();
         JsonArray instructions = new JsonArray();
         instructions.add("Return exactly one JSON object.");
-        instructions.add("Use exactly the fields defined in response_contract.schema.result.fields.");
-        instructions.add("Do not add any fields.");
-        instructions.add("Do not remove any fields.");
+        instructions.add("Use response_contract.schema.result.fields to construct the result object.");
+        instructions.add("Place all generated result values under the result field.");
+        instructions.add("Do not modify the response_contract section.");
+        instructions.add("Do not add any fields not defined in response_contract.schema.result.fields.");
+        instructions.add("Do not remove any fields defined in response_contract.schema.result.fields.");
         instructions.add("Do not rename any fields.");
         instructions.add("Set every returned field value as a string.");
         instructions.add("If a value cannot be determined, return an empty string for that field.");
@@ -123,16 +125,20 @@ public class LlmInstructionsFieldGeneratorTest {
         Console.log("____llmInstructions.instructions.5____", instructions.get(5).getAsString());
         Console.log("____llmInstructions.instructions.6____", instructions.get(6).getAsString());
         Console.log("____llmInstructions.instructions.7____", instructions.get(7).getAsString());
+        Console.log("____llmInstructions.instructions.8____", instructions.get(8).getAsString());
+        Console.log("____llmInstructions.instructions.9____", instructions.get(9).getAsString());
 
-        assertEquals(8, instructions.size());
+        assertEquals(10, instructions.size());
         assertEquals("Return exactly one JSON object.", instructions.get(0).getAsString());
-        assertEquals("Use exactly the fields defined in response_contract.schema.result.fields.", instructions.get(1).getAsString());
-        assertEquals("Do not add any fields.", instructions.get(2).getAsString());
-        assertEquals("Do not remove any fields.", instructions.get(3).getAsString());
-        assertEquals("Do not rename any fields.", instructions.get(4).getAsString());
-        assertEquals("Set every returned field value as a string.", instructions.get(5).getAsString());
-        assertEquals("If a value cannot be determined, return an empty string for that field.", instructions.get(6).getAsString());
-        assertEquals("Do not include natural language outside the JSON object.", instructions.get(7).getAsString());
+        assertEquals("Use response_contract.schema.result.fields to construct the result object.", instructions.get(1).getAsString());
+        assertEquals("Place all generated result values under the result field.", instructions.get(2).getAsString());
+        assertEquals("Do not modify the response_contract section.", instructions.get(3).getAsString());
+        assertEquals("Do not add any fields not defined in response_contract.schema.result.fields.", instructions.get(4).getAsString());
+        assertEquals("Do not remove any fields defined in response_contract.schema.result.fields.", instructions.get(5).getAsString());
+        assertEquals("Do not rename any fields.", instructions.get(6).getAsString());
+        assertEquals("Set every returned field value as a string.", instructions.get(7).getAsString());
+        assertEquals("If a value cannot be determined, return an empty string for that field.", instructions.get(8).getAsString());
+        assertEquals("Do not include natural language outside the JSON object.", instructions.get(9).getAsString());
     }
 
     @Test
