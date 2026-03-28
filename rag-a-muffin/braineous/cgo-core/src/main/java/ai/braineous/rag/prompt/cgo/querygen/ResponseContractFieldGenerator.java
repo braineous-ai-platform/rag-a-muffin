@@ -9,6 +9,23 @@ import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldValue;
 import com.google.gson.JsonObject;
 
+/**
+ *  {
+ *   "type": "validation_result",
+ *   "description": "Deterministic response contract derived from selected fields.",
+ *   "schema": {
+ *     "result": {
+ *       "fields": {
+ *         "ok": "string",
+ *         "code": "string",
+ *         "message": "string",
+ *         "anchorId": "string"
+ *       }
+ *     }
+ *   }
+ * }
+ */
+
 public class ResponseContractFieldGenerator implements FieldGenerator {
 
     private final ResponseContractRegistry registry;
@@ -33,8 +50,8 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
     }
 
     @Override
-    public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest<?> request) {
-        JsonObject responseContract =
+    public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request) {
+        /*JsonObject responseContract =
                 registry.responseContractFor(request.getMeta().getQueryKind());
 
         FieldValue fieldValue =
@@ -50,6 +67,7 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
                         null
                 );
 
-        return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
+        return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);*/
+        return null;
     }
 }

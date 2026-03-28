@@ -1,15 +1,16 @@
 package ai.braineous.rag.prompt.cgo.querygen.model;
 
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import com.google.gson.JsonObject;
 
 public class FieldGenerationResult {
 
     private final FieldDefinition fieldDefinition;
-    private final FieldValue fieldValue;
+    private final JsonObject fieldValue;
     private final ValidationResult validationResult;
 
     public FieldGenerationResult(FieldDefinition fieldDefinition,
-                                 FieldValue fieldValue,
+                                 JsonObject fieldValue,
                                  ValidationResult validationResult) {
         this.fieldDefinition = fieldDefinition;
         this.fieldValue = fieldValue;
@@ -20,7 +21,7 @@ public class FieldGenerationResult {
         return fieldDefinition;
     }
 
-    public FieldValue getFieldValue() {
+    public JsonObject getFieldValue() {
         return fieldValue;
     }
 

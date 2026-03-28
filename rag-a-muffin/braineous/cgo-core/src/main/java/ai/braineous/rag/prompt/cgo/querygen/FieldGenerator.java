@@ -8,5 +8,5 @@ public interface FieldGenerator {
 
     boolean supports(FieldDefinition fieldDefinition);
 
-    FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest<?> request);
+    FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request);
 }
