@@ -65,7 +65,7 @@ public final class ValidationResult {
      */
     private final Map<String, Object> metadata;
 
-    private ValidationResult(
+    public ValidationResult(
             boolean ok,
             String code,
             String message,
