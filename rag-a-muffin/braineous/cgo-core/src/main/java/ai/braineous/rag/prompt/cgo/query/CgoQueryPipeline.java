@@ -4,6 +4,9 @@ import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.PromptRequestOutput;
+import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
+import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenService;
+import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenValidator;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -26,6 +29,8 @@ import java.util.Objects;
 public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PromptBuilder promptBuilder;
+
+    private final QueryGenService queryGenService;
     private volatile LlmClient llmClient;
 
     private volatile ScorerClient scorerClient;
@@ -38,14 +43,18 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     public CgoQueryPipeline(PromptBuilder promptBuilder) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
+        this.queryGenService = new QueryGenService();
         this.llmClient = null;
-        this.llmResponseValidator = new GsonPhaseResultValidator();
+        //this.llmResponseValidator = new GsonPhaseResultValidator();
+        this.llmResponseValidator = new QueryGenValidator();
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
         this.promptBuilder = promptBuilder;
         this.llmClient = llmClient;
-        this.llmResponseValidator = new GsonPhaseResultValidator();
+        //this.llmResponseValidator = new GsonPhaseResultValidator();
+        this.llmResponseValidator = new QueryGenValidator();
+        this.queryGenService = new QueryGenService();
     }
 
     CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
@@ -53,6 +62,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = llmClient;
         this.llmResponseValidator = llmResponseValidator;
+        this.queryGenService = new QueryGenService();
     }
 
     public ScorerClient getScorerClient() {
@@ -71,13 +81,22 @@ public final class CgoQueryPipeline implements QueryPipeline {
         Objects.requireNonNull(adapter,
                 "Missing LlmAdapter on QueryRequest. Adapter must be explicit (cost guard).");
 
-        PromptRequestOutput requestOutput = promptBuilder.generateRequestPrompt(request);
+        /*PromptRequestOutput requestOutput = promptBuilder.generateRequestPrompt(request);
         JsonObject prompt = requestOutput.getRequestOutput();
 
         ValidationResult promptValidation = requestOutput.getValidationResult();
         if (promptValidation != null && !promptValidation.isOk()) {
             return new QueryExecution<T>(request, null, promptValidation, null, null);
+        }*/
+        QueryGenOutput requestOutput = queryGenService.generateQuery(request);
+        JsonObject prompt = requestOutput.getPayload();
+
+        ValidationResult promptValidation = requestOutput.getValidationResult();
+        if (promptValidation != null && !promptValidation.isOk()) {
+            return new QueryExecution<T>(request, null, promptValidation, null, null);
         }
+
+
 
         LlmClient client = this.findLlmClient();
         String rawResponse = client.executePrompt(adapter, request, prompt);

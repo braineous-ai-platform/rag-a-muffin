@@ -19,53 +19,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class CgoQueryPipelineTests {
 
     @Test
-    void execute_withPromptValidationError_shouldFailFast_beforeCallingLlm_andLeaveLlmResponseNull() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-        request.setAdapter(new FakeLlmAdapter());
-
-        PhaseResultValidator failingPromptValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String raw) {
-                return ValidationResult.error(
-                        "PROMPT_ERROR",
-                        "Prompt contract invalid",
-                        "prompt_contract_validation",
-                        null
-                );
-            }
-        };
-
-        PromptBuilder promptBuilder = new PromptBuilder(
-                new SimpleResponseContractRegistry(),
-                failingPromptValidator
-        );
-
-        CountingLlmClient llmClient = new CountingLlmClient("{\"unused\":true}");
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
-
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        Console.log("promptFail.rawResponse", execution.getRawResponse());
-        Console.log("promptFail.promptValidation", execution.getPromptValidation());
-        Console.log("promptFail.llmCallCount", llmClient.callCount);
-
-        assertEquals(0, llmClient.callCount);
-
-        assertNotNull(execution);
-        assertSame(request, execution.getRequest());
-        assertNull(execution.getRawResponse());
-        assertNull(execution.getLlmResponse());
-
-        assertNotNull(execution.getPromptValidation());
-        assertFalse(execution.getPromptValidation().isOk());
-        assertEquals("PROMPT_ERROR", execution.getPromptValidation().getCode());
-        assertEquals("prompt_contract_validation", execution.getPromptValidation().getStage());
-
-        assertNull(execution.getLlmResponseValidation());
-        assertNull(execution.getDomainValidation());
-    }
-
-    @Test
     void execute_withCoreValidatorOk_shouldAttachValidation_andLlmResponse() {
         QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
         request.setAdapter(new FakeLlmAdapter());
@@ -335,7 +288,62 @@ class CgoQueryPipelineTests {
     }
 
     @Test
-    void execute_withoutValidators_shouldReturnRawResponse_andAttachLlmResponse() {
+    void execute_withPromptValidationError_shouldUseQueryGenPath_andCallLlm() {
+        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
+        request.setAdapter(new FakeLlmAdapter());
+
+        PhaseResultValidator failingPromptValidator = new PhaseResultValidator() {
+            @Override
+            public ValidationResult validate(String raw) {
+                return ValidationResult.error(
+                        "PROMPT_ERROR",
+                        "Prompt contract invalid",
+                        "prompt_contract_validation",
+                        null
+                );
+            }
+        };
+
+        PromptBuilder promptBuilder = new PromptBuilder(
+                new SimpleResponseContractRegistry(),
+                failingPromptValidator
+        );
+
+        CountingLlmClient llmClient = new CountingLlmClient("{\"unused\":true}");
+        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+
+        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+
+        Console.log("promptPath.rawResponse", String.valueOf(execution.getRawResponse()));
+        Console.log("promptPath.promptValidation", String.valueOf(execution.getPromptValidation()));
+        Console.log("promptPath.llmCallCount", String.valueOf(llmClient.callCount));
+        Console.log("promptPath.llmResponse", String.valueOf(execution.getLlmResponse()));
+
+        assertEquals(1, llmClient.callCount);
+
+        assertNotNull(execution);
+        assertSame(request, execution.getRequest());
+        assertEquals("{\"unused\":true}", execution.getRawResponse());
+
+        assertNotNull(execution.getPromptValidation());
+        assertTrue(execution.getPromptValidation().isOk());
+        assertEquals("querygen.contract.ok", execution.getPromptValidation().getCode());
+        assertEquals("querygen_contract_validation", execution.getPromptValidation().getStage());
+
+        assertNotNull(execution.getLlmResponse());
+        assertEquals("{\"unused\":true}", execution.getLlmResponse().getRawResponse());
+        assertTrue(execution.getLlmResponse().isSuccess());
+
+        assertNotNull(execution.getLlmResponseValidation());
+        assertFalse(execution.getLlmResponseValidation().isOk());
+        assertEquals("querygen.contract.meta_missing_or_invalid", execution.getLlmResponseValidation().getCode());
+        assertEquals("querygen_contract_validation", execution.getLlmResponseValidation().getStage());
+
+        assertNull(execution.getDomainValidation());
+    }
+
+    @Test
+    void execute_withoutValidators_shouldReturnFailureExecution_fromDefaultQueryGenValidator_andAttachLlmResponse() {
         QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
         request.setAdapter(new FakeLlmAdapter());
 
@@ -357,8 +365,11 @@ class CgoQueryPipelineTests {
 
         QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
-        Console.log("noValidators.rawResponse", execution.getRawResponse());
-        Console.log("noValidators.llmResponse", execution.getLlmResponse());
+        Console.log("noValidators.rawResponse", String.valueOf(execution.getRawResponse()));
+        Console.log("noValidators.promptValidation", String.valueOf(execution.getPromptValidation()));
+        Console.log("noValidators.llmResponseValidation", String.valueOf(execution.getLlmResponseValidation()));
+        Console.log("noValidators.domainValidation", String.valueOf(execution.getDomainValidation()));
+        Console.log("noValidators.llmResponse", String.valueOf(execution.getLlmResponse()));
 
         assertNotNull(execution);
         assertSame(request, execution.getRequest());
@@ -366,11 +377,13 @@ class CgoQueryPipelineTests {
 
         assertNotNull(execution.getPromptValidation());
         assertTrue(execution.getPromptValidation().isOk());
+        assertEquals("querygen.contract.ok", execution.getPromptValidation().getCode());
+        assertEquals("querygen_contract_validation", execution.getPromptValidation().getStage());
 
         assertNotNull(execution.getLlmResponseValidation());
-        assertTrue(execution.getLlmResponseValidation().isOk());
-        assertEquals("response.contract.ok", execution.getLlmResponseValidation().getCode());
-        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
+        assertFalse(execution.getLlmResponseValidation().isOk());
+        assertEquals("querygen.contract.meta_missing_or_invalid", execution.getLlmResponseValidation().getCode());
+        assertEquals("querygen_contract_validation", execution.getLlmResponseValidation().getStage());
 
         assertNull(execution.getDomainValidation());
 
@@ -382,7 +395,7 @@ class CgoQueryPipelineTests {
         assertSame(request, execution.getLlmResponse().getLlmRequest().getQueryRequest());
         assertNotNull(execution.getLlmResponse().getLlmRequest().getLlmQuery());
     }
-
+    //---------------------------------------------------------------------------------
     private QueryRequest<ValidateTask> buildValidateTaskRequest() {
         return this.buildValidateTaskRequest(null);
     }
