@@ -97,9 +97,13 @@ public final class CgoQueryPipeline implements QueryPipeline {
         }
 
 
-
         LlmClient client = this.findLlmClient();
-        String rawResponse = client.executePrompt(adapter, request, prompt);
+        JsonObject llmPayload = new JsonObject();
+        llmPayload.addProperty("model", "llama3");
+        llmPayload.addProperty("prompt", prompt.toString());
+        llmPayload.addProperty("stream", false);
+
+        String rawResponse = client.executePrompt(adapter, request, llmPayload);
 
         LLMResponse llmResponse = this.createLlmResponse(request, prompt, rawResponse);
 
