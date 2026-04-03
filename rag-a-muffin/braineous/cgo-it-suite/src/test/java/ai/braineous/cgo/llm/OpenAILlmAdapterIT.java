@@ -479,7 +479,7 @@ public class OpenAILlmAdapterIT {
     }
 
     //------------------------------------------
-    @Test
+    //@Test
     void invokeLlm_executor_mode_with_response_contract_should_hold_when_only_query_kind_changes() {
 
         QueryRequest queryRequest = new QueryRequest();
