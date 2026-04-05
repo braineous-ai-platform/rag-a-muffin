@@ -14,7 +14,12 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LlmInstructionsFieldGeneratorTest {
 
@@ -25,7 +30,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supported.true____", String.valueOf(supported));
+        Console.log("____llmInstructions.supports.true____", String.valueOf(supported));
 
         assertTrue(supported);
     }
@@ -36,7 +41,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(null);
 
-        Console.log("____llmInstructions.supported.nullFieldDefinition____", String.valueOf(supported));
+        Console.log("____llmInstructions.supports.nullFieldDefinition____", String.valueOf(supported));
 
         assertFalse(supported);
     }
@@ -48,7 +53,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supported.nullFieldName____", String.valueOf(supported));
+        Console.log("____llmInstructions.supports.nullFieldName____", String.valueOf(supported));
 
         assertFalse(supported);
     }
@@ -60,12 +65,12 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supported.false____", String.valueOf(supported));
+        Console.log("____llmInstructions.supports.false____", String.valueOf(supported));
 
         assertFalse(supported);
     }
 
-    //@Test
+    @Test
     public void generate_shouldReturnStaticInstructionBlock() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
@@ -75,21 +80,26 @@ public class LlmInstructionsFieldGeneratorTest {
 
         JsonObject expected = new JsonObject();
         JsonArray instructions = new JsonArray();
+        instructions.add("Return only JSON.");
+        instructions.add("Use the provided output_template as the final answer format.");
+        instructions.add("Use runtime_result as truth.");
+        instructions.add("Do not recompute validation from context.");
+        instructions.add("Do not evaluate constraints from scratch.");
+        instructions.add("Set result.ok from runtime_result.ok.");
+        instructions.add("Set result.code from runtime_result.code.");
+        instructions.add("Return compact JSON on a single line.");
+        instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
+        instructions.add("Set every value in output_template as a string.");
+        instructions.add("Return exactly the output_template shape.");
+        instructions.add("Do not add, remove, or rename any fields.");
         instructions.add("Return exactly one JSON object.");
-        instructions.add("Use response_contract.schema.result.fields to construct the result object.");
-        instructions.add("Place all generated result values under the result field.");
-        instructions.add("Do not modify the response_contract section.");
-        instructions.add("Do not add any fields not defined in response_contract.schema.result.fields.");
-        instructions.add("Do not remove any fields defined in response_contract.schema.result.fields.");
-        instructions.add("Do not rename any fields.");
-        instructions.add("Set every returned field value as a string.");
-        instructions.add("If a value cannot be determined, return an empty string for that field.");
-        instructions.add("Do not include natural language outside the JSON object.");
+        instructions.add("Do not wrap the JSON in markdown fences.");
+        instructions.add("Do not include explanation before or after the JSON.");
         expected.add("instructions", instructions);
 
         Console.log("____llmInstructions.generate.actual____", result.getFieldValue().toString());
         Console.log("____llmInstructions.generate.expected____", expected.toString());
-        Console.log("____llmInstructions.generate.validation____", String.valueOf(result.getValidationResult()));
+        Console.log("____llmInstructions.generate.validationCode____", result.getValidationResult().getCode());
 
         assertNotNull(result);
         assertSame(fieldDefinition, result.getFieldDefinition());
@@ -106,7 +116,7 @@ public class LlmInstructionsFieldGeneratorTest {
         assertTrue(validationResult.getMetadata().isEmpty());
     }
 
-    //@Test
+    @Test
     public void generate_shouldReturnInstructionsArray_withExpectedOrder() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
@@ -127,18 +137,28 @@ public class LlmInstructionsFieldGeneratorTest {
         Console.log("____llmInstructions.instructions.7____", instructions.get(7).getAsString());
         Console.log("____llmInstructions.instructions.8____", instructions.get(8).getAsString());
         Console.log("____llmInstructions.instructions.9____", instructions.get(9).getAsString());
+        Console.log("____llmInstructions.instructions.10____", instructions.get(10).getAsString());
+        Console.log("____llmInstructions.instructions.11____", instructions.get(11).getAsString());
+        Console.log("____llmInstructions.instructions.12____", instructions.get(12).getAsString());
+        Console.log("____llmInstructions.instructions.13____", instructions.get(13).getAsString());
+        Console.log("____llmInstructions.instructions.14____", instructions.get(14).getAsString());
 
-        assertEquals(10, instructions.size());
-        assertEquals("Return exactly one JSON object.", instructions.get(0).getAsString());
-        assertEquals("Use response_contract.schema.result.fields to construct the result object.", instructions.get(1).getAsString());
-        assertEquals("Place all generated result values under the result field.", instructions.get(2).getAsString());
-        assertEquals("Do not modify the response_contract section.", instructions.get(3).getAsString());
-        assertEquals("Do not add any fields not defined in response_contract.schema.result.fields.", instructions.get(4).getAsString());
-        assertEquals("Do not remove any fields defined in response_contract.schema.result.fields.", instructions.get(5).getAsString());
-        assertEquals("Do not rename any fields.", instructions.get(6).getAsString());
-        assertEquals("Set every returned field value as a string.", instructions.get(7).getAsString());
-        assertEquals("If a value cannot be determined, return an empty string for that field.", instructions.get(8).getAsString());
-        assertEquals("Do not include natural language outside the JSON object.", instructions.get(9).getAsString());
+        assertEquals(15, instructions.size());
+        assertEquals("Return only JSON.", instructions.get(0).getAsString());
+        assertEquals("Use the provided output_template as the final answer format.", instructions.get(1).getAsString());
+        assertEquals("Use runtime_result as truth.", instructions.get(2).getAsString());
+        assertEquals("Do not recompute validation from context.", instructions.get(3).getAsString());
+        assertEquals("Do not evaluate constraints from scratch.", instructions.get(4).getAsString());
+        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(5).getAsString());
+        assertEquals("Set result.code from runtime_result.code.", instructions.get(6).getAsString());
+        assertEquals("Return compact JSON on a single line.", instructions.get(7).getAsString());
+        assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(8).getAsString());
+        assertEquals("Set every value in output_template as a string.", instructions.get(9).getAsString());
+        assertEquals("Return exactly the output_template shape.", instructions.get(10).getAsString());
+        assertEquals("Do not add, remove, or rename any fields.", instructions.get(11).getAsString());
+        assertEquals("Return exactly one JSON object.", instructions.get(12).getAsString());
+        assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(13).getAsString());
+        assertEquals("Do not include explanation before or after the JSON.", instructions.get(14).getAsString());
     }
 
     @Test
@@ -151,7 +171,11 @@ public class LlmInstructionsFieldGeneratorTest {
 
         ValidationResult validationResult = result.getValidationResult();
 
-        Console.log("____llmInstructions.validationResult____", String.valueOf(validationResult));
+        Console.log("____llmInstructions.validation.isOk____", String.valueOf(validationResult.isOk()));
+        Console.log("____llmInstructions.validation.code____", validationResult.getCode());
+        Console.log("____llmInstructions.validation.message____", validationResult.getMessage());
+        Console.log("____llmInstructions.validation.stage____", validationResult.getStage());
+        Console.log("____llmInstructions.validation.anchorId____", validationResult.getAnchorId());
 
         assertNotNull(validationResult);
         assertTrue(validationResult.isOk());
