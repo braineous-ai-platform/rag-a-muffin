@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.querygen;
 
+import ai.braineous.rag.prompt.cgo.api.Control;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
@@ -13,6 +14,7 @@ import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
+import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -69,7 +71,7 @@ public class TaskFieldGeneratorTest {
     public void generate_shouldReturnLatestTaskBlock() {
         TaskFieldGenerator generator = new TaskFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("task");
-        QueryRequest request = buildRequest();
+        QueryRequest request = buildRequestWithControls();
 
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
@@ -92,6 +94,11 @@ public class TaskFieldGeneratorTest {
         select.add("message");
         select.add("anchorId");
         expected.add("select", select);
+
+        JsonObject controls = new JsonObject();
+        controls.addProperty("promo_mode", "spring_campaign");
+        controls.addProperty("message_style", "brief");
+        expected.add("controls", controls);
 
         Console.log("____task.generate.actual____", result.getFieldValue().toString());
         Console.log("____task.generate.expected____", expected.toString());
@@ -116,7 +123,7 @@ public class TaskFieldGeneratorTest {
     public void generate_shouldReturnTaskFields_withExpectedValues() {
         TaskFieldGenerator generator = new TaskFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("task");
-        QueryRequest request = buildRequest();
+        QueryRequest request = buildRequestWithControls();
 
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
@@ -124,6 +131,7 @@ public class TaskFieldGeneratorTest {
         JsonObject intent = task.getAsJsonObject("intent");
         JsonArray select = task.getAsJsonArray("select");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
+        JsonObject controls = task.getAsJsonObject("controls");
 
         Console.log("____task.intent.goal____", intent.get("goal").getAsString());
         Console.log("____task.factId____", task.get("factId").getAsString());
@@ -135,6 +143,8 @@ public class TaskFieldGeneratorTest {
         Console.log("____task.relatedFactIds.size____", String.valueOf(relatedFactIds.size()));
         Console.log("____task.relatedFactIds.0____", relatedFactIds.get(0).getAsString());
         Console.log("____task.relatedFactIds.1____", relatedFactIds.get(1).getAsString());
+        Console.log("____task.controls.promo_mode____", controls.get("promo_mode").getAsString());
+        Console.log("____task.controls.message_style____", controls.get("message_style").getAsString());
 
         assertEquals("Validate departure and arrival airport codes", intent.get("goal").getAsString());
         assertEquals("Flight:F100", task.get("factId").getAsString());
@@ -148,13 +158,16 @@ public class TaskFieldGeneratorTest {
         assertEquals(2, relatedFactIds.size());
         assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
+
+        assertEquals("spring_campaign", controls.get("promo_mode").getAsString());
+        assertEquals("brief", controls.get("message_style").getAsString());
     }
 
     @Test
     public void generate_shouldNotEmitConstraintsForCurrentPhase() {
         TaskFieldGenerator generator = new TaskFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("task");
-        QueryRequest request = buildRequest();
+        QueryRequest request = buildRequestWithControls();
 
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
@@ -169,7 +182,7 @@ public class TaskFieldGeneratorTest {
     public void generate_shouldReturnValidationResultAnchoredToTaskField() {
         TaskFieldGenerator generator = new TaskFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("task");
-        QueryRequest request = buildRequest();
+        QueryRequest request = buildRequestWithControls();
 
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
@@ -187,7 +200,91 @@ public class TaskFieldGeneratorTest {
         assertTrue(validationResult.getMetadata().isEmpty());
     }
 
-    private QueryRequest buildRequest() {
+    @Test
+    public void generate_shouldReturnEmptyControls_whenControlsIsNull() {
+        TaskFieldGenerator generator = new TaskFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("task");
+        QueryRequest request = buildRequestWithNullControls();
+
+        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+
+        JsonObject task = result.getFieldValue();
+        JsonObject controls = task.getAsJsonObject("controls");
+
+        Console.log("____task.controls.null.actual____", task.toString());
+        Console.log("____task.controls.null.size____", String.valueOf(controls.size()));
+
+        assertNotNull(controls);
+        assertEquals(0, controls.size());
+        assertTrue(task.has("intent"));
+        assertTrue(task.has("factId"));
+        assertTrue(task.has("relatedFactIds"));
+        assertTrue(task.has("select"));
+    }
+
+    @Test
+    public void generate_shouldPreserveControlOrder() {
+        TaskFieldGenerator generator = new TaskFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("task");
+        QueryRequest request = buildRequestWithControls();
+
+        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+
+        JsonObject task = result.getFieldValue();
+        String actual = task.toString();
+
+        Console.log("____task.controls.order.actual____", actual);
+
+        assertTrue(actual.indexOf("\"promo_mode\"") < actual.indexOf("\"message_style\""));
+    }
+
+    @Test
+    public void generate_shouldIgnoreNullKeys_andAllowNullValues() {
+        TaskFieldGenerator generator = new TaskFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("task");
+        QueryRequest request = buildRequestWithNullKeyAndNullValueControls();
+
+        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+
+        JsonObject task = result.getFieldValue();
+        JsonObject controls = task.getAsJsonObject("controls");
+
+        Console.log("____task.controls.nullKeyNullValue.actual____", task.toString());
+        Console.log("____task.controls.has.message_style____", String.valueOf(controls.has("message_style")));
+        Console.log("____task.controls.message_style.isJsonNull____", String.valueOf(controls.get("message_style").isJsonNull()));
+
+        assertFalse(controls.has("ignored_null_key"));
+        assertTrue(controls.has("message_style"));
+        assertTrue(controls.get("message_style").isJsonNull());
+        assertEquals("spring_campaign", controls.get("promo_mode").getAsString());
+    }
+
+    private QueryRequest buildRequestWithControls() {
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate departure and arrival airport codes"
+        );
+
+        GraphContext context = new GraphContext();
+
+        List<Control> controls = Arrays.asList(
+                new Control("promo_mode", "spring_campaign"),
+                new Control("message_style", "brief")
+        );
+
+        ValidateTask task = new ValidateTask(
+                "Validate departure and arrival airport codes",
+                "Flight:F100",
+                Arrays.asList("ok", "code", "message", "anchorId"),
+                Arrays.asList("Airport:AUS", "Airport:DFW")
+        );
+        task.setControls(controls);
+
+        return new QueryRequest(meta, context, task);
+    }
+
+    private QueryRequest buildRequestWithNullControls() {
         Meta meta = new Meta(
                 "v1",
                 "validate_flight_airports",
@@ -202,6 +299,33 @@ public class TaskFieldGeneratorTest {
                 Arrays.asList("ok", "code", "message", "anchorId"),
                 Arrays.asList("Airport:AUS", "Airport:DFW")
         );
+        task.setControls(null);
+
+        return new QueryRequest(meta, context, task);
+    }
+
+    private QueryRequest buildRequestWithNullKeyAndNullValueControls() {
+        Meta meta = new Meta(
+                "v1",
+                "validate_flight_airports",
+                "Validate departure and arrival airport codes"
+        );
+
+        GraphContext context = new GraphContext();
+
+        List<Control> controls = Arrays.asList(
+                new Control("promo_mode", "spring_campaign"),
+                new Control(null, "ignored_value"),
+                new Control("message_style", null)
+        );
+
+        ValidateTask task = new ValidateTask(
+                "Validate departure and arrival airport codes",
+                "Flight:F100",
+                Arrays.asList("ok", "code", "message", "anchorId"),
+                Arrays.asList("Airport:AUS", "Airport:DFW")
+        );
+        task.setControls(controls);
 
         return new QueryRequest(meta, context, task);
     }

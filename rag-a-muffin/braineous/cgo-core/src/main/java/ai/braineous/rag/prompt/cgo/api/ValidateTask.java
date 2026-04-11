@@ -20,6 +20,7 @@ public final class ValidateTask implements QueryTask {
     private String factId; // e.g. "Flight:F100"
     private List<String> requestedFields;
     private List<String> relatedFactIds;
+    private List<Control> controls;
 
     public ValidateTask(String description, String factId){
         this.description = description;
@@ -53,6 +54,14 @@ public final class ValidateTask implements QueryTask {
         return relatedFactIds;
     }
 
+    public List<Control> getControls() {
+        return controls;
+    }
+
+    public void setControls(List<Control> controls) {
+        this.controls = controls;
+    }
+
     @Override
     public String toString() {
         return "ValidateTask{" +
@@ -60,6 +69,7 @@ public final class ValidateTask implements QueryTask {
                 ", factId='" + factId + '\'' +
                 ", requestedFields=" + requestedFields +
                 ", relatedFactIds=" + relatedFactIds +
+                ", controls=" + controls +
                 '}';
     }
 
@@ -67,7 +77,6 @@ public final class ValidateTask implements QueryTask {
     public JsonObject toJson() {
         JsonObject out = new JsonObject();
 
-        // intent (from description)
         JsonObject intent = new JsonObject();
         if (this.description != null) {
             intent.addProperty("goal", this.description);
@@ -76,18 +85,15 @@ public final class ValidateTask implements QueryTask {
         }
         out.add("intent", intent);
 
-        // factId
         if (this.factId != null) {
             out.addProperty("factId", this.factId);
         } else {
             out.add("factId", null);
         }
 
-        // relatedFactIds
         out.add("relatedFactIds", toJsonArray(this.relatedFactIds));
-
-        // select (from requestedFields)
         out.add("select", toJsonArray(this.requestedFields));
+        out.add("controls", toControlsJsonObject(this.controls));
 
         return out;
     }
@@ -103,7 +109,6 @@ public final class ValidateTask implements QueryTask {
 
         String description = null;
 
-        // intent.goal → description
         if (jsonObject.has("intent") && jsonObject.get("intent").isJsonObject()) {
             JsonObject intent = jsonObject.getAsJsonObject("intent");
             if (intent.has("goal") && !intent.get("goal").isJsonNull()) {
@@ -116,13 +121,13 @@ public final class ValidateTask implements QueryTask {
             factId = jsonObject.get("factId").getAsString();
         }
 
-        // select → requestedFields
         List<String> requestedFields = readStringArray(jsonObject, "select");
-
-        // relatedFactIds (same)
         List<String> relatedFactIds = readStringArray(jsonObject, "relatedFactIds");
 
-        return new ValidateTask(description, factId, requestedFields, relatedFactIds);
+        ValidateTask task = new ValidateTask(description, factId, requestedFields, relatedFactIds);
+        task.setControls(readControls(jsonObject, "controls"));
+
+        return task;
     }
 
     private static JsonArray toJsonArray(List<String> items) {
@@ -141,6 +146,37 @@ public final class ValidateTask implements QueryTask {
         }
 
         return array;
+    }
+
+    private static JsonObject toControlsJsonObject(List<Control> controls) {
+        JsonObject jsonObject = new JsonObject();
+
+        if (controls == null) {
+            return jsonObject;
+        }
+
+        for (int i = 0; i < controls.size(); i++) {
+            Control control = controls.get(i);
+
+            if (control == null) {
+                continue;
+            }
+
+            String key = control.getKey();
+            String value = control.getValue();
+
+            if (key == null) {
+                continue;
+            }
+
+            if (value != null) {
+                jsonObject.addProperty(key, value);
+            } else {
+                jsonObject.add(key, null);
+            }
+        }
+
+        return jsonObject;
     }
 
     private static List<String> readStringArray(JsonObject jsonObject, String fieldName) {
@@ -164,5 +200,28 @@ public final class ValidateTask implements QueryTask {
         }
 
         return values;
+    }
+
+    private static List<Control> readControls(JsonObject jsonObject, String fieldName) {
+        List<Control> controls = new ArrayList<Control>();
+
+        if (!jsonObject.has(fieldName) || jsonObject.get(fieldName).isJsonNull()) {
+            return controls;
+        }
+
+        if (!jsonObject.get(fieldName).isJsonObject()) {
+            return controls;
+        }
+
+        JsonObject controlsObject = jsonObject.getAsJsonObject(fieldName);
+        for (String key : controlsObject.keySet()) {
+            if (!controlsObject.get(key).isJsonNull()) {
+                controls.add(new Control(key, controlsObject.get(key).getAsString()));
+            } else {
+                controls.add(new Control(key, null));
+            }
+        }
+
+        return controls;
     }
 }

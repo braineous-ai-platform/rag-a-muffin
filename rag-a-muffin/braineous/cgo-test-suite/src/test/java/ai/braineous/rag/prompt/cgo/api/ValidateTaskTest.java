@@ -25,6 +25,7 @@ public class ValidateTaskTest {
         Console.log("____validateTask.factId____", String.valueOf(task.getFactId()));
         Console.log("____validateTask.requestedFields____", String.valueOf(task.getRequestedFields()));
         Console.log("____validateTask.relatedFactIds____", String.valueOf(task.getRelatedFactIds()));
+        Console.log("____validateTask.controls____", String.valueOf(task.getControls()));
 
         assertEquals("Validate departure and arrival airport codes", task.getDescription());
         assertEquals("Flight:F100", task.getFactId());
@@ -36,10 +37,11 @@ public class ValidateTaskTest {
         assertEquals(2, task.getRelatedFactIds().size());
         assertEquals("Airport:AUS", task.getRelatedFactIds().get(0));
         assertEquals("Airport:DFW", task.getRelatedFactIds().get(1));
+        assertNull(task.getControls());
     }
 
     @Test
-    public void toJson_shouldSerializeLatestTaskShape() {
+    public void toJson_shouldSerializeLatestTaskShapeIncludingEmptyControls() {
         ValidateTask task = new ValidateTask(
                 "Validate departure and arrival airport codes",
                 "Flight:F100",
@@ -69,10 +71,43 @@ public class ValidateTaskTest {
         select.add("anchorId");
         expected.add("select", select);
 
+        JsonObject controls = new JsonObject();
+        expected.add("controls", controls);
+
         Console.log("____validateTask.toJson.actual____", actual.toString());
         Console.log("____validateTask.toJson.expected____", expected.toString());
 
         assertEquals(expected, actual);
+    }
+
+    @Test
+    public void toJson_shouldSerializeControlsAsFlatObjectOfStrings() {
+        ValidateTask task = new ValidateTask(
+                "Validate departure and arrival airport codes",
+                "Flight:F100",
+                Arrays.asList("ok", "code"),
+                Arrays.asList("Airport:AUS")
+        );
+
+        task.setControls(
+                Arrays.asList(
+                        new Control("promo_mode", "spring_campaign"),
+                        new Control("message_style", "brief"),
+                        new Control("channel", "email")
+                )
+        );
+
+        JsonObject actual = task.toJson();
+        JsonObject controls = actual.getAsJsonObject("controls");
+
+        Console.log("____validateTask.toJson.controls.actual____", actual.toString());
+        Console.log("____validateTask.toJson.controls.object____", controls.toString());
+
+        assertNotNull(controls);
+        assertEquals(3, controls.entrySet().size());
+        assertEquals("spring_campaign", controls.get("promo_mode").getAsString());
+        assertEquals("brief", controls.get("message_style").getAsString());
+        assertEquals("email", controls.get("channel").getAsString());
     }
 
     @Test
@@ -103,6 +138,10 @@ public class ValidateTaskTest {
         assertTrue(actual.has("relatedFactIds"));
         assertEquals(1, actual.getAsJsonArray("relatedFactIds").size());
         assertEquals("Airport:AUS", actual.getAsJsonArray("relatedFactIds").get(0).getAsString());
+
+        assertTrue(actual.has("controls"));
+        assertTrue(actual.get("controls").isJsonObject());
+        assertEquals(0, actual.getAsJsonObject("controls").entrySet().size());
     }
 
     @Test
@@ -125,10 +164,14 @@ public class ValidateTaskTest {
         assertTrue(actual.has("relatedFactIds"));
         assertTrue(actual.get("relatedFactIds").isJsonArray());
         assertEquals(0, actual.getAsJsonArray("relatedFactIds").size());
+
+        assertTrue(actual.has("controls"));
+        assertTrue(actual.get("controls").isJsonObject());
+        assertEquals(0, actual.getAsJsonObject("controls").entrySet().size());
     }
 
     @Test
-    public void toJson_shouldNotEmitConstraintsForCurrentPhase() {
+    public void toJson_shouldWriteEmptyControlsWhenControlsAreNull() {
         ValidateTask task = new ValidateTask(
                 "Validate departure and arrival airport codes",
                 "Flight:F100",
@@ -138,9 +181,63 @@ public class ValidateTaskTest {
 
         JsonObject actual = task.toJson();
 
-        Console.log("____validateTask.noConstraints.actual____", actual.toString());
+        Console.log("____validateTask.nullControls.actual____", actual.toString());
 
-        assertFalse(actual.has("constraints"));
+        assertTrue(actual.has("controls"));
+        assertTrue(actual.get("controls").isJsonObject());
+        assertEquals(0, actual.getAsJsonObject("controls").entrySet().size());
+    }
+
+    @Test
+    public void toJson_shouldIgnoreControlEntriesWithNullKeys() {
+        ValidateTask task = new ValidateTask(
+                "Validate departure and arrival airport codes",
+                "Flight:F100",
+                Arrays.asList("ok", "code"),
+                Arrays.asList("Airport:AUS")
+        );
+
+        task.setControls(
+                Arrays.asList(
+                        new Control(null, "spring_campaign"),
+                        new Control("message_style", "brief")
+                )
+        );
+
+        JsonObject actual = task.toJson();
+        JsonObject controls = actual.getAsJsonObject("controls");
+
+        Console.log("____validateTask.ignoreNullControlKeys.actual____", actual.toString());
+
+        assertEquals(1, controls.entrySet().size());
+        assertEquals("brief", controls.get("message_style").getAsString());
+        assertFalse(controls.has("null"));
+    }
+
+    @Test
+    public void toJson_shouldPreserveNullControlValues() {
+        ValidateTask task = new ValidateTask(
+                "Validate departure and arrival airport codes",
+                "Flight:F100",
+                Arrays.asList("ok", "code"),
+                Arrays.asList("Airport:AUS")
+        );
+
+        task.setControls(
+                Arrays.asList(
+                        new Control("promo_mode", null),
+                        new Control("message_style", "brief")
+                )
+        );
+
+        JsonObject actual = task.toJson();
+        JsonObject controls = actual.getAsJsonObject("controls");
+
+        Console.log("____validateTask.nullControlValue.actual____", actual.toString());
+
+        assertTrue(controls.has("promo_mode"));
+        assertTrue(controls.get("promo_mode").isJsonNull());
+        assertEquals("brief", controls.get("message_style").getAsString());
     }
 
     @Test
@@ -162,7 +259,7 @@ public class ValidateTaskTest {
     }
 
     @Test
-    public void fromJson_shouldReconstructValidateTask_fromLatestTaskShape() {
+    public void fromJson_shouldReconstructValidateTask_fromLatestTaskShapeIncludingControls() {
         JsonObject json = new JsonObject();
 
         JsonObject intent = new JsonObject();
@@ -183,12 +280,18 @@ public class ValidateTaskTest {
         relatedFactIds.add("Airport:DFW");
         json.add("relatedFactIds", relatedFactIds);
 
+        JsonObject controls = new JsonObject();
+        controls.addProperty("promo_mode", "spring_campaign");
+        controls.addProperty("message_style", "brief");
+        json.add("controls", controls);
+
         ValidateTask task = ValidateTask.fromJson(json);
 
         Console.log("____validateTask.fromJson.description____", String.valueOf(task.getDescription()));
         Console.log("____validateTask.fromJson.factId____", String.valueOf(task.getFactId()));
         Console.log("____validateTask.fromJson.requestedFields____", String.valueOf(task.getRequestedFields()));
         Console.log("____validateTask.fromJson.relatedFactIds____", String.valueOf(task.getRelatedFactIds()));
+        Console.log("____validateTask.fromJson.controls____", String.valueOf(task.getControls()));
 
         assertNotNull(task);
         assertEquals("Validate departure and arrival airport codes", task.getDescription());
@@ -201,6 +304,13 @@ public class ValidateTaskTest {
         assertEquals(2, task.getRelatedFactIds().size());
         assertEquals("Airport:AUS", task.getRelatedFactIds().get(0));
         assertEquals("Airport:DFW", task.getRelatedFactIds().get(1));
+
+        assertNotNull(task.getControls());
+        assertEquals(2, task.getControls().size());
+        assertEquals("promo_mode", task.getControls().get(0).getKey());
+        assertEquals("spring_campaign", task.getControls().get(0).getValue());
+        assertEquals("message_style", task.getControls().get(1).getKey());
+        assertEquals("brief", task.getControls().get(1).getValue());
     }
 
     @Test
@@ -228,6 +338,7 @@ public class ValidateTaskTest {
         Console.log("____validateTask.fromJson.noArrays.factId____", String.valueOf(task.getFactId()));
         Console.log("____validateTask.fromJson.noArrays.requestedFields____", String.valueOf(task.getRequestedFields()));
         Console.log("____validateTask.fromJson.noArrays.relatedFactIds____", String.valueOf(task.getRelatedFactIds()));
+        Console.log("____validateTask.fromJson.noArrays.controls____", String.valueOf(task.getControls()));
 
         assertNotNull(task);
         assertEquals("Validate departure and arrival airport codes", task.getDescription());
@@ -236,6 +347,8 @@ public class ValidateTaskTest {
         assertTrue(task.getRequestedFields().isEmpty());
         assertNotNull(task.getRelatedFactIds());
         assertTrue(task.getRelatedFactIds().isEmpty());
+        assertNotNull(task.getControls());
+        assertTrue(task.getControls().isEmpty());
     }
 
     @Test
@@ -263,6 +376,8 @@ public class ValidateTaskTest {
         assertEquals("ok", task.getRequestedFields().get(0));
         assertEquals(1, task.getRelatedFactIds().size());
         assertEquals("Airport:AUS", task.getRelatedFactIds().get(0));
+        assertNotNull(task.getControls());
+        assertTrue(task.getControls().isEmpty());
     }
 
     @Test
@@ -287,6 +402,8 @@ public class ValidateTaskTest {
         assertTrue(task.getRequestedFields().isEmpty());
         assertNotNull(task.getRelatedFactIds());
         assertTrue(task.getRelatedFactIds().isEmpty());
+        assertNotNull(task.getControls());
+        assertTrue(task.getControls().isEmpty());
     }
 
     @Test
@@ -328,7 +445,7 @@ public class ValidateTaskTest {
     }
 
     @Test
-    public void fromJson_shouldIgnoreConstraintsForCurrentPhase() {
+    public void fromJson_shouldReadControlsAsFlatObjectOfStrings() {
         JsonObject json = new JsonObject();
 
         JsonObject intent = new JsonObject();
@@ -337,11 +454,11 @@ public class ValidateTaskTest {
 
         json.addProperty("factId", "Flight:F100");
 
-        JsonObject constraints = new JsonObject();
-        JsonObject validation = new JsonObject();
-        validation.addProperty("departure_code_required", true);
-        constraints.add("validation", validation);
-        json.add("constraints", constraints);
+        JsonObject controls = new JsonObject();
+        controls.addProperty("promo_mode", "spring_campaign");
+        controls.addProperty("message_style", "brief");
+        controls.add("decision_scope", null);
+        json.add("controls", controls);
 
         JsonArray select = new JsonArray();
         select.add("ok");
@@ -355,27 +472,64 @@ public class ValidateTaskTest {
 
         ValidateTask task = ValidateTask.fromJson(json);
 
-        Console.log("____validateTask.fromJson.ignoreConstraints.description____", String.valueOf(task.getDescription()));
-        Console.log("____validateTask.fromJson.ignoreConstraints.requestedFields____", String.valueOf(task.getRequestedFields()));
+        Console.log("____validateTask.fromJson.controls.description____", String.valueOf(task.getDescription()));
+        Console.log("____validateTask.fromJson.controls.controls____", String.valueOf(task.getControls()));
 
         assertNotNull(task);
-        assertEquals("Validate departure and arrival airport codes", task.getDescription());
-        assertEquals("Flight:F100", task.getFactId());
-        assertEquals(2, task.getRequestedFields().size());
-        assertEquals("ok", task.getRequestedFields().get(0));
-        assertEquals("code", task.getRequestedFields().get(1));
-        assertEquals(2, task.getRelatedFactIds().size());
-        assertEquals("Airport:AUS", task.getRelatedFactIds().get(0));
-        assertEquals("Airport:DFW", task.getRelatedFactIds().get(1));
+        assertNotNull(task.getControls());
+        assertEquals(3, task.getControls().size());
+
+        assertEquals("promo_mode", task.getControls().get(0).getKey());
+        assertEquals("spring_campaign", task.getControls().get(0).getValue());
+
+        assertEquals("message_style", task.getControls().get(1).getKey());
+        assertEquals("brief", task.getControls().get(1).getValue());
+
+        assertEquals("decision_scope", task.getControls().get(2).getKey());
+        assertNull(task.getControls().get(2).getValue());
     }
 
     @Test
-    public void toString_shouldIncludeInternalLegacyFields() {
+    public void fromJson_shouldReturnEmptyControlsWhenControlsAbsent() {
+        JsonObject json = new JsonObject();
+
+        JsonObject intent = new JsonObject();
+        intent.addProperty("goal", "Validate departure and arrival airport codes");
+        json.add("intent", intent);
+
+        json.addProperty("factId", "Flight:F100");
+
+        JsonArray select = new JsonArray();
+        select.add("ok");
+        json.add("select", select);
+
+        JsonArray relatedFactIds = new JsonArray();
+        relatedFactIds.add("Airport:AUS");
+        json.add("relatedFactIds", relatedFactIds);
+
+        ValidateTask task = ValidateTask.fromJson(json);
+
+        Console.log("____validateTask.fromJson.noControls.controls____", String.valueOf(task.getControls()));
+
+        assertNotNull(task);
+        assertNotNull(task.getControls());
+        assertTrue(task.getControls().isEmpty());
+    }
+
+    @Test
+    public void toString_shouldIncludeInternalLegacyFieldsAndControls() {
         ValidateTask task = new ValidateTask(
                 "Validate departure and arrival airport codes",
                 "Flight:F100",
                 Arrays.asList("ok", "code"),
                 Arrays.asList("Airport:AUS", "Airport:DFW")
+        );
+
+        task.setControls(
+                Arrays.asList(
+                        new Control("promo_mode", "spring_campaign"),
+                        new Control("message_style", "brief")
+                )
         );
 
         String actual = task.toString();
@@ -386,5 +540,6 @@ public class ValidateTaskTest {
         assertTrue(actual.contains("factId='Flight:F100'"));
         assertTrue(actual.contains("requestedFields=[ok, code]"));
         assertTrue(actual.contains("relatedFactIds=[Airport:AUS, Airport:DFW]"));
+        assertTrue(actual.contains("controls=["));
     }
 }
