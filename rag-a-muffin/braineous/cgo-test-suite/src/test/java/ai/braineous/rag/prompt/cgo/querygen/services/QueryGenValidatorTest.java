@@ -6,7 +6,11 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Test;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryGenValidatorTest {
 
@@ -116,39 +120,75 @@ public class QueryGenValidatorTest {
     }
 
     @Test
-    public void validate_shouldReturnError_whenTaskDescriptionIsMissing() {
+    public void validate_shouldReturnError_whenTaskIntentIsMissing() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
-        payload.getAsJsonObject("task").remove("description");
+        payload.getAsJsonObject("task").remove("intent");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.taskDescriptionMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.taskDescriptionMissing.result____", String.valueOf(result));
+        Console.log("____queryGenValidator.taskIntentMissing.payload____", payload.toString());
+        Console.log("____queryGenValidator.taskIntentMissing.result____", String.valueOf(result));
 
         assertNotNull(result);
         assertFalse(result.isOk());
-        assertEquals("querygen.contract.task.description_missing", result.getCode());
-        assertEquals("Missing or invalid 'task.description'", result.getMessage());
+        assertEquals("querygen.contract.task.intent_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.intent' object", result.getMessage());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
     @Test
-    public void validate_shouldReturnError_whenRequestedFieldsContainsNonString() {
+    public void validate_shouldReturnError_whenTaskIntentGoalIsMissing() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
-        JsonArray requestedFields = payload.getAsJsonObject("task").getAsJsonArray("requestedFields");
-        requestedFields.add(123);
+        payload.getAsJsonObject("task").getAsJsonObject("intent").remove("goal");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.requestedFieldsInvalid.payload____", payload.toString());
-        Console.log("____queryGenValidator.requestedFieldsInvalid.result____", String.valueOf(result));
+        Console.log("____queryGenValidator.taskIntentGoalMissing.payload____", payload.toString());
+        Console.log("____queryGenValidator.taskIntentGoalMissing.result____", String.valueOf(result));
 
         assertNotNull(result);
         assertFalse(result.isOk());
-        assertEquals("querygen.contract.task.requestedFields_not_all_strings", result.getCode());
-        assertEquals("'task.requestedFields' must contain only strings or nulls", result.getMessage());
+        assertEquals("querygen.contract.task.intent.goal_missing", result.getCode());
+        assertEquals("Missing or invalid 'task.intent.goal'", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenSelectContainsNonString() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        JsonArray select = payload.getAsJsonObject("task").getAsJsonArray("select");
+        select.add(123);
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("____queryGenValidator.selectInvalid.payload____", payload.toString());
+        Console.log("____queryGenValidator.selectInvalid.result____", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.select_not_all_strings", result.getCode());
+        assertEquals("'task.select' must contain only strings or nulls", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenOutputTemplateIsMissing() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.remove("output_template");
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("____queryGenValidator.outputTemplateMissing.payload____", payload.toString());
+        Console.log("____queryGenValidator.outputTemplateMissing.result____", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.output_template_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'output_template' object", result.getMessage());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
@@ -261,15 +301,17 @@ public class QueryGenValidatorTest {
         root.add("context", context);
 
         JsonObject task = new JsonObject();
-        task.addProperty("description", "Validate departure and arrival airport codes");
+        JsonObject intent = new JsonObject();
+        intent.addProperty("goal", "Validate departure and arrival airport codes");
+        task.add("intent", intent);
         task.addProperty("factId", "Flight:F100");
 
-        JsonArray requestedFields = new JsonArray();
-        requestedFields.add("ok");
-        requestedFields.add("code");
-        requestedFields.add("message");
-        requestedFields.add("anchorId");
-        task.add("requestedFields", requestedFields);
+        JsonArray select = new JsonArray();
+        select.add("ok");
+        select.add("code");
+        select.add("message");
+        select.add("anchorId");
+        task.add("select", select);
 
         JsonArray relatedFactIds = new JsonArray();
         relatedFactIds.add("Airport:AUS");
@@ -277,6 +319,15 @@ public class QueryGenValidatorTest {
         task.add("relatedFactIds", relatedFactIds);
 
         root.add("task", task);
+
+        JsonObject outputTemplate = new JsonObject();
+        JsonObject outputTemplateResult = new JsonObject();
+        outputTemplateResult.addProperty("ok", "");
+        outputTemplateResult.addProperty("code", "");
+        outputTemplateResult.addProperty("message", "");
+        outputTemplateResult.addProperty("anchorId", "");
+        outputTemplate.add("result", outputTemplateResult);
+        root.add("output_template", outputTemplate);
 
         JsonObject responseContract = new JsonObject();
         responseContract.addProperty("type", "validation_result");
@@ -296,8 +347,22 @@ public class QueryGenValidatorTest {
 
         JsonObject llmInstructions = new JsonObject();
         JsonArray instructions = new JsonArray();
+        instructions.add("Return ONLY the output_template with values filled.");
+        instructions.add("Use runtime_result as truth.");
+        instructions.add("Do NOT recompute validation from context.");
+        instructions.add("Do not evaluate constraints from scratch.");
+        instructions.add("Return compact JSON on a single line.");
+        instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
+        instructions.add("Set every value as a string.");
+        instructions.add("Return exactly the output_template shape.");
+        instructions.add("Do not add, remove, or rename any fields.");
         instructions.add("Return exactly one JSON object.");
-        instructions.add("Use response_contract.schema.result.fields to construct the result object.");
+        instructions.add("Do not wrap the JSON in markdown fences.");
+        instructions.add("Do not include explanation before or after the JSON.");
+        instructions.add("Set result.ok from runtime_result.ok.");
+        instructions.add("Set result.code from runtime_result.code.");
+        instructions.add("Set result.message from runtime_result.message.");
+        instructions.add("Set result.anchorId from runtime_result.anchorId.");
         llmInstructions.add("instructions", instructions);
         root.add("llm_instructions", llmInstructions);
 

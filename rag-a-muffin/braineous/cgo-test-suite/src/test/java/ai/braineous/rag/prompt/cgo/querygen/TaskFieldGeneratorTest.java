@@ -66,7 +66,7 @@ public class TaskFieldGeneratorTest {
     }
 
     @Test
-    public void generate_shouldReturnTaskBlock() {
+    public void generate_shouldReturnLatestTaskBlock() {
         TaskFieldGenerator generator = new TaskFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("task");
         QueryRequest request = buildRequest();
@@ -74,20 +74,24 @@ public class TaskFieldGeneratorTest {
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
         JsonObject expected = new JsonObject();
-        expected.addProperty("description", "Validate departure and arrival airport codes");
-        expected.addProperty("factId", "Flight:F100");
 
-        JsonArray requestedFields = new JsonArray();
-        requestedFields.add("ok");
-        requestedFields.add("code");
-        requestedFields.add("message");
-        requestedFields.add("anchorId");
-        expected.add("requestedFields", requestedFields);
+        JsonObject intent = new JsonObject();
+        intent.addProperty("goal", "Validate departure and arrival airport codes");
+        expected.add("intent", intent);
+
+        expected.addProperty("factId", "Flight:F100");
 
         JsonArray relatedFactIds = new JsonArray();
         relatedFactIds.add("Airport:AUS");
         relatedFactIds.add("Airport:DFW");
         expected.add("relatedFactIds", relatedFactIds);
+
+        JsonArray select = new JsonArray();
+        select.add("ok");
+        select.add("code");
+        select.add("message");
+        select.add("anchorId");
+        expected.add("select", select);
 
         Console.log("____task.generate.actual____", result.getFieldValue().toString());
         Console.log("____task.generate.expected____", expected.toString());
@@ -117,32 +121,48 @@ public class TaskFieldGeneratorTest {
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
         JsonObject task = result.getFieldValue();
-        JsonArray requestedFields = task.getAsJsonArray("requestedFields");
+        JsonObject intent = task.getAsJsonObject("intent");
+        JsonArray select = task.getAsJsonArray("select");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
 
-        Console.log("____task.description____", task.get("description").getAsString());
+        Console.log("____task.intent.goal____", intent.get("goal").getAsString());
         Console.log("____task.factId____", task.get("factId").getAsString());
-        Console.log("____task.requestedFields.size____", String.valueOf(requestedFields.size()));
-        Console.log("____task.requestedFields.0____", requestedFields.get(0).getAsString());
-        Console.log("____task.requestedFields.1____", requestedFields.get(1).getAsString());
-        Console.log("____task.requestedFields.2____", requestedFields.get(2).getAsString());
-        Console.log("____task.requestedFields.3____", requestedFields.get(3).getAsString());
+        Console.log("____task.select.size____", String.valueOf(select.size()));
+        Console.log("____task.select.0____", select.get(0).getAsString());
+        Console.log("____task.select.1____", select.get(1).getAsString());
+        Console.log("____task.select.2____", select.get(2).getAsString());
+        Console.log("____task.select.3____", select.get(3).getAsString());
         Console.log("____task.relatedFactIds.size____", String.valueOf(relatedFactIds.size()));
         Console.log("____task.relatedFactIds.0____", relatedFactIds.get(0).getAsString());
         Console.log("____task.relatedFactIds.1____", relatedFactIds.get(1).getAsString());
 
-        assertEquals("Validate departure and arrival airport codes", task.get("description").getAsString());
+        assertEquals("Validate departure and arrival airport codes", intent.get("goal").getAsString());
         assertEquals("Flight:F100", task.get("factId").getAsString());
 
-        assertEquals(4, requestedFields.size());
-        assertEquals("ok", requestedFields.get(0).getAsString());
-        assertEquals("code", requestedFields.get(1).getAsString());
-        assertEquals("message", requestedFields.get(2).getAsString());
-        assertEquals("anchorId", requestedFields.get(3).getAsString());
+        assertEquals(4, select.size());
+        assertEquals("ok", select.get(0).getAsString());
+        assertEquals("code", select.get(1).getAsString());
+        assertEquals("message", select.get(2).getAsString());
+        assertEquals("anchorId", select.get(3).getAsString());
 
         assertEquals(2, relatedFactIds.size());
         assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
+    }
+
+    @Test
+    public void generate_shouldNotEmitConstraintsForCurrentPhase() {
+        TaskFieldGenerator generator = new TaskFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("task");
+        QueryRequest request = buildRequest();
+
+        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+
+        JsonObject task = result.getFieldValue();
+
+        Console.log("____task.noConstraints.actual____", task.toString());
+
+        assertFalse(task.has("constraints"));
     }
 
     @Test

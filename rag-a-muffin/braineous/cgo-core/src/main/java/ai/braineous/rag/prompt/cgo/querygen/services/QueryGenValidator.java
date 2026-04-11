@@ -41,7 +41,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
 
             JsonObject root = rootElement.getAsJsonObject();
 
-            // ---- meta ----
             if (!root.has("meta") || !root.get("meta").isJsonObject()) {
                 return error(
                         "querygen.contract.meta_missing_or_invalid",
@@ -79,7 +78,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 );
             }
 
-            // ---- context ----
             if (!root.has("context") || !root.get("context").isJsonObject()) {
                 return error(
                         "querygen.contract.context_missing_or_invalid",
@@ -97,7 +95,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 );
             }
 
-            // ---- task ----
             if (!root.has("task") || !root.get("task").isJsonObject()) {
                 return error(
                         "querygen.contract.task_missing_or_invalid",
@@ -108,11 +105,21 @@ public final class QueryGenValidator implements PhaseResultValidator {
 
             JsonObject task = root.getAsJsonObject("task");
 
-            String taskDescription = requireString(task, "description");
-            if (taskDescription == null) {
+            if (!task.has("intent") || !task.get("intent").isJsonObject()) {
                 return error(
-                        "querygen.contract.task.description_missing",
-                        "Missing or invalid 'task.description'",
+                        "querygen.contract.task.intent_missing_or_invalid",
+                        "Missing or invalid 'task.intent' object",
+                        Collections.singletonMap("task", task.toString())
+                );
+            }
+
+            JsonObject intent = task.getAsJsonObject("intent");
+
+            String goal = requireString(intent, "goal");
+            if (goal == null) {
+                return error(
+                        "querygen.contract.task.intent.goal_missing",
+                        "Missing or invalid 'task.intent.goal'",
                         Collections.singletonMap("task", task.toString())
                 );
             }
@@ -127,21 +134,21 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 }
             }
 
-            if (task.has("requestedFields") && !task.get("requestedFields").isJsonNull()) {
-                if (!task.get("requestedFields").isJsonArray()) {
+            if (task.has("select") && !task.get("select").isJsonNull()) {
+                if (!task.get("select").isJsonArray()) {
                     return error(
-                            "querygen.contract.task.requestedFields_invalid",
-                            "Invalid 'task.requestedFields' (must be an array when present)",
+                            "querygen.contract.task.select_invalid",
+                            "Invalid 'task.select' (must be an array when present)",
                             Collections.singletonMap("task", task.toString())
                     );
                 }
 
-                JsonArray requestedFields = task.getAsJsonArray("requestedFields");
-                if (!allStringsOrNulls(requestedFields)) {
+                JsonArray select = task.getAsJsonArray("select");
+                if (!allStringsOrNulls(select)) {
                     return error(
-                            "querygen.contract.task.requestedFields_not_all_strings",
-                            "'task.requestedFields' must contain only strings or nulls",
-                            Collections.singletonMap("requestedFields", requestedFields.toString())
+                            "querygen.contract.task.select_not_all_strings",
+                            "'task.select' must contain only strings or nulls",
+                            Collections.singletonMap("select", select.toString())
                     );
                 }
             }
@@ -165,7 +172,23 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 }
             }
 
-            // ---- response_contract ----
+            if (!root.has("output_template") || !root.get("output_template").isJsonObject()) {
+                return error(
+                        "querygen.contract.output_template_missing_or_invalid",
+                        "Missing or invalid 'output_template' object",
+                        Collections.singletonMap("rawQuery", rawQuery)
+                );
+            }
+
+            JsonObject outputTemplate = root.getAsJsonObject("output_template");
+            if (!outputTemplate.has("result") || !outputTemplate.get("result").isJsonObject()) {
+                return error(
+                        "querygen.contract.output_template.result_missing_or_invalid",
+                        "Missing or invalid 'output_template.result' object",
+                        Collections.singletonMap("output_template", outputTemplate.toString())
+                );
+            }
+
             if (!root.has("response_contract") || !root.get("response_contract").isJsonObject()) {
                 return error(
                         "querygen.contract.response_contract_missing_or_invalid",
@@ -174,7 +197,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 );
             }
 
-            // ---- llm_instructions ----
             if (!root.has("llm_instructions") || !root.get("llm_instructions").isJsonObject()) {
                 return error(
                         "querygen.contract.llm_instructions_missing_or_invalid",
@@ -201,7 +223,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 );
             }
 
-            // ---- llm_trace (optional) ----
             if (root.has("llm_trace") && !root.get("llm_trace").isJsonNull()) {
                 if (!root.get("llm_trace").isJsonObject()) {
                     return error(
@@ -212,7 +233,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 }
             }
 
-            // ---- llm_trace_instructions (optional) ----
             if (root.has("llm_trace_instructions") && !root.get("llm_trace_instructions").isJsonNull()) {
                 JsonElement llmTraceInstructionsEl = root.get("llm_trace_instructions");
 

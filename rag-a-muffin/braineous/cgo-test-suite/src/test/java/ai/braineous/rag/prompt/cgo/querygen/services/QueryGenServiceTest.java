@@ -16,7 +16,10 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryGenServiceTest {
 
@@ -46,6 +49,7 @@ public class QueryGenServiceTest {
         Console.log("____queryGenService.payload.meta____", payload.getAsJsonObject("meta").toString());
         Console.log("____queryGenService.payload.context____", payload.getAsJsonObject("context").toString());
         Console.log("____queryGenService.payload.task____", payload.getAsJsonObject("task").toString());
+        Console.log("____queryGenService.payload.outputTemplate____", payload.getAsJsonObject("output_template").toString());
         Console.log("____queryGenService.payload.responseContract____", payload.getAsJsonObject("response_contract").toString());
         Console.log("____queryGenService.payload.llmInstructions____", payload.getAsJsonObject("llm_instructions").toString());
         Console.log("____queryGenService.payload.llmTrace____", payload.getAsJsonObject("llm_trace").toString());
@@ -54,6 +58,7 @@ public class QueryGenServiceTest {
         assertTrue(payload.has("meta"));
         assertTrue(payload.has("context"));
         assertTrue(payload.has("task"));
+        assertTrue(payload.has("output_template"));
         assertTrue(payload.has("response_contract"));
         assertTrue(payload.has("llm_instructions"));
         assertTrue(payload.has("llm_trace"));
@@ -101,32 +106,36 @@ public class QueryGenServiceTest {
     }
 
     @Test
-    public void generateQuery_shouldReturnTask_withExpectedValues() {
+    public void generateQuery_shouldReturnOutputTemplate_withRequestedFieldsInOrder() {
         QueryGenService service = new QueryGenService();
         QueryRequest request = buildRequest();
 
         QueryGenOutput output = service.generateQuery(request);
-        JsonObject task = output.getPayload().getAsJsonObject("task");
-        JsonArray requestedFields = task.getAsJsonArray("requestedFields");
-        JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
+        JsonObject outputTemplate = output.getPayload().getAsJsonObject("output_template");
+        JsonObject result = outputTemplate.getAsJsonObject("result");
 
-        Console.log("____queryGenService.task.description____", task.get("description").getAsString());
-        Console.log("____queryGenService.task.factId____", task.get("factId").getAsString());
-        Console.log("____queryGenService.task.requestedFields____", requestedFields.toString());
-        Console.log("____queryGenService.task.relatedFactIds____", relatedFactIds.toString());
+        Console.log("____queryGenService.outputTemplate____", outputTemplate.toString());
+        Console.log("____queryGenService.outputTemplate.result____", result.toString());
 
-        assertEquals("Validate departure and arrival airport codes", task.get("description").getAsString());
-        assertEquals("Flight:F100", task.get("factId").getAsString());
+        assertNotNull(outputTemplate);
+        assertNotNull(result);
+        assertEquals(4, result.entrySet().size());
 
-        assertEquals(4, requestedFields.size());
-        assertEquals("ok", requestedFields.get(0).getAsString());
-        assertEquals("code", requestedFields.get(1).getAsString());
-        assertEquals("message", requestedFields.get(2).getAsString());
-        assertEquals("anchorId", requestedFields.get(3).getAsString());
+        JsonArray keys = new JsonArray();
+        for (Map.Entry<String, com.google.gson.JsonElement> entry : result.entrySet()) {
+            keys.add(entry.getKey());
+            Console.log("____queryGenService.outputTemplate.key____", entry.getKey());
+        }
 
-        assertEquals(2, relatedFactIds.size());
-        assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
-        assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
+        assertEquals("ok", keys.get(0).getAsString());
+        assertEquals("code", keys.get(1).getAsString());
+        assertEquals("message", keys.get(2).getAsString());
+        assertEquals("anchorId", keys.get(3).getAsString());
+
+        assertEquals("", result.get("ok").getAsString());
+        assertEquals("", result.get("code").getAsString());
+        assertEquals("", result.get("message").getAsString());
+        assertEquals("", result.get("anchorId").getAsString());
     }
 
     @Test
@@ -154,8 +163,8 @@ public class QueryGenServiceTest {
         assertEquals("string", fields.get("anchorId").getAsString());
     }
 
-    //@Test
-    public void generateQuery_shouldReturnLlmInstructions_withExpectedOrder() {
+    @Test
+    public void generateQuery_shouldReturnLlmInstructions_withExpectedStaticAndDynamicOrder() {
         QueryGenService service = new QueryGenService();
         QueryRequest request = buildRequest();
 
@@ -174,18 +183,30 @@ public class QueryGenServiceTest {
         Console.log("____queryGenService.llmInstructions.7____", instructions.get(7).getAsString());
         Console.log("____queryGenService.llmInstructions.8____", instructions.get(8).getAsString());
         Console.log("____queryGenService.llmInstructions.9____", instructions.get(9).getAsString());
+        Console.log("____queryGenService.llmInstructions.10____", instructions.get(10).getAsString());
+        Console.log("____queryGenService.llmInstructions.11____", instructions.get(11).getAsString());
+        Console.log("____queryGenService.llmInstructions.12____", instructions.get(12).getAsString());
+        Console.log("____queryGenService.llmInstructions.13____", instructions.get(13).getAsString());
+        Console.log("____queryGenService.llmInstructions.14____", instructions.get(14).getAsString());
+        Console.log("____queryGenService.llmInstructions.15____", instructions.get(15).getAsString());
 
-        assertEquals(10, instructions.size());
-        assertEquals("Return exactly one JSON object.", instructions.get(0).getAsString());
-        assertEquals("Use response_contract.schema.result.fields to construct the result object.", instructions.get(1).getAsString());
-        assertEquals("Place all generated result values under the result field.", instructions.get(2).getAsString());
-        assertEquals("Do not modify the response_contract section.", instructions.get(3).getAsString());
-        assertEquals("Do not add any fields not defined in response_contract.schema.result.fields.", instructions.get(4).getAsString());
-        assertEquals("Do not remove any fields defined in response_contract.schema.result.fields.", instructions.get(5).getAsString());
-        assertEquals("Do not rename any fields.", instructions.get(6).getAsString());
-        assertEquals("Set every returned field value as a string.", instructions.get(7).getAsString());
-        assertEquals("If a value cannot be determined, return an empty string for that field.", instructions.get(8).getAsString());
-        assertEquals("Do not include natural language outside the JSON object.", instructions.get(9).getAsString());
+        assertEquals(16, instructions.size());
+        assertEquals("Return ONLY the output_template with values filled.", instructions.get(0).getAsString());
+        assertEquals("Use runtime_result as truth.", instructions.get(1).getAsString());
+        assertEquals("Do NOT recompute validation from context.", instructions.get(2).getAsString());
+        assertEquals("Do not evaluate constraints from scratch.", instructions.get(3).getAsString());
+        assertEquals("Return compact JSON on a single line.", instructions.get(4).getAsString());
+        assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(5).getAsString());
+        assertEquals("Set every value as a string.", instructions.get(6).getAsString());
+        assertEquals("Return exactly the output_template shape.", instructions.get(7).getAsString());
+        assertEquals("Do not add, remove, or rename any fields.", instructions.get(8).getAsString());
+        assertEquals("Return exactly one JSON object.", instructions.get(9).getAsString());
+        assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(10).getAsString());
+        assertEquals("Do not include explanation before or after the JSON.", instructions.get(11).getAsString());
+        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
+        assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
+        assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
+        assertEquals("Set result.anchorId from runtime_result.anchorId.", instructions.get(15).getAsString());
     }
 
     @Test
@@ -246,24 +267,33 @@ public class QueryGenServiceTest {
     }
 
     @Test
-    public void generateQuery_shouldReturnValidationResult_fromQueryGenValidator() {
+    public void generateQuery_shouldReturnTask_withExpectedValues() {
         QueryGenService service = new QueryGenService();
         QueryRequest request = buildRequest();
 
         QueryGenOutput output = service.generateQuery(request);
-        ValidationResult validationResult = output.getValidationResult();
+        JsonObject task = output.getPayload().getAsJsonObject("task");
+        JsonObject intent = task.getAsJsonObject("intent");
+        JsonArray selectedFields = task.getAsJsonArray("select");
+        JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
 
-        Console.log("____queryGenService.validationResult____", String.valueOf(validationResult));
+        Console.log("____queryGenService.task.intent____", intent.toString());
+        Console.log("____queryGenService.task.factId____", task.get("factId").getAsString());
+        Console.log("____queryGenService.task.select____", selectedFields.toString());
+        Console.log("____queryGenService.task.relatedFactIds____", relatedFactIds.toString());
 
-        assertNotNull(validationResult);
-        assertTrue(validationResult.isOk());
-        assertEquals("querygen.contract.ok", validationResult.getCode());
-        assertEquals("QueryGen contract is valid", validationResult.getMessage());
-        assertEquals("querygen_contract_validation", validationResult.getStage());
-        assertNull(validationResult.getAnchorId());
-        assertNotNull(validationResult.getMetadata());
-        assertEquals("v1", validationResult.getMetadata().get("version"));
-        assertEquals("validate_flight_airports", validationResult.getMetadata().get("queryKind"));
+        assertEquals("Validate departure and arrival airport codes", intent.get("goal").getAsString());
+        assertEquals("Flight:F100", task.get("factId").getAsString());
+
+        assertEquals(4, selectedFields.size());
+        assertEquals("ok", selectedFields.get(0).getAsString());
+        assertEquals("code", selectedFields.get(1).getAsString());
+        assertEquals("message", selectedFields.get(2).getAsString());
+        assertEquals("anchorId", selectedFields.get(3).getAsString());
+
+        assertEquals(2, relatedFactIds.size());
+        assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
+        assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
     }
 
     private QueryRequest buildRequest() {

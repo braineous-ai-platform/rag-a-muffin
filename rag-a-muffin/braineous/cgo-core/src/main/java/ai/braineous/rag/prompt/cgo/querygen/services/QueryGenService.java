@@ -9,6 +9,7 @@ import ai.braineous.rag.prompt.cgo.querygen.LlmInstructionsFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.LlmTraceFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.LlmTraceInstructionsFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.MetaFieldGenerator;
+import ai.braineous.rag.prompt.cgo.querygen.OutputTemplateFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.ResponseContractFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.TaskFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
@@ -23,6 +24,7 @@ public class QueryGenService {
     private final FieldGenerator metaFieldGenerator;
     private final FieldGenerator contextFieldGenerator;
     private final FieldGenerator taskFieldGenerator;
+    private final FieldGenerator outputTemplateFieldGenerator;
     private final FieldGenerator responseContractFieldGenerator;
     private final FieldGenerator llmInstructionsFieldGenerator;
     private final FieldGenerator llmTraceFieldGenerator;
@@ -33,6 +35,7 @@ public class QueryGenService {
         this.metaFieldGenerator = new MetaFieldGenerator();
         this.contextFieldGenerator = new ContextFieldGenerator();
         this.taskFieldGenerator = new TaskFieldGenerator();
+        this.outputTemplateFieldGenerator = new OutputTemplateFieldGenerator();
         this.responseContractFieldGenerator = new ResponseContractFieldGenerator();
         this.llmInstructionsFieldGenerator = new LlmInstructionsFieldGenerator();
         this.llmTraceFieldGenerator = new LlmTraceFieldGenerator();
@@ -45,6 +48,7 @@ public class QueryGenService {
         addMeta(llmQuery, queryRequest);
         addContext(llmQuery, queryRequest);
         addTask(llmQuery, queryRequest);
+        addOutputTemplate(llmQuery, queryRequest);
         addResponseContract(llmQuery, queryRequest);
         addLlmInstructions(llmQuery, queryRequest);
         addLlmTrace(llmQuery, queryRequest);
@@ -74,6 +78,16 @@ public class QueryGenService {
                 this.taskFieldGenerator.generate(new FieldDefinition("task"), queryRequest);
 
         llmQuery.add("task", result.getFieldValue());
+    }
+
+    private void addOutputTemplate(JsonObject llmQuery, QueryRequest queryRequest) {
+        FieldGenerationResult result =
+                this.outputTemplateFieldGenerator.generate(
+                        new FieldDefinition("output_template"),
+                        queryRequest
+                );
+
+        llmQuery.add("output_template", result.getFieldValue());
     }
 
     private void addResponseContract(JsonObject llmQuery, QueryRequest queryRequest) {

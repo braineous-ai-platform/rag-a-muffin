@@ -67,20 +67,27 @@ public final class ValidateTask implements QueryTask {
     public JsonObject toJson() {
         JsonObject out = new JsonObject();
 
+        // intent (from description)
+        JsonObject intent = new JsonObject();
         if (this.description != null) {
-            out.addProperty("description", this.description);
+            intent.addProperty("goal", this.description);
         } else {
-            out.add("description", null);
+            intent.add("goal", null);
         }
+        out.add("intent", intent);
 
+        // factId
         if (this.factId != null) {
             out.addProperty("factId", this.factId);
         } else {
             out.add("factId", null);
         }
 
-        out.add("requestedFields", toJsonArray(this.requestedFields));
+        // relatedFactIds
         out.add("relatedFactIds", toJsonArray(this.relatedFactIds));
+
+        // select (from requestedFields)
+        out.add("select", toJsonArray(this.requestedFields));
 
         return out;
     }
@@ -95,8 +102,13 @@ public final class ValidateTask implements QueryTask {
         }
 
         String description = null;
-        if (jsonObject.has("description") && !jsonObject.get("description").isJsonNull()) {
-            description = jsonObject.get("description").getAsString();
+
+        // intent.goal → description
+        if (jsonObject.has("intent") && jsonObject.get("intent").isJsonObject()) {
+            JsonObject intent = jsonObject.getAsJsonObject("intent");
+            if (intent.has("goal") && !intent.get("goal").isJsonNull()) {
+                description = intent.get("goal").getAsString();
+            }
         }
 
         String factId = null;
@@ -104,7 +116,10 @@ public final class ValidateTask implements QueryTask {
             factId = jsonObject.get("factId").getAsString();
         }
 
-        List<String> requestedFields = readStringArray(jsonObject, "requestedFields");
+        // select → requestedFields
+        List<String> requestedFields = readStringArray(jsonObject, "select");
+
+        // relatedFactIds (same)
         List<String> relatedFactIds = readStringArray(jsonObject, "relatedFactIds");
 
         return new ValidateTask(description, factId, requestedFields, relatedFactIds);

@@ -17,7 +17,6 @@ import java.util.Arrays;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -71,7 +70,7 @@ public class LlmInstructionsFieldGeneratorTest {
     }
 
     @Test
-    public void generate_shouldReturnStaticInstructionBlock() {
+    public void generate_shouldReturnStaticAndDynamicInstructionBlock() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
         QueryRequest request = buildRequest();
@@ -80,21 +79,22 @@ public class LlmInstructionsFieldGeneratorTest {
 
         JsonObject expected = new JsonObject();
         JsonArray instructions = new JsonArray();
-        instructions.add("Return only JSON.");
-        instructions.add("Use the provided output_template as the final answer format.");
+        instructions.add("Return ONLY the output_template with values filled.");
         instructions.add("Use runtime_result as truth.");
-        instructions.add("Do not recompute validation from context.");
+        instructions.add("Do NOT recompute validation from context.");
         instructions.add("Do not evaluate constraints from scratch.");
-        instructions.add("Set result.ok from runtime_result.ok.");
-        instructions.add("Set result.code from runtime_result.code.");
         instructions.add("Return compact JSON on a single line.");
         instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
-        instructions.add("Set every value in output_template as a string.");
+        instructions.add("Set every value as a string.");
         instructions.add("Return exactly the output_template shape.");
         instructions.add("Do not add, remove, or rename any fields.");
         instructions.add("Return exactly one JSON object.");
         instructions.add("Do not wrap the JSON in markdown fences.");
         instructions.add("Do not include explanation before or after the JSON.");
+        instructions.add("Set result.ok from runtime_result.ok.");
+        instructions.add("Set result.code from runtime_result.code.");
+        instructions.add("Set result.message from runtime_result.message.");
+        instructions.add("Set result.anchorId from runtime_result.anchorId.");
         expected.add("instructions", instructions);
 
         Console.log("____llmInstructions.generate.actual____", result.getFieldValue().toString());
@@ -117,7 +117,7 @@ public class LlmInstructionsFieldGeneratorTest {
     }
 
     @Test
-    public void generate_shouldReturnInstructionsArray_withExpectedOrder() {
+    public void generate_shouldReturnInstructionsArray_withStaticSectionFollowedByDynamicBindings() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
         QueryRequest request = buildRequest();
@@ -142,23 +142,48 @@ public class LlmInstructionsFieldGeneratorTest {
         Console.log("____llmInstructions.instructions.12____", instructions.get(12).getAsString());
         Console.log("____llmInstructions.instructions.13____", instructions.get(13).getAsString());
         Console.log("____llmInstructions.instructions.14____", instructions.get(14).getAsString());
+        Console.log("____llmInstructions.instructions.15____", instructions.get(15).getAsString());
 
-        assertEquals(15, instructions.size());
-        assertEquals("Return only JSON.", instructions.get(0).getAsString());
-        assertEquals("Use the provided output_template as the final answer format.", instructions.get(1).getAsString());
-        assertEquals("Use runtime_result as truth.", instructions.get(2).getAsString());
-        assertEquals("Do not recompute validation from context.", instructions.get(3).getAsString());
-        assertEquals("Do not evaluate constraints from scratch.", instructions.get(4).getAsString());
-        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(5).getAsString());
-        assertEquals("Set result.code from runtime_result.code.", instructions.get(6).getAsString());
-        assertEquals("Return compact JSON on a single line.", instructions.get(7).getAsString());
-        assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(8).getAsString());
-        assertEquals("Set every value in output_template as a string.", instructions.get(9).getAsString());
-        assertEquals("Return exactly the output_template shape.", instructions.get(10).getAsString());
-        assertEquals("Do not add, remove, or rename any fields.", instructions.get(11).getAsString());
-        assertEquals("Return exactly one JSON object.", instructions.get(12).getAsString());
-        assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(13).getAsString());
-        assertEquals("Do not include explanation before or after the JSON.", instructions.get(14).getAsString());
+        assertEquals(16, instructions.size());
+
+        assertEquals("Return ONLY the output_template with values filled.", instructions.get(0).getAsString());
+        assertEquals("Use runtime_result as truth.", instructions.get(1).getAsString());
+        assertEquals("Do NOT recompute validation from context.", instructions.get(2).getAsString());
+        assertEquals("Do not evaluate constraints from scratch.", instructions.get(3).getAsString());
+        assertEquals("Return compact JSON on a single line.", instructions.get(4).getAsString());
+        assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(5).getAsString());
+        assertEquals("Set every value as a string.", instructions.get(6).getAsString());
+        assertEquals("Return exactly the output_template shape.", instructions.get(7).getAsString());
+        assertEquals("Do not add, remove, or rename any fields.", instructions.get(8).getAsString());
+        assertEquals("Return exactly one JSON object.", instructions.get(9).getAsString());
+        assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(10).getAsString());
+        assertEquals("Do not include explanation before or after the JSON.", instructions.get(11).getAsString());
+
+        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
+        assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
+        assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
+        assertEquals("Set result.anchorId from runtime_result.anchorId.", instructions.get(15).getAsString());
+    }
+
+    @Test
+    public void generate_shouldReturnDynamicBindings_inRequestedFieldOrder() {
+        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
+        QueryRequest request = buildRequest();
+
+        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+
+        JsonArray instructions = result.getFieldValue().getAsJsonArray("instructions");
+
+        Console.log("____llmInstructions.dynamicBinding.0____", instructions.get(12).getAsString());
+        Console.log("____llmInstructions.dynamicBinding.1____", instructions.get(13).getAsString());
+        Console.log("____llmInstructions.dynamicBinding.2____", instructions.get(14).getAsString());
+        Console.log("____llmInstructions.dynamicBinding.3____", instructions.get(15).getAsString());
+
+        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
+        assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
+        assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
+        assertEquals("Set result.anchorId from runtime_result.anchorId.", instructions.get(15).getAsString());
     }
 
     @Test
