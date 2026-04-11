@@ -54,7 +54,7 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         instructions.add("Return ONLY the output_template with values filled.");
         instructions.add("Use runtime_result as truth.");
         instructions.add("Do NOT recompute validation from context.");
-        instructions.add("Do not evaluate constraints from scratch.");
+        instructions.add("Do not infer control values from context.");
         instructions.add("Return compact JSON on a single line.");
         instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
         instructions.add("Set every value as a string.");
@@ -72,14 +72,15 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
             return;
         }
 
-        for (int i = 0; i < requestedFields.size(); i++) {
+        int i = 0;
+        while (i < requestedFields.size()) {
             String fieldName = requestedFields.get(i);
 
-            if (fieldName == null) {
-                continue;
+            if (fieldName != null) {
+                instructions.add("Set result." + fieldName + " from runtime_result." + fieldName + ".");
             }
 
-            instructions.add("Set result." + fieldName + " from runtime_result." + fieldName + ".");
+            i++;
         }
     }
 

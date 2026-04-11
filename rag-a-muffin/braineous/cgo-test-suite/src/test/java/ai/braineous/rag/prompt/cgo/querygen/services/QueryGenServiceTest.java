@@ -1,9 +1,9 @@
 package ai.braineous.rag.prompt.cgo.querygen.services;
 
+import ai.braineous.rag.prompt.cgo.api.Control;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
-import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
@@ -14,11 +14,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QueryGenServiceTest {
@@ -194,7 +194,7 @@ public class QueryGenServiceTest {
         assertEquals("Return ONLY the output_template with values filled.", instructions.get(0).getAsString());
         assertEquals("Use runtime_result as truth.", instructions.get(1).getAsString());
         assertEquals("Do NOT recompute validation from context.", instructions.get(2).getAsString());
-        assertEquals("Do not evaluate constraints from scratch.", instructions.get(3).getAsString());
+        assertEquals("Do not infer control values from context.", instructions.get(3).getAsString());
         assertEquals("Return compact JSON on a single line.", instructions.get(4).getAsString());
         assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(5).getAsString());
         assertEquals("Set every value as a string.", instructions.get(6).getAsString());
@@ -276,11 +276,13 @@ public class QueryGenServiceTest {
         JsonObject intent = task.getAsJsonObject("intent");
         JsonArray selectedFields = task.getAsJsonArray("select");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
+        JsonObject controls = task.getAsJsonObject("controls");
 
         Console.log("____queryGenService.task.intent____", intent.toString());
         Console.log("____queryGenService.task.factId____", task.get("factId").getAsString());
         Console.log("____queryGenService.task.select____", selectedFields.toString());
         Console.log("____queryGenService.task.relatedFactIds____", relatedFactIds.toString());
+        Console.log("____queryGenService.task.controls____", controls.toString());
 
         assertEquals("Validate departure and arrival airport codes", intent.get("goal").getAsString());
         assertEquals("Flight:F100", task.get("factId").getAsString());
@@ -294,6 +296,9 @@ public class QueryGenServiceTest {
         assertEquals(2, relatedFactIds.size());
         assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
+
+        assertEquals("spring_campaign", controls.get("promo_mode").getAsString());
+        assertEquals("brief", controls.get("message_style").getAsString());
     }
 
     private QueryRequest buildRequest() {
@@ -316,12 +321,18 @@ public class QueryGenServiceTest {
 
         GraphContext context = new GraphContext(nodes);
 
+        List<Control> controls = Arrays.asList(
+                new Control("promo_mode", "spring_campaign"),
+                new Control("message_style", "brief")
+        );
+
         ValidateTask task = new ValidateTask(
                 "Validate departure and arrival airport codes",
                 "Flight:F100",
                 Arrays.asList("ok", "code", "message", "anchorId"),
                 Arrays.asList("Airport:AUS", "Airport:DFW")
         );
+        task.setControls(controls);
 
         return new QueryRequest(meta, context, task);
     }

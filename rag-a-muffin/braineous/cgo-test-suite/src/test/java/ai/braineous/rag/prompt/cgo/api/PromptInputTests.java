@@ -8,6 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class PromptInputTests {
+
     @Test
     void generate_fromJson_shouldPopulatePromptInput() {
         System.out.println("console.log -> test start: generate_fromJson_shouldPopulatePromptInput");
@@ -29,8 +30,13 @@ public class PromptInputTests {
                 "    }\n" +
                 "  },\n" +
                 "  \"task\": {\n" +
-                "    \"description\": \"Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.\",\n" +
-                "    \"factId\": \"Flight:F100\"\n" +
+                "    \"intent\": {\n" +
+                "      \"goal\": \"Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph.\"\n" +
+                "    },\n" +
+                "    \"factId\": \"Flight:F100\",\n" +
+                "    \"relatedFactIds\": [],\n" +
+                "    \"select\": [],\n" +
+                "    \"controls\": {}\n" +
                 "  },\n" +
                 "  \"response_contract\": {\n" +
                 "    \"type\": \"validation_result\",\n" +
@@ -82,8 +88,20 @@ public class PromptInputTests {
 
         // task
         assertNotNull(parsed.getTask());
-        assertEquals("Flight:F100", ((ValidateTask) parsed.getTask()).getFactId());
-        assertNotNull(parsed.getTask().getDescription());
+        assertTrue(parsed.getTask() instanceof ValidateTask);
+
+        ValidateTask validateTask = (ValidateTask) parsed.getTask();
+        assertEquals("Flight:F100", validateTask.getFactId());
+        assertEquals(
+                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph.",
+                validateTask.getDescription()
+        );
+        assertNotNull(validateTask.getRelatedFactIds());
+        assertEquals(0, validateTask.getRelatedFactIds().size());
+        assertNotNull(validateTask.getRequestedFields());
+        assertEquals(0, validateTask.getRequestedFields().size());
+        assertNotNull(validateTask.getControls());
+        assertEquals(0, validateTask.getControls().size());
         System.out.println("console.log -> task ok");
 
         // response contract
@@ -107,5 +125,4 @@ public class PromptInputTests {
 
         System.out.println("console.log -> test end: PASS");
     }
-
 }

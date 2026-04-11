@@ -12,53 +12,6 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QueryRequestToJsonTest {
 
     @Test
-    void toJson_emits_canonical_shape_and_taskType() {
-
-        // Arrange
-        Meta meta = new Meta("v1", "validate_fact", "basic validate task");
-        GraphContext ctx = new GraphContext(Map.of());
-        ValidateTask task = new ValidateTask("validate this fact", "Flight:F100");
-
-        QueryRequest<ValidateTask> req = new QueryRequest<>(meta, ctx, task);
-
-        // Act
-        JsonObject json = req.toJson();
-        Console.log("UT:QueryRequest.toJson", json);
-
-        // Assert (top-level keys exist)
-        assertNotNull(json);
-        assertTrue(json.has("meta"));
-        assertTrue(json.has("context"));
-        assertTrue(json.has("task"));
-        assertTrue(json.has("taskType"));
-        assertTrue(json.has("rule"));
-        assertTrue(json.has("adapter"));
-
-        // Assert taskType is exact class name
-        assertEquals(ValidateTask.class.getName(), json.get("taskType").getAsString());
-
-        // Assert rule/adapter are explicitly null (shape stability)
-        assertTrue(json.get("rule").isJsonNull());
-        assertTrue(json.get("adapter").isJsonNull());
-
-        // Assert nested meta fields
-        JsonObject metaJson = json.getAsJsonObject("meta");
-        assertEquals("v1", metaJson.get("version").getAsString());
-        assertEquals("validate_fact", metaJson.get("queryKind").getAsString());
-        assertEquals("basic validate task", metaJson.get("description").getAsString());
-
-        // Assert nested task fields
-        JsonObject taskJson = json.getAsJsonObject("task");
-        assertEquals("validate this fact", taskJson.get("description").getAsString());
-        assertEquals("Flight:F100", taskJson.get("factId").getAsString());
-
-        // Assert context is present (nodes object exists)
-        JsonObject ctxJson = json.getAsJsonObject("context");
-        assertTrue(ctxJson.has("nodes"));
-        assertTrue(ctxJson.get("nodes").isJsonObject());
-    }
-
-    @Test
     void fromJson_rehydrates_task_meta_context_and_leaves_rule_adapter_null() {
 
         // Arrange
@@ -518,6 +471,69 @@ public class QueryRequestToJsonTest {
 
         // Assert
         org.junit.jupiter.api.Assertions.assertEquals(id, rehydrated.getRequestId());
+    }
+
+
+    @Test
+    void toJson_emits_canonical_shape_and_taskType() {
+
+        // Arrange
+        Meta meta = new Meta("v1", "validate_fact", "basic validate task");
+        GraphContext ctx = new GraphContext(Map.of());
+        ValidateTask task = new ValidateTask("validate this fact", "Flight:F100");
+
+        QueryRequest<ValidateTask> req = new QueryRequest<>(meta, ctx, task);
+
+        // Act
+        JsonObject json = req.toJson();
+        Console.log("UT:QueryRequest.toJson", json);
+
+        // Assert (top-level keys exist)
+        assertNotNull(json);
+        assertTrue(json.has("meta"));
+        assertTrue(json.has("context"));
+        assertTrue(json.has("task"));
+        assertTrue(json.has("taskType"));
+        assertTrue(json.has("rule"));
+        assertTrue(json.has("adapter"));
+
+        // Assert taskType is exact class name
+        assertEquals(ValidateTask.class.getName(), json.get("taskType").getAsString());
+
+        // Assert rule/adapter are explicitly null (shape stability)
+        assertTrue(json.get("rule").isJsonNull());
+        assertTrue(json.get("adapter").isJsonNull());
+
+        // Assert nested meta fields
+        JsonObject metaJson = json.getAsJsonObject("meta");
+        assertEquals("v1", metaJson.get("version").getAsString());
+        assertEquals("validate_fact", metaJson.get("queryKind").getAsString());
+        assertEquals("basic validate task", metaJson.get("description").getAsString());
+
+        // Assert nested task fields (UPDATED SHAPE)
+        JsonObject taskJson = json.getAsJsonObject("task");
+        JsonObject intentJson = taskJson.getAsJsonObject("intent");
+
+        assertNotNull(intentJson);
+        assertEquals("validate this fact", intentJson.get("goal").getAsString());
+        assertEquals("Flight:F100", taskJson.get("factId").getAsString());
+
+        assertTrue(taskJson.has("relatedFactIds"));
+        assertTrue(taskJson.get("relatedFactIds").isJsonArray());
+        assertEquals(0, taskJson.getAsJsonArray("relatedFactIds").size());
+
+        assertTrue(taskJson.has("select"));
+        assertTrue(taskJson.get("select").isJsonArray());
+        assertEquals(0, taskJson.getAsJsonArray("select").size());
+
+        assertTrue(taskJson.has("controls"));
+        assertTrue(taskJson.get("controls").isJsonObject());
+        assertEquals(0, taskJson.getAsJsonObject("controls").size());
+
+        // Assert context is present (nodes object exists)
+        JsonObject ctxJson = json.getAsJsonObject("context");
+        assertTrue(ctxJson.has("nodes"));
+        assertTrue(ctxJson.get("nodes").isJsonObject());
     }
 
 }

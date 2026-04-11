@@ -14,11 +14,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertSame;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class LlmInstructionsFieldGeneratorTest {
 
@@ -29,7 +25,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supports.true____", String.valueOf(supported));
+        Console.log("____llmInstructions.supported.true____", String.valueOf(supported));
 
         assertTrue(supported);
     }
@@ -40,7 +36,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(null);
 
-        Console.log("____llmInstructions.supports.nullFieldDefinition____", String.valueOf(supported));
+        Console.log("____llmInstructions.supported.nullFieldDefinition____", String.valueOf(supported));
 
         assertFalse(supported);
     }
@@ -52,7 +48,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supports.nullFieldName____", String.valueOf(supported));
+        Console.log("____llmInstructions.supported.nullFieldName____", String.valueOf(supported));
 
         assertFalse(supported);
     }
@@ -60,17 +56,17 @@ public class LlmInstructionsFieldGeneratorTest {
     @Test
     public void supports_shouldReturnFalse_forNonLlmInstructionsField() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("response_contract");
+        FieldDefinition fieldDefinition = new FieldDefinition("llm_trace_instructions");
 
         boolean supported = generator.supports(fieldDefinition);
 
-        Console.log("____llmInstructions.supports.false____", String.valueOf(supported));
+        Console.log("____llmInstructions.supported.false____", String.valueOf(supported));
 
         assertFalse(supported);
     }
 
     @Test
-    public void generate_shouldReturnStaticAndDynamicInstructionBlock() {
+    public void generate_shouldReturnInstructionBlock() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
         QueryRequest request = buildRequest();
@@ -82,7 +78,7 @@ public class LlmInstructionsFieldGeneratorTest {
         instructions.add("Return ONLY the output_template with values filled.");
         instructions.add("Use runtime_result as truth.");
         instructions.add("Do NOT recompute validation from context.");
-        instructions.add("Do not evaluate constraints from scratch.");
+        instructions.add("Do not infer control values from context.");
         instructions.add("Return compact JSON on a single line.");
         instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
         instructions.add("Set every value as a string.");
@@ -99,7 +95,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         Console.log("____llmInstructions.generate.actual____", result.getFieldValue().toString());
         Console.log("____llmInstructions.generate.expected____", expected.toString());
-        Console.log("____llmInstructions.generate.validationCode____", result.getValidationResult().getCode());
+        Console.log("____llmInstructions.generate.validation____", String.valueOf(result.getValidationResult()));
 
         assertNotNull(result);
         assertSame(fieldDefinition, result.getFieldDefinition());
@@ -117,7 +113,7 @@ public class LlmInstructionsFieldGeneratorTest {
     }
 
     @Test
-    public void generate_shouldReturnInstructionsArray_withStaticSectionFollowedByDynamicBindings() {
+    public void generate_shouldReturnInstructionsArray_withExpectedOrder() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
         QueryRequest request = buildRequest();
@@ -145,11 +141,10 @@ public class LlmInstructionsFieldGeneratorTest {
         Console.log("____llmInstructions.instructions.15____", instructions.get(15).getAsString());
 
         assertEquals(16, instructions.size());
-
         assertEquals("Return ONLY the output_template with values filled.", instructions.get(0).getAsString());
         assertEquals("Use runtime_result as truth.", instructions.get(1).getAsString());
         assertEquals("Do NOT recompute validation from context.", instructions.get(2).getAsString());
-        assertEquals("Do not evaluate constraints from scratch.", instructions.get(3).getAsString());
+        assertEquals("Do not infer control values from context.", instructions.get(3).getAsString());
         assertEquals("Return compact JSON on a single line.", instructions.get(4).getAsString());
         assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(5).getAsString());
         assertEquals("Set every value as a string.", instructions.get(6).getAsString());
@@ -158,28 +153,6 @@ public class LlmInstructionsFieldGeneratorTest {
         assertEquals("Return exactly one JSON object.", instructions.get(9).getAsString());
         assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(10).getAsString());
         assertEquals("Do not include explanation before or after the JSON.", instructions.get(11).getAsString());
-
-        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
-        assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
-        assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
-        assertEquals("Set result.anchorId from runtime_result.anchorId.", instructions.get(15).getAsString());
-    }
-
-    @Test
-    public void generate_shouldReturnDynamicBindings_inRequestedFieldOrder() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
-        QueryRequest request = buildRequest();
-
-        FieldGenerationResult result = generator.generate(fieldDefinition, request);
-
-        JsonArray instructions = result.getFieldValue().getAsJsonArray("instructions");
-
-        Console.log("____llmInstructions.dynamicBinding.0____", instructions.get(12).getAsString());
-        Console.log("____llmInstructions.dynamicBinding.1____", instructions.get(13).getAsString());
-        Console.log("____llmInstructions.dynamicBinding.2____", instructions.get(14).getAsString());
-        Console.log("____llmInstructions.dynamicBinding.3____", instructions.get(15).getAsString());
-
         assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
         assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
         assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
@@ -196,11 +169,7 @@ public class LlmInstructionsFieldGeneratorTest {
 
         ValidationResult validationResult = result.getValidationResult();
 
-        Console.log("____llmInstructions.validation.isOk____", String.valueOf(validationResult.isOk()));
-        Console.log("____llmInstructions.validation.code____", validationResult.getCode());
-        Console.log("____llmInstructions.validation.message____", validationResult.getMessage());
-        Console.log("____llmInstructions.validation.stage____", validationResult.getStage());
-        Console.log("____llmInstructions.validation.anchorId____", validationResult.getAnchorId());
+        Console.log("____llmInstructions.validationResult____", String.valueOf(validationResult));
 
         assertNotNull(validationResult);
         assertTrue(validationResult.isOk());
