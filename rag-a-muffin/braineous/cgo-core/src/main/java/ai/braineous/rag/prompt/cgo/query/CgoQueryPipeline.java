@@ -3,10 +3,10 @@ package ai.braineous.rag.prompt.cgo.query;
 import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
-import ai.braineous.rag.prompt.cgo.prompt.PromptRequestOutput;
 import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenService;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenValidator;
+import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -46,17 +46,18 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.queryGenService = new QueryGenService();
         this.llmClient = null;
         //this.llmResponseValidator = new GsonPhaseResultValidator();
-        this.llmResponseValidator = new QueryGenValidator();
+        this.llmResponseValidator = new QueryResultValidator();
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
         this.promptBuilder = promptBuilder;
         this.llmClient = llmClient;
         //this.llmResponseValidator = new GsonPhaseResultValidator();
-        this.llmResponseValidator = new QueryGenValidator();
+        this.llmResponseValidator = new QueryResultValidator();
         this.queryGenService = new QueryGenService();
     }
 
+    //for test-suite
     CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
                      PhaseResultValidator llmResponseValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");

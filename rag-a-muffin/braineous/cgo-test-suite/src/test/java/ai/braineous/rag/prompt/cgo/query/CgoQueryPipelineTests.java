@@ -336,8 +336,8 @@ class CgoQueryPipelineTests {
 
         assertNotNull(execution.getLlmResponseValidation());
         assertFalse(execution.getLlmResponseValidation().isOk());
-        assertEquals("querygen.contract.meta_missing_or_invalid", execution.getLlmResponseValidation().getCode());
-        assertEquals("querygen_contract_validation", execution.getLlmResponseValidation().getStage());
+        assertEquals("queryresult.contract.result_missing_or_invalid", execution.getLlmResponseValidation().getCode());
+        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
 
         assertNull(execution.getDomainValidation());
     }
@@ -382,8 +382,8 @@ class CgoQueryPipelineTests {
 
         assertNotNull(execution.getLlmResponseValidation());
         assertFalse(execution.getLlmResponseValidation().isOk());
-        assertEquals("querygen.contract.meta_missing_or_invalid", execution.getLlmResponseValidation().getCode());
-        assertEquals("querygen_contract_validation", execution.getLlmResponseValidation().getStage());
+        assertEquals("queryresult.contract.result.ok_missing", execution.getLlmResponseValidation().getCode());
+        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
 
         assertNull(execution.getDomainValidation());
 
