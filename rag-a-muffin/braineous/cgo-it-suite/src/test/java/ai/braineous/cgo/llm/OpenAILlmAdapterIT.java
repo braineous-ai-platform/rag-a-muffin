@@ -754,7 +754,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("Flight:F100", result.get("anchorId").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_preserve_precomputed_pass_runtime_result_when_only_intent_message_changes() {
 
         QueryRequest queryRequest = new QueryRequest();

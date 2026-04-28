@@ -281,10 +281,7 @@ public final class QueryExecution<T extends QueryTask> {
         //---llmResponse-------------------------------------
         LLMResponse llmResponse = null;
         if (json.has("llmResponse") && !json.get("llmResponse").isJsonNull()) {
-            llmResponse = LLMResponse.fromJson(
-                    json.getAsJsonObject("llmResponse").toString(),
-                    LLMResponse.class
-            );
+            llmResponse = LLMResponse.fromJson(json.getAsJsonObject("llmResponse"));
         }
 
 
