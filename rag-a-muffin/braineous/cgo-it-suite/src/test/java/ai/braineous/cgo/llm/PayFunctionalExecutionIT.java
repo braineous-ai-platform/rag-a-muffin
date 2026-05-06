@@ -223,4 +223,130 @@ public class PayFunctionalExecutionIT {
             return ((OpenAILlmAdapter) adapter).invokeLlm(queryRequest, llmPayload);
         }
     }
+
+    //---------------drift assertion-----------------------
+    @Test
+    public void payFunctionalExecution_drift_shouldKeepContractStableAcrossRuns() {
+
+        int runCount = 10;
+
+        java.util.Map<String, Integer> decisionCounts =
+                new java.util.HashMap<String, Integer>();
+
+        java.util.Map<String, Integer> reasonCounts =
+                new java.util.HashMap<String, Integer>();
+
+        java.util.Map<String, Integer> codeCounts =
+                new java.util.HashMap<String, Integer>();
+
+        int contractFailureCount = 0;
+
+        int i = 0;
+        while (i < runCount) {
+
+            QueryRequest<ValidateTask> request =
+                    this.buildPayDecisionRequest();
+
+            request.setAdapter(new OpenAILlmAdapter());
+
+            PromptBuilder promptBuilder =
+                    new PromptBuilder(new SimpleResponseContractRegistry());
+
+            CgoQueryPipeline pipeline =
+                    new CgoQueryPipeline(promptBuilder);
+
+            QueryExecution<ValidateTask> execution =
+                    pipeline.execute(request);
+
+            Console.log("pay.drift.run", String.valueOf(i));
+            Console.log("pay.drift.status", String.valueOf(execution.getStatus()));
+            Console.log("pay.drift.stage", String.valueOf(execution.getStage()));
+            Console.log("pay.drift.rawResponse", String.valueOf(execution.getRawResponse()));
+            Console.log("pay.drift.llmResponseValidation", String.valueOf(execution.getLlmResponseValidation()));
+
+            try {
+                assertNotNull(execution);
+                assertTrue(execution.isOk());
+                assertEquals("OK", execution.getStatus());
+                assertEquals("ok", execution.getStage());
+
+                String rawResponse =
+                        String.valueOf(execution.getRawResponse()).trim();
+
+                assertFalse(rawResponse.contains("\n"));
+                assertFalse(rawResponse.contains("\r"));
+                assertFalse(rawResponse.contains("\t"));
+
+                JsonElement parsed =
+                        JsonParser.parseString(rawResponse);
+
+                assertTrue(parsed.isJsonObject());
+
+                JsonObject root =
+                        parsed.getAsJsonObject();
+
+                assertTrue(root.has("result"));
+                assertEquals(1, root.entrySet().size());
+
+                JsonObject result =
+                        root.getAsJsonObject("result");
+
+                assertNotNull(result);
+                assertEquals(3, result.size());
+
+                assertTrue(result.has("decision"));
+                assertTrue(result.has("reason"));
+                assertTrue(result.has("code"));
+
+                assertTrue(result.get("decision").isJsonPrimitive());
+                assertTrue(result.get("reason").isJsonPrimitive());
+                assertTrue(result.get("code").isJsonPrimitive());
+
+                String decision =
+                        result.get("decision").getAsString();
+
+                String reason =
+                        result.get("reason").getAsString();
+
+                String code =
+                        result.get("code").getAsString();
+
+                increment(decisionCounts, decision);
+                increment(reasonCounts, reason);
+                increment(codeCounts, code);
+
+                Console.log("pay.drift.decision", decision);
+                Console.log("pay.drift.reason", reason);
+                Console.log("pay.drift.code", code);
+
+            } catch (AssertionError e) {
+                contractFailureCount++;
+                Console.log("pay.drift.contract.failure", e.getMessage());
+            }
+
+            i++;
+        }
+
+        Console.log("pay.drift.runCount", String.valueOf(runCount));
+        Console.log("pay.drift.contractFailureCount", String.valueOf(contractFailureCount));
+        Console.log("pay.drift.uniqueDecisions", decisionCounts.toString());
+        Console.log("pay.drift.uniqueReasons", reasonCounts.toString());
+        Console.log("pay.drift.uniqueCodes", codeCounts.toString());
+
+        assertEquals(0, contractFailureCount);
+        assertFalse(decisionCounts.isEmpty());
+        assertFalse(reasonCounts.isEmpty());
+        assertFalse(codeCounts.isEmpty());
+    }
+
+    private void increment(java.util.Map<String, Integer> counts, String value) {
+        Integer current =
+                counts.get(value);
+
+        if (current == null) {
+            counts.put(value, 1);
+        } else {
+            counts.put(value, current + 1);
+        }
+    }
 }
