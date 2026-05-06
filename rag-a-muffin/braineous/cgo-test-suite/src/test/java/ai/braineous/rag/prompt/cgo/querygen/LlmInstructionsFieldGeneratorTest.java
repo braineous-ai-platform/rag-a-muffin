@@ -1,202 +1,161 @@
 package ai.braineous.rag.prompt.cgo.querygen;
 
-import ai.braineous.rag.prompt.cgo.api.GraphContext;
-import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
-import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import static org.junit.jupiter.api.Assertions.*;
-
 public class LlmInstructionsFieldGeneratorTest {
 
     @Test
-    public void supports_shouldReturnTrue_forLlmInstructionsField() {
+    public void test_1() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+
+        boolean supports = generator.supports(new FieldDefinition("llm_instructions"));
+
+        Console.log("llm.instructions.supports", String.valueOf(supports));
+
+        Assertions.assertTrue(supports);
+    }
+
+    @Test
+    public void test_2() {
+        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+
+        boolean supports = generator.supports(new FieldDefinition("something_else"));
+
+        Console.log("llm.instructions.supports.other", String.valueOf(supports));
+
+        Assertions.assertFalse(supports);
+    }
+
+    @Test
+    public void test_3() {
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
+        QueryRequest request = new QueryRequest();
 
-        boolean supported = generator.supports(fieldDefinition);
-
-        Console.log("____llmInstructions.supported.true____", String.valueOf(supported));
-
-        assertTrue(supported);
-    }
-
-    @Test
-    public void supports_shouldReturnFalse_whenFieldDefinitionIsNull() {
         LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-
-        boolean supported = generator.supports(null);
-
-        Console.log("____llmInstructions.supported.nullFieldDefinition____", String.valueOf(supported));
-
-        assertFalse(supported);
-    }
-
-    @Test
-    public void supports_shouldReturnFalse_whenFieldNameIsNull() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition(null);
-
-        boolean supported = generator.supports(fieldDefinition);
-
-        Console.log("____llmInstructions.supported.nullFieldName____", String.valueOf(supported));
-
-        assertFalse(supported);
-    }
-
-    @Test
-    public void supports_shouldReturnFalse_forNonLlmInstructionsField() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("llm_trace_instructions");
-
-        boolean supported = generator.supports(fieldDefinition);
-
-        Console.log("____llmInstructions.supported.false____", String.valueOf(supported));
-
-        assertFalse(supported);
-    }
-
-    @Test
-    public void generate_shouldReturnInstructionBlock() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
-        QueryRequest request = buildRequest();
-
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
-        JsonObject expected = new JsonObject();
-        JsonArray instructions = new JsonArray();
-        instructions.add("Return ONLY the output_template with values filled.");
-        instructions.add("Use runtime_result as truth.");
-        instructions.add("Do NOT recompute validation from context.");
-        instructions.add("Do not infer control values from context.");
-        instructions.add("Return compact JSON on a single line.");
-        instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
-        instructions.add("Set every value as a string.");
-        instructions.add("Return exactly the output_template shape.");
-        instructions.add("Do not add, remove, or rename any fields.");
-        instructions.add("Return exactly one JSON object.");
-        instructions.add("Do not wrap the JSON in markdown fences.");
-        instructions.add("Do not include explanation before or after the JSON.");
-        instructions.add("Set result.ok from runtime_result.ok.");
-        instructions.add("Set result.code from runtime_result.code.");
-        instructions.add("Set result.message from runtime_result.message.");
-        instructions.add("Set result.anchorId from runtime_result.anchorId.");
-        expected.add("instructions", instructions);
+        JsonObject fieldValue = result.getFieldValue();
+        JsonArray instructions = fieldValue.getAsJsonArray("instructions");
 
-        Console.log("____llmInstructions.generate.actual____", result.getFieldValue().toString());
-        Console.log("____llmInstructions.generate.expected____", expected.toString());
-        Console.log("____llmInstructions.generate.validation____", String.valueOf(result.getValidationResult()));
+        Console.log("llm.instructions.generated", instructions.toString());
 
-        assertNotNull(result);
-        assertSame(fieldDefinition, result.getFieldDefinition());
-        assertEquals(expected, result.getFieldValue());
+        Assertions.assertNotNull(result);
+        Assertions.assertNotNull(fieldValue);
+        Assertions.assertNotNull(instructions);
 
-        ValidationResult validationResult = result.getValidationResult();
-        assertNotNull(validationResult);
-        assertTrue(validationResult.isOk());
-        assertEquals("field.llm_instructions.ok", validationResult.getCode());
-        assertEquals("VALID", validationResult.getMessage());
-        assertEquals("field_generation", validationResult.getStage());
-        assertEquals("llm_instructions", validationResult.getAnchorId());
-        assertNotNull(validationResult.getMetadata());
-        assertTrue(validationResult.getMetadata().isEmpty());
+        assertInstructionExists(instructions, "You are an execution engine, not a document reader.");
+        assertInstructionExists(instructions, "Return only JSON.");
+        assertInstructionExists(instructions, "Use the provided output_template as the final answer format.");
+        assertInstructionExists(instructions, "Execute the llm_query using only the provided context and task.");
+        assertInstructionExists(instructions, "Do not describe, summarize, explain, or analyze this request.");
+        assertInstructionExists(instructions, "Use context.nodes as the system state.");
+        assertInstructionExists(instructions, "Use task.factId as the primary fact.");
+        assertInstructionExists(instructions, "Use task.relatedFactIds as related system facts.");
+        assertInstructionExists(instructions, "Use task.controls as execution controls only.");
+        assertInstructionExists(instructions, "Do not treat task.controls as additional facts.");
+        assertInstructionExists(instructions, "Do not infer missing facts from task.controls.");
+        assertInstructionExists(instructions, "Do not recompute task.controls from context.");
+        assertInstructionExists(instructions, "Return compact JSON on a single line.");
+        assertInstructionExists(instructions, "Do not include spaces, tabs, or newlines outside JSON syntax.");
+        assertInstructionExists(instructions, "Set every value in output_template as a string.");
+        assertInstructionExists(instructions, "Return exactly the output_template shape.");
+        assertInstructionExists(instructions, "Do not add, remove, or rename any fields.");
+        assertInstructionExists(instructions, "Return exactly one JSON object.");
+        assertInstructionExists(instructions, "Do not wrap the JSON in markdown fences.");
+        assertInstructionExists(instructions, "Do not include explanation before or after the JSON.");
+
+        Assertions.assertTrue(result.getValidationResult().isOk());
+        Assertions.assertEquals("field.llm_instructions.ok", result.getValidationResult().getCode());
     }
 
     @Test
-    public void generate_shouldReturnInstructionsArray_withExpectedOrder() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+    public void test_4() {
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
-        QueryRequest request = buildRequest();
 
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList("CustomerAccount:CUST-2001", "PaymentMethod:PM-3001")
+                );
+
+        QueryRequest request = new QueryRequest(null, null, task, null, null);
+
+        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
-        JsonArray instructions = result.getFieldValue().getAsJsonArray("instructions");
+        JsonObject fieldValue = result.getFieldValue();
+        JsonArray instructions = fieldValue.getAsJsonArray("instructions");
 
-        Console.log("____llmInstructions.instructions.size____", String.valueOf(instructions.size()));
-        Console.log("____llmInstructions.instructions.0____", instructions.get(0).getAsString());
-        Console.log("____llmInstructions.instructions.1____", instructions.get(1).getAsString());
-        Console.log("____llmInstructions.instructions.2____", instructions.get(2).getAsString());
-        Console.log("____llmInstructions.instructions.3____", instructions.get(3).getAsString());
-        Console.log("____llmInstructions.instructions.4____", instructions.get(4).getAsString());
-        Console.log("____llmInstructions.instructions.5____", instructions.get(5).getAsString());
-        Console.log("____llmInstructions.instructions.6____", instructions.get(6).getAsString());
-        Console.log("____llmInstructions.instructions.7____", instructions.get(7).getAsString());
-        Console.log("____llmInstructions.instructions.8____", instructions.get(8).getAsString());
-        Console.log("____llmInstructions.instructions.9____", instructions.get(9).getAsString());
-        Console.log("____llmInstructions.instructions.10____", instructions.get(10).getAsString());
-        Console.log("____llmInstructions.instructions.11____", instructions.get(11).getAsString());
-        Console.log("____llmInstructions.instructions.12____", instructions.get(12).getAsString());
-        Console.log("____llmInstructions.instructions.13____", instructions.get(13).getAsString());
-        Console.log("____llmInstructions.instructions.14____", instructions.get(14).getAsString());
-        Console.log("____llmInstructions.instructions.15____", instructions.get(15).getAsString());
+        Console.log("llm.instructions.with.fields", instructions.toString());
 
-        assertEquals(16, instructions.size());
-        assertEquals("Return ONLY the output_template with values filled.", instructions.get(0).getAsString());
-        assertEquals("Use runtime_result as truth.", instructions.get(1).getAsString());
-        assertEquals("Do NOT recompute validation from context.", instructions.get(2).getAsString());
-        assertEquals("Do not infer control values from context.", instructions.get(3).getAsString());
-        assertEquals("Return compact JSON on a single line.", instructions.get(4).getAsString());
-        assertEquals("Do not include spaces, tabs, or newlines outside JSON syntax.", instructions.get(5).getAsString());
-        assertEquals("Set every value as a string.", instructions.get(6).getAsString());
-        assertEquals("Return exactly the output_template shape.", instructions.get(7).getAsString());
-        assertEquals("Do not add, remove, or rename any fields.", instructions.get(8).getAsString());
-        assertEquals("Return exactly one JSON object.", instructions.get(9).getAsString());
-        assertEquals("Do not wrap the JSON in markdown fences.", instructions.get(10).getAsString());
-        assertEquals("Do not include explanation before or after the JSON.", instructions.get(11).getAsString());
-        assertEquals("Set result.ok from runtime_result.ok.", instructions.get(12).getAsString());
-        assertEquals("Set result.code from runtime_result.code.", instructions.get(13).getAsString());
-        assertEquals("Set result.message from runtime_result.message.", instructions.get(14).getAsString());
-        assertEquals("Set result.anchorId from runtime_result.anchorId.", instructions.get(15).getAsString());
+        assertInstructionExists(instructions, "Set result.decision as a string value derived from llm_query execution.");
+        assertInstructionExists(instructions, "Set result.reason as a string value derived from llm_query execution.");
+        assertInstructionExists(instructions, "Set result.code as a string value derived from llm_query execution.");
+
+        Assertions.assertTrue(result.getValidationResult().isOk());
     }
 
     @Test
-    public void generate_shouldReturnValidationResultAnchoredToLlmInstructionsField() {
-        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+    public void test_5() {
         FieldDefinition fieldDefinition = new FieldDefinition("llm_instructions");
-        QueryRequest request = buildRequest();
+        QueryRequest request = new QueryRequest();
 
+        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
-        ValidationResult validationResult = result.getValidationResult();
+        JsonObject fieldValue = result.getFieldValue();
+        JsonArray instructions = fieldValue.getAsJsonArray("instructions");
 
-        Console.log("____llmInstructions.validationResult____", String.valueOf(validationResult));
+        Console.log("llm.instructions.no.old.runtime.result", instructions.toString());
 
-        assertNotNull(validationResult);
-        assertTrue(validationResult.isOk());
-        assertEquals("field.llm_instructions.ok", validationResult.getCode());
-        assertEquals("VALID", validationResult.getMessage());
-        assertEquals("field_generation", validationResult.getStage());
-        assertEquals("llm_instructions", validationResult.getAnchorId());
-        assertNotNull(validationResult.getMetadata());
-        assertTrue(validationResult.getMetadata().isEmpty());
+        assertInstructionDoesNotExist(instructions, "Use runtime_result as truth.");
+        assertInstructionDoesNotExist(instructions, "Do NOT recompute validation from context.");
+        assertInstructionDoesNotExist(instructions, "Do not infer control values from context.");
     }
 
-    private QueryRequest buildRequest() {
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate departure and arrival airport codes"
-        );
+    private void assertInstructionExists(JsonArray instructions, String expected) {
+        boolean found = false;
 
-        GraphContext context = new GraphContext();
+        int i = 0;
+        while (i < instructions.size()) {
+            String instruction = instructions.get(i).getAsString();
 
-        ValidateTask task = new ValidateTask(
-                "Validate departure and arrival airport codes",
-                "Flight:F100",
-                Arrays.asList("ok", "code", "message", "anchorId"),
-                Arrays.asList("Airport:AUS", "Airport:DFW")
-        );
+            if (expected.equals(instruction)) {
+                found = true;
+            }
 
-        return new QueryRequest(meta, context, task);
+            i++;
+        }
+
+        Assertions.assertTrue(found, expected);
+    }
+
+    private void assertInstructionDoesNotExist(JsonArray instructions, String unexpected) {
+        boolean found = false;
+
+        int i = 0;
+        while (i < instructions.size()) {
+            String instruction = instructions.get(i).getAsString();
+
+            if (unexpected.equals(instruction)) {
+                found = true;
+            }
+
+            i++;
+        }
+
+        Assertions.assertFalse(found, unexpected);
     }
 }

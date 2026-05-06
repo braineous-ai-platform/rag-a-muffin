@@ -21,9 +21,11 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         if (fieldDefinition == null) {
             return false;
         }
+
         if (fieldDefinition.getName() == null) {
             return false;
         }
+
         return "llm_instructions".equals(fieldDefinition.getName());
     }
 
@@ -32,8 +34,8 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         JsonObject fieldValue = new JsonObject();
         JsonArray instructions = new JsonArray();
 
-        addStaticInstructions(instructions);
-        addDynamicResultBindings(instructions, request);
+        addExecutionModeInstructions(instructions);
+        addRequestedFieldInstructions(instructions, request);
 
         fieldValue.add("instructions", instructions);
 
@@ -50,14 +52,22 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
     }
 
-    private void addStaticInstructions(JsonArray instructions) {
-        instructions.add("Return ONLY the output_template with values filled.");
-        instructions.add("Use runtime_result as truth.");
-        instructions.add("Do NOT recompute validation from context.");
-        instructions.add("Do not infer control values from context.");
+    private void addExecutionModeInstructions(JsonArray instructions) {
+        instructions.add("You are an execution engine, not a document reader.");
+        instructions.add("Return only JSON.");
+        instructions.add("Use the provided output_template as the final answer format.");
+        instructions.add("Execute the llm_query using only the provided context and task.");
+        instructions.add("Do not describe, summarize, explain, or analyze this request.");
+        instructions.add("Use context.nodes as the system state.");
+        instructions.add("Use task.factId as the primary fact.");
+        instructions.add("Use task.relatedFactIds as related system facts.");
+        instructions.add("Use task.controls as execution controls only.");
+        instructions.add("Do not treat task.controls as additional facts.");
+        instructions.add("Do not infer missing facts from task.controls.");
+        instructions.add("Do not recompute task.controls from context.");
         instructions.add("Return compact JSON on a single line.");
         instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
-        instructions.add("Set every value as a string.");
+        instructions.add("Set every value in output_template as a string.");
         instructions.add("Return exactly the output_template shape.");
         instructions.add("Do not add, remove, or rename any fields.");
         instructions.add("Return exactly one JSON object.");
@@ -65,7 +75,7 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         instructions.add("Do not include explanation before or after the JSON.");
     }
 
-    private void addDynamicResultBindings(JsonArray instructions, QueryRequest request) {
+    private void addRequestedFieldInstructions(JsonArray instructions, QueryRequest request) {
         List<String> requestedFields = getRequestedFields(request);
 
         if (requestedFields == null) {
@@ -77,7 +87,7 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
             String fieldName = requestedFields.get(i);
 
             if (fieldName != null) {
-                instructions.add("Set result." + fieldName + " from runtime_result." + fieldName + ".");
+                instructions.add("Set result." + fieldName + " as a string value derived from llm_query execution.");
             }
 
             i++;

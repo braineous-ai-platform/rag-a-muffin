@@ -6,7 +6,6 @@ import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 
 import java.util.List;
@@ -21,9 +20,11 @@ public class OutputTemplateFieldGenerator implements FieldGenerator {
         if (fieldDefinition == null) {
             return false;
         }
+
         if (fieldDefinition.getName() == null) {
             return false;
         }
+
         return "output_template".equals(fieldDefinition.getName());
     }
 
@@ -32,20 +33,9 @@ public class OutputTemplateFieldGenerator implements FieldGenerator {
         JsonObject fieldValue = new JsonObject();
         JsonObject result = new JsonObject();
 
-        QueryTask queryTask = request.getTask();
-        List<String> selectedFields = null;
+        List<String> selectedFields = getSelectedFields(request);
 
-        if (queryTask instanceof ValidateTask) {
-            ValidateTask validateTask = (ValidateTask) queryTask;
-            selectedFields = validateTask.getRequestedFields();
-        }
-
-        JsonArray orderedFields = toJsonArray(selectedFields);
-        for (int i = 0; i < orderedFields.size(); i++) {
-            if (!orderedFields.get(i).isJsonNull()) {
-                result.addProperty(orderedFields.get(i).getAsString(), "");
-            }
-        }
+        addSelectedFields(result, selectedFields);
 
         fieldValue.add("result", result);
 
@@ -62,21 +52,36 @@ public class OutputTemplateFieldGenerator implements FieldGenerator {
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
     }
 
-    private JsonArray toJsonArray(List<String> items) {
-        JsonArray array = new JsonArray();
-
-        if (items == null) {
-            return array;
+    private List<String> getSelectedFields(QueryRequest request) {
+        if (request == null) {
+            return null;
         }
 
-        for (String item : items) {
-            if (item != null) {
-                array.add(item);
-            } else {
-                array.add((String) null);
+        QueryTask queryTask = request.getTask();
+
+        if (!(queryTask instanceof ValidateTask)) {
+            return null;
+        }
+
+        ValidateTask validateTask = (ValidateTask) queryTask;
+
+        return validateTask.getRequestedFields();
+    }
+
+    private void addSelectedFields(JsonObject result, List<String> selectedFields) {
+        if (selectedFields == null) {
+            return;
+        }
+
+        int i = 0;
+        while (i < selectedFields.size()) {
+            String fieldName = selectedFields.get(i);
+
+            if (fieldName != null) {
+                result.addProperty(fieldName, "");
             }
-        }
 
-        return array;
+            i++;
+        }
     }
 }

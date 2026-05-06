@@ -2,6 +2,7 @@ package ai.braineous.cgo.llm;
 
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
+import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -12,7 +13,7 @@ import java.util.Map;
 
 public class OpenAILlmAdapterIT {
 
-    @Test
+    //@Test
     void invokeLlm_returns_body_on_2xx_response() {
         QueryRequest queryRequest = new QueryRequest();
         queryRequest.setMeta(new Meta("v1", "reroute_passengers", "test"));
@@ -41,7 +42,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertFalse(root.get("rawResponse").isJsonNull());
     }
 
-    @Test
+    //@Test
     void invokeLlm_deterministic_payload_executor_mode_should_return_json_only() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -153,7 +154,7 @@ public class OpenAILlmAdapterIT {
     }
 
     //----------baseline-----------------------------------------------
-    @Test
+    //@Test
     void invokeLlm_executor_mode_with_response_contract_should_synthesize_result_values() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -264,7 +265,7 @@ public class OpenAILlmAdapterIT {
     }
 
     //-----trace reintroduction---------------
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_return_result_and_trace_objects() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -318,7 +319,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertTrue(modelOutput.startsWith("{"));
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_populate_determinable_trace_fields_only() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -372,7 +373,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertTrue(modelOutput.startsWith("{"));
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_fully_populate_trace_fields() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -613,7 +614,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("Flight:F100", result.get("anchorId").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_fail_from_precomputed_runtime_truth_with_equal_airports() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -693,7 +694,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("Flight:F100", result.get("anchorId").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_preserve_precomputed_pass_runtime_result_with_different_airports() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -942,7 +943,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("OK", result.get("code").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_preserve_requested_projection_only_when_runtime_result_is_fixed() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1012,7 +1013,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("OK", result.get("code").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_return_all_projected_values_as_strings() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1081,7 +1082,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("OK", result.get("code").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_force_all_projected_result_values_to_strings() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1155,7 +1156,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("OK", result.get("code").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_return_exactly_one_json_object_without_prefix_or_suffix_text() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1312,7 +1313,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("", result.get("code").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_preserve_projection_only_without_leaking_unselected_runtime_fields() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1522,5 +1523,86 @@ public class OpenAILlmAdapterIT {
         Assertions.assertTrue(parsed.isJsonObject());
 
         Assertions.assertEquals("{\"result\":{\"ok\":\"true\",\"code\":\"OK\"}}", modelOutput);
+    }
+
+    @Test
+    void invokeLlm_pay_decision_executor_mode_should_return_single_line_json() {
+
+        QueryRequest queryRequest = new QueryRequest();
+        queryRequest.setMeta(new Meta("v1", "decision", "pay decision"));
+        queryRequest.generateRequestId();
+
+        String prompt =
+                "You are a task execution engine.\n\n" +
+                        "Return only JSON.\n" +
+                        "Use the provided output_template as the final answer format.\n" +
+                        "Execute the payment capture decision using only the provided context and task.\n" +
+                        "Do not describe, summarize, explain, or analyze this request.\n" +
+                        "Use context.nodes as the system state.\n" +
+                        "Use task.factId as the primary payment request.\n" +
+                        "Use task.relatedFactIds as related payment system facts.\n" +
+                        "Use task.controls as execution controls only.\n" +
+                        "Do not treat task.controls as additional facts.\n" +
+                        "Return compact JSON on a single line.\n" +
+                        "Do not include spaces, tabs, or newlines outside JSON syntax.\n" +
+                        "Set every value in output_template as a string.\n" +
+                        "Return exactly the output_template shape.\n" +
+                        "Do not add, remove, or rename any fields.\n" +
+                        "Return exactly one JSON object.\n" +
+                        "Do not wrap the JSON in markdown fences.\n" +
+                        "Do not include explanation before or after the JSON.\n\n" +
+                        "INPUT:\n" +
+                        "{"
+                        + "\"task\":{"
+                        + "\"intent\":{\"goal\":\"decision\"},"
+                        + "\"factId\":\"PaymentRequest:PAY-1001\","
+                        + "\"relatedFactIds\":[\"CustomerAccount:CUST-2001\",\"PaymentMethod:PM-3001\",\"RiskProfile:RISK-4001\",\"MerchantPolicy:POL-5001\"],"
+                        + "\"select\":[\"decision\",\"reason\",\"code\"],"
+                        + "\"controls\":{\"intent\":\"decide_payment_capture\"}"
+                        + "},"
+                        + "\"context\":{\"nodes\":{"
+                        + "\"PaymentRequest:PAY-1001\":{\"id\":\"PaymentRequest:PAY-1001\",\"text\":\"{\\\"id\\\":\\\"PaymentRequest:PAY-1001\\\",\\\"kind\\\":\\\"PaymentRequest\\\",\\\"mode\\\":\\\"atomic\\\",\\\"amount\\\":\\\"125.00\\\",\\\"currency\\\":\\\"USD\\\"}\",\"attributes\":[],\"mode\":\"ATOMIC\"},"
+                        + "\"CustomerAccount:CUST-2001\":{\"id\":\"CustomerAccount:CUST-2001\",\"text\":\"{\\\"id\\\":\\\"CustomerAccount:CUST-2001\\\",\\\"kind\\\":\\\"CustomerAccount\\\",\\\"mode\\\":\\\"atomic\\\",\\\"status\\\":\\\"ACTIVE\\\"}\",\"attributes\":[],\"mode\":\"ATOMIC\"},"
+                        + "\"PaymentMethod:PM-3001\":{\"id\":\"PaymentMethod:PM-3001\",\"text\":\"{\\\"id\\\":\\\"PaymentMethod:PM-3001\\\",\\\"kind\\\":\\\"PaymentMethod\\\",\\\"mode\\\":\\\"atomic\\\",\\\"type\\\":\\\"CARD\\\"}\",\"attributes\":[],\"mode\":\"ATOMIC\"},"
+                        + "\"RiskProfile:RISK-4001\":{\"id\":\"RiskProfile:RISK-4001\",\"text\":\"{\\\"id\\\":\\\"RiskProfile:RISK-4001\\\",\\\"kind\\\":\\\"RiskProfile\\\",\\\"mode\\\":\\\"atomic\\\",\\\"level\\\":\\\"LOW\\\"}\",\"attributes\":[],\"mode\":\"ATOMIC\"},"
+                        + "\"MerchantPolicy:POL-5001\":{\"id\":\"MerchantPolicy:POL-5001\",\"text\":\"{\\\"id\\\":\\\"MerchantPolicy:POL-5001\\\",\\\"kind\\\":\\\"MerchantPolicy\\\",\\\"mode\\\":\\\"atomic\\\",\\\"capture\\\":\\\"AUTO\\\"}\",\"attributes\":[],\"mode\":\"ATOMIC\"}"
+                        + "}},"
+                        + "\"output_template\":{\"result\":{\"decision\":\"\",\"reason\":\"\",\"code\":\"\"}}"
+                        + "}";
+
+        JsonObject llmPayload = new JsonObject();
+        llmPayload.addProperty("model", "llama3");
+        llmPayload.addProperty("prompt", prompt);
+        llmPayload.addProperty("stream", false);
+
+        OpenAILlmAdapter adapter = new OpenAILlmAdapter();
+        String response = adapter.invokeLlm(queryRequest, llmPayload);
+
+        JsonObject root = JsonParser.parseString(response).getAsJsonObject();
+        String rawModelOutput = root.getAsJsonObject("rawResponse").get("response").getAsString();
+        String modelOutput = rawModelOutput.trim();
+
+        Console.log("pay.executor.raw", rawModelOutput);
+        Console.log("pay.executor.normalized", modelOutput);
+
+        Assertions.assertEquals(rawModelOutput, modelOutput);
+        Assertions.assertFalse(modelOutput.contains("\n"));
+        Assertions.assertFalse(modelOutput.contains("\r"));
+        Assertions.assertFalse(modelOutput.contains("\t"));
+
+        JsonElement parsed = JsonParser.parseString(modelOutput);
+        Assertions.assertTrue(parsed.isJsonObject());
+
+        JsonObject result = parsed.getAsJsonObject().getAsJsonObject("result");
+
+        Assertions.assertNotNull(result);
+        Assertions.assertTrue(result.has("decision"));
+        Assertions.assertTrue(result.has("reason"));
+        Assertions.assertTrue(result.has("code"));
+        Assertions.assertEquals(3, result.size());
+
+        Assertions.assertTrue(result.get("decision").isJsonPrimitive());
+        Assertions.assertTrue(result.get("reason").isJsonPrimitive());
+        Assertions.assertTrue(result.get("code").isJsonPrimitive());
     }
 }

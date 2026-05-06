@@ -11,181 +11,301 @@ import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 public class ContextFieldGeneratorTest {
 
     @Test
-    public void supports_shouldReturnTrue_forContextField() {
+    public void test_1() {
         ContextFieldGenerator generator = new ContextFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("context");
 
-        boolean supported = generator.supports(fieldDefinition);
+        boolean supported = generator.supports(new FieldDefinition("context"));
 
-        Console.log("____context.supported.true____", String.valueOf(supported));
+        Console.log("context.supported", String.valueOf(supported));
 
-        assertTrue(supported);
+        Assertions.assertTrue(supported);
     }
 
     @Test
-    public void supports_shouldReturnFalse_whenFieldDefinitionIsNull() {
+    public void test_2() {
         ContextFieldGenerator generator = new ContextFieldGenerator();
 
         boolean supported = generator.supports(null);
 
-        Console.log("____context.supported.nullFieldDefinition____", String.valueOf(supported));
+        Console.log("context.supported.null", String.valueOf(supported));
 
-        assertFalse(supported);
+        Assertions.assertFalse(supported);
     }
 
     @Test
-    public void supports_shouldReturnFalse_whenFieldNameIsNull() {
+    public void test_3() {
         ContextFieldGenerator generator = new ContextFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition(null);
 
-        boolean supported = generator.supports(fieldDefinition);
+        boolean supported = generator.supports(new FieldDefinition(null));
 
-        Console.log("____context.supported.nullFieldName____", String.valueOf(supported));
+        Console.log("context.supported.null.name", String.valueOf(supported));
 
-        assertFalse(supported);
+        Assertions.assertFalse(supported);
     }
 
     @Test
-    public void supports_shouldReturnFalse_forNonContextField() {
+    public void test_4() {
         ContextFieldGenerator generator = new ContextFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("task");
 
-        boolean supported = generator.supports(fieldDefinition);
+        boolean supported = generator.supports(new FieldDefinition("task"));
 
-        Console.log("____context.supported.false____", String.valueOf(supported));
+        Console.log("context.supported.other", String.valueOf(supported));
 
-        assertFalse(supported);
+        Assertions.assertFalse(supported);
     }
 
     @Test
-    public void generate_shouldReturnContextBlock() {
+    public void test_5() {
         ContextFieldGenerator generator = new ContextFieldGenerator();
         FieldDefinition fieldDefinition = new FieldDefinition("context");
+
         QueryRequest request = buildRequest();
 
-        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+        FieldGenerationResult result =
+                generator.generate(fieldDefinition, request);
 
         JsonObject expected = buildExpectedContextJson();
 
-        Console.log("____context.generate.actual____", result.getFieldValue().toString());
-        Console.log("____context.generate.expected____", expected.toString());
-        Console.log("____context.generate.validation____", String.valueOf(result.getValidationResult()));
+        Console.log("context.generate.actual", result.getFieldValue().toString());
+        Console.log("context.generate.expected", expected.toString());
+        Console.log("context.generate.validation", String.valueOf(result.getValidationResult()));
 
-        assertNotNull(result);
-        assertSame(fieldDefinition, result.getFieldDefinition());
-        assertEquals(expected, result.getFieldValue());
+        Assertions.assertNotNull(result);
+        Assertions.assertSame(fieldDefinition, result.getFieldDefinition());
 
-        ValidationResult validationResult = result.getValidationResult();
-        assertNotNull(validationResult);
-        assertTrue(validationResult.isOk());
-        assertEquals("field.context.ok", validationResult.getCode());
-        assertEquals("VALID", validationResult.getMessage());
-        assertEquals("field_generation", validationResult.getStage());
-        assertEquals("context", validationResult.getAnchorId());
-        assertNotNull(validationResult.getMetadata());
-        assertTrue(validationResult.getMetadata().isEmpty());
-    }
-
-    @Test
-    public void generate_shouldReturnNodes_withExpectedValues() {
-        ContextFieldGenerator generator = new ContextFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("context");
-        QueryRequest request = buildRequest();
-
-        FieldGenerationResult result = generator.generate(fieldDefinition, request);
-
-        JsonObject nodes = result.getFieldValue().getAsJsonObject("nodes");
-        JsonObject flightNode = nodes.getAsJsonObject("Flight:F100");
-
-        Console.log("____context.nodes.size____", String.valueOf(nodes.entrySet().size()));
-        Console.log("____context.node.id____", flightNode.get("id").getAsString());
-        Console.log("____context.node.text____", flightNode.get("text").getAsString());
-        Console.log("____context.node.attributes____", flightNode.getAsJsonArray("attributes").toString());
-        Console.log("____context.node.mode____", flightNode.get("mode").getAsString());
-
-        assertEquals(1, nodes.entrySet().size());
-        assertNotNull(flightNode);
-        assertEquals("Flight:F100", flightNode.get("id").getAsString());
-        assertEquals("{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}", flightNode.get("text").getAsString());
-        assertEquals(0, flightNode.getAsJsonArray("attributes").size());
-        assertEquals("RELATIONAL", flightNode.get("mode").getAsString());
-    }
-
-    @Test
-    public void generate_shouldReturnValidationResultAnchoredToContextField() {
-        ContextFieldGenerator generator = new ContextFieldGenerator();
-        FieldDefinition fieldDefinition = new FieldDefinition("context");
-        QueryRequest request = buildRequest();
-
-        FieldGenerationResult result = generator.generate(fieldDefinition, request);
+        assertExpectedNodes(expected, result.getFieldValue());
 
         ValidationResult validationResult = result.getValidationResult();
 
-        Console.log("____context.validationResult____", String.valueOf(validationResult));
+        Assertions.assertNotNull(validationResult);
+        Assertions.assertTrue(validationResult.isOk());
+        Assertions.assertEquals("field.context.ok", validationResult.getCode());
+        Assertions.assertEquals("VALID", validationResult.getMessage());
+        Assertions.assertEquals("field_generation", validationResult.getStage());
+        Assertions.assertEquals("context", validationResult.getAnchorId());
+        Assertions.assertNotNull(validationResult.getMetadata());
+        Assertions.assertTrue(validationResult.getMetadata().isEmpty());
+    }
 
-        assertNotNull(validationResult);
-        assertTrue(validationResult.isOk());
-        assertEquals("field.context.ok", validationResult.getCode());
-        assertEquals("VALID", validationResult.getMessage());
-        assertEquals("field_generation", validationResult.getStage());
-        assertEquals("context", validationResult.getAnchorId());
-        assertNotNull(validationResult.getMetadata());
-        assertTrue(validationResult.getMetadata().isEmpty());
+    @Test
+    public void test_6() {
+        ContextFieldGenerator generator = new ContextFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("context");
+
+        QueryRequest request = buildRequest();
+
+        FieldGenerationResult result =
+                generator.generate(fieldDefinition, request);
+
+        JsonObject nodes =
+                result.getFieldValue().getAsJsonObject("nodes");
+
+        JsonObject paymentNode =
+                nodes.getAsJsonObject("PaymentRequest:PAY-1001");
+
+        JsonObject customerNode =
+                nodes.getAsJsonObject("CustomerAccount:CUST-2001");
+
+        Console.log("context.nodes.size", String.valueOf(nodes.entrySet().size()));
+        Console.log("context.payment.node", paymentNode.toString());
+        Console.log("context.customer.node", customerNode.toString());
+
+        Assertions.assertEquals(2, nodes.entrySet().size());
+
+        Assertions.assertNotNull(paymentNode);
+        Assertions.assertEquals(
+                "PaymentRequest:PAY-1001",
+                paymentNode.get("id").getAsString()
+        );
+
+        Assertions.assertEquals(
+                "{\"paymentId\":\"PAY-1001\",\"amount\":\"125.00\",\"currency\":\"USD\",\"risk\":\"LOW\"}",
+                paymentNode.get("text").getAsString()
+        );
+
+        Assertions.assertEquals(
+                "RELATIONAL",
+                paymentNode.get("mode").getAsString()
+        );
+
+        Assertions.assertNotNull(customerNode);
+
+        Assertions.assertEquals(
+                "CustomerAccount:CUST-2001",
+                customerNode.get("id").getAsString()
+        );
+
+        Assertions.assertEquals(
+                "{\"customerId\":\"CUST-2001\",\"status\":\"ACTIVE\",\"segment\":\"TRUSTED\"}",
+                customerNode.get("text").getAsString()
+        );
+
+        Assertions.assertEquals(
+                "RELATIONAL",
+                customerNode.get("mode").getAsString()
+        );
+    }
+
+    @Test
+    public void test_7() {
+        ContextFieldGenerator generator = new ContextFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("context");
+
+        FieldGenerationResult result =
+                generator.generate(fieldDefinition, null);
+
+        JsonObject context = result.getFieldValue();
+
+        Console.log("context.null.request", context.toString());
+
+        Assertions.assertNotNull(context);
+        Assertions.assertEquals(0, context.size());
+
+        Assertions.assertTrue(result.getValidationResult().isOk());
+    }
+
+    @Test
+    public void test_8() {
+        ContextFieldGenerator generator = new ContextFieldGenerator();
+        FieldDefinition fieldDefinition = new FieldDefinition("context");
+
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
+
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList("CustomerAccount:CUST-2001")
+                );
+
+        QueryRequest request =
+                new QueryRequest(meta, null, task, null, null);
+
+        FieldGenerationResult result =
+                generator.generate(fieldDefinition, request);
+
+        JsonObject context = result.getFieldValue();
+
+        Console.log("context.null.graph", context.toString());
+
+        Assertions.assertNotNull(context);
+        Assertions.assertEquals(0, context.size());
+        Assertions.assertTrue(result.getValidationResult().isOk());
+    }
+
+    private void assertExpectedNodes(JsonObject expected, JsonObject actual) {
+        JsonObject expectedNodes =
+                expected.getAsJsonObject("nodes");
+
+        JsonObject actualNodes =
+                actual.getAsJsonObject("nodes");
+
+        Assertions.assertNotNull(actualNodes);
+        Assertions.assertEquals(expectedNodes.size(), actualNodes.size());
+
+        Assertions.assertTrue(actualNodes.has("PaymentRequest:PAY-1001"));
+        Assertions.assertTrue(actualNodes.has("CustomerAccount:CUST-2001"));
+
+        Assertions.assertEquals(
+                expectedNodes.getAsJsonObject("PaymentRequest:PAY-1001"),
+                actualNodes.getAsJsonObject("PaymentRequest:PAY-1001")
+        );
+
+        Assertions.assertEquals(
+                expectedNodes.getAsJsonObject("CustomerAccount:CUST-2001"),
+                actualNodes.getAsJsonObject("CustomerAccount:CUST-2001")
+        );
     }
 
     private QueryRequest buildRequest() {
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate departure and arrival airport codes"
-        );
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
 
-        Map<String, Node> nodes = new HashMap<String, Node>();
+        Map<String, Node> nodes =
+                new LinkedHashMap<String, Node>();
+
         nodes.put(
-                "Flight:F100",
+                "PaymentRequest:PAY-1001",
                 new Node(
-                        "Flight:F100",
-                        "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
+                        "PaymentRequest:PAY-1001",
+                        "{\"paymentId\":\"PAY-1001\",\"amount\":\"125.00\",\"currency\":\"USD\",\"risk\":\"LOW\"}",
                         Arrays.asList(),
                         Node.Mode.RELATIONAL
                 )
         );
 
-        GraphContext context = new GraphContext(nodes);
-
-        ValidateTask task = new ValidateTask(
-                "Validate departure and arrival airport codes",
-                "Flight:F100",
-                Arrays.asList("ok", "code", "message", "anchorId"),
-                Arrays.asList("Airport:AUS", "Airport:DFW")
+        nodes.put(
+                "CustomerAccount:CUST-2001",
+                new Node(
+                        "CustomerAccount:CUST-2001",
+                        "{\"customerId\":\"CUST-2001\",\"status\":\"ACTIVE\",\"segment\":\"TRUSTED\"}",
+                        Arrays.asList(),
+                        Node.Mode.RELATIONAL
+                )
         );
+
+        GraphContext context =
+                new GraphContext(nodes);
+
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList(
+                                "CustomerAccount:CUST-2001"
+                        )
+                );
 
         return new QueryRequest(meta, context, task);
     }
 
     private JsonObject buildExpectedContextJson() {
         JsonObject expected = new JsonObject();
+
         JsonObject nodes = new JsonObject();
-        JsonObject flightNode = new JsonObject();
-        JsonArray attributes = new JsonArray();
 
-        flightNode.addProperty("id", "Flight:F100");
-        flightNode.addProperty("text", "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}");
-        flightNode.add("attributes", attributes);
-        flightNode.addProperty("mode", "RELATIONAL");
+        JsonObject paymentNode = new JsonObject();
+        paymentNode.addProperty("id", "PaymentRequest:PAY-1001");
+        paymentNode.addProperty(
+                "text",
+                "{\"paymentId\":\"PAY-1001\",\"amount\":\"125.00\",\"currency\":\"USD\",\"risk\":\"LOW\"}"
+        );
+        paymentNode.add("attributes", new JsonArray());
+        paymentNode.addProperty("mode", "RELATIONAL");
 
-        nodes.add("Flight:F100", flightNode);
+        JsonObject customerNode = new JsonObject();
+        customerNode.addProperty("id", "CustomerAccount:CUST-2001");
+        customerNode.addProperty(
+                "text",
+                "{\"customerId\":\"CUST-2001\",\"status\":\"ACTIVE\",\"segment\":\"TRUSTED\"}"
+        );
+        customerNode.add("attributes", new JsonArray());
+        customerNode.addProperty("mode", "RELATIONAL");
+
+        nodes.add("PaymentRequest:PAY-1001", paymentNode);
+        nodes.add("CustomerAccount:CUST-2001", customerNode);
+
         expected.add("nodes", nodes);
 
         return expected;

@@ -4,6 +4,7 @@ import ai.braineous.rag.prompt.cgo.api.Control;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
+import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import com.google.gson.JsonObject;
@@ -20,19 +21,17 @@ public class TaskFieldGenerator implements FieldGenerator {
         if (fieldDefinition == null) {
             return false;
         }
+
         if (fieldDefinition.getName() == null) {
             return false;
         }
+
         return "task".equals(fieldDefinition.getName());
     }
 
     @Override
     public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request) {
-        ValidateTask task = (ValidateTask) request.getTask();
-        JsonObject fieldValue = task.toJson();
-
-        JsonObject controlsObject = buildControlsObject(task.getControls());
-        fieldValue.add("controls", controlsObject);
+        JsonObject fieldValue = buildTaskObject(request);
 
         ValidationResult validationResult =
                 new ValidationResult(
@@ -47,7 +46,27 @@ public class TaskFieldGenerator implements FieldGenerator {
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
     }
 
-    //------------
+    private JsonObject buildTaskObject(QueryRequest request) {
+        if (request == null) {
+            return new JsonObject();
+        }
+
+        QueryTask queryTask = request.getTask();
+
+        if (!(queryTask instanceof ValidateTask)) {
+            return new JsonObject();
+        }
+
+        ValidateTask task = (ValidateTask) queryTask;
+
+        JsonObject fieldValue = task.toJson();
+
+        JsonObject controlsObject = buildControlsObject(task.getControls());
+        fieldValue.add("controls", controlsObject);
+
+        return fieldValue;
+    }
+
     private JsonObject buildControlsObject(List<Control> controls) {
         JsonObject controlsObject = new JsonObject();
 

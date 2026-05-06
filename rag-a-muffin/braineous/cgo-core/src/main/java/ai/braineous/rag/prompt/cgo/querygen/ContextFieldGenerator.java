@@ -17,17 +17,17 @@ public class ContextFieldGenerator implements FieldGenerator {
         if (fieldDefinition == null) {
             return false;
         }
+
         if (fieldDefinition.getName() == null) {
             return false;
         }
+
         return "context".equals(fieldDefinition.getName());
     }
 
     @Override
     public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request) {
-
-        GraphContext context = request.getContext();
-        JsonObject fieldValue = context.toJson();
+        JsonObject fieldValue = buildContextObject(request);
 
         ValidationResult validationResult =
                 new ValidationResult(
@@ -40,5 +40,19 @@ public class ContextFieldGenerator implements FieldGenerator {
                 );
 
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
+    }
+
+    private JsonObject buildContextObject(QueryRequest request) {
+        if (request == null) {
+            return new JsonObject();
+        }
+
+        GraphContext context = request.getContext();
+
+        if (context == null) {
+            return new JsonObject();
+        }
+
+        return context.toJson();
     }
 }
