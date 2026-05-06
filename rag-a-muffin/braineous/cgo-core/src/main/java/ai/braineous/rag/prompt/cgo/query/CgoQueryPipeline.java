@@ -3,9 +3,9 @@ package ai.braineous.rag.prompt.cgo.query;
 import ai.braineous.rag.prompt.cgo.api.*;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
+import ai.braineous.rag.prompt.cgo.prompt.PromptRequestOutput;
 import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenService;
-import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenValidator;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
 import ai.braineous.rag.prompt.utils.Resources;
 import com.google.gson.JsonObject;
@@ -13,19 +13,6 @@ import com.google.gson.JsonParser;
 
 import java.util.Objects;
 
-/**
- * Core, domain-agnostic implementation of the QueryPipeline.
- *
- * Responsibilities:
- *  - Take a QueryRequest<T extends QueryTask>
- *  - Use PromptBuilder to construct the LLM prompt JSON
- *  - Call LlmClient
- *  - Wrap request + raw response in QueryExecution<T>
- *
- * This class MUST remain domain-agnostic:
- *  - No references to specific tasks like "ValidateTask"
- *  - No references to domain result DTOs (e.g., ValidationResult for flights)
- */
 public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PromptBuilder promptBuilder;
@@ -37,28 +24,24 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
     private final PhaseResultValidator llmResponseValidator;
 
-    private boolean inMemoryMode = false; //not-in-memory by default
-
-
+    private boolean inMemoryMode = false;
 
     public CgoQueryPipeline(PromptBuilder promptBuilder) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.queryGenService = new QueryGenService();
         this.llmClient = null;
-        //this.llmResponseValidator = new GsonPhaseResultValidator();
         this.llmResponseValidator = new QueryResultValidator();
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient) {
         this.promptBuilder = promptBuilder;
         this.llmClient = llmClient;
-        //this.llmResponseValidator = new GsonPhaseResultValidator();
         this.llmResponseValidator = new QueryResultValidator();
         this.queryGenService = new QueryGenService();
     }
 
-    //for test-suite
-    CgoQueryPipeline(PromptBuilder promptBuilder, LlmClient llmClient,
+    CgoQueryPipeline(PromptBuilder promptBuilder,
+                     LlmClient llmClient,
                      PhaseResultValidator llmResponseValidator) {
         this.promptBuilder = Objects.requireNonNull(promptBuilder, "promptBuilder must not be null");
         this.llmClient = llmClient;
@@ -79,66 +62,100 @@ public final class CgoQueryPipeline implements QueryPipeline {
         Objects.requireNonNull(request, "request must not be null");
 
         LlmAdapter adapter = request.getAdapter();
-        Objects.requireNonNull(adapter,
-                "Missing LlmAdapter on QueryRequest. Adapter must be explicit (cost guard).");
+        Objects.requireNonNull(
+                adapter,
+                "Missing LlmAdapter on QueryRequest. Adapter must be explicit (cost guard)."
+        );
 
-        /*PromptRequestOutput requestOutput = promptBuilder.generateRequestPrompt(request);
-        JsonObject prompt = requestOutput.getRequestOutput();
-
-        ValidationResult promptValidation = requestOutput.getValidationResult();
-        if (promptValidation != null && !promptValidation.isOk()) {
-            return new QueryExecution<T>(request, null, promptValidation, null, null);
-        }*/
         QueryGenOutput requestOutput = queryGenService.generateQuery(request);
-        JsonObject prompt = requestOutput.getPayload();
+        JsonObject llmQuery = requestOutput.getPayload();
 
         ValidationResult promptValidation = requestOutput.getValidationResult();
         if (promptValidation != null && !promptValidation.isOk()) {
             return new QueryExecution<T>(request, null, promptValidation, null, null);
         }
 
+        PromptRequestOutput executionPrompt =
+                promptBuilder.generateExecutionPrompt(llmQuery);
+
+        String executionPromptText =
+                executionPrompt.getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
 
         LlmClient client = this.findLlmClient();
+
         JsonObject llmPayload = new JsonObject();
         llmPayload.addProperty("model", "llama3");
-        llmPayload.addProperty("prompt", prompt.toString());
+        llmPayload.addProperty("prompt", executionPromptText);
         llmPayload.addProperty("stream", false);
 
-        String rawResponse = client.executePrompt(adapter, request, llmPayload);
+        String rawResponse =
+                client.executePrompt(adapter, request, llmPayload);
 
-        LLMResponse llmResponse = this.createLlmResponse(request, prompt, rawResponse);
+        LLMResponse llmResponse =
+                this.createLlmResponse(request, llmQuery, rawResponse);
 
         ValidationResult responseValidation = null;
+
         if (this.llmResponseValidator != null) {
-            responseValidation = llmResponseValidator.validate(rawResponse);
+            responseValidation =
+                    llmResponseValidator.validate(rawResponse);
+
             if (responseValidation != null && !responseValidation.isOk()) {
                 QueryExecution<T> failedExecution =
-                        new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, null);
+                        new QueryExecution<T>(
+                                request,
+                                rawResponse,
+                                promptValidation,
+                                responseValidation,
+                                null
+                        );
+
                 failedExecution.setLlmResponse(llmResponse);
                 failedExecution.setInMemoryMode(this.inMemoryMode);
                 this.score(failedExecution);
+
                 return failedExecution;
             }
         }
 
         LLMResponseValidatorRule rule = request.getRule();
         ValidationResult domainValidation = null;
+
         if (rule != null) {
-            domainValidation = rule.validate(rawResponse);
+            domainValidation =
+                    rule.validate(rawResponse);
+
             if (domainValidation != null && !domainValidation.isOk()) {
                 QueryExecution<T> failedExecution =
-                        new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+                        new QueryExecution<T>(
+                                request,
+                                rawResponse,
+                                promptValidation,
+                                responseValidation,
+                                domainValidation
+                        );
+
                 failedExecution.setLlmResponse(llmResponse);
                 failedExecution.setInMemoryMode(this.inMemoryMode);
                 this.score(failedExecution);
+
                 return failedExecution;
             }
         }
 
-        JsonObject parsedResponse = this.parseLlmResponse(rawResponse);
+        JsonObject parsedResponse =
+                this.parseLlmResponse(rawResponse);
 
         QueryExecution<T> execution =
-                new QueryExecution<T>(request, rawResponse, promptValidation, responseValidation, domainValidation);
+                new QueryExecution<T>(
+                        request,
+                        rawResponse,
+                        promptValidation,
+                        responseValidation,
+                        domainValidation
+                );
 
         execution.setLlmResponse(llmResponse);
         execution.setInMemoryMode(this.inMemoryMode);
@@ -147,75 +164,94 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
         return execution;
     }
-    //--------------------------------------------------------------------------------------
-    private LlmClient findLlmClient(){
+
+    private LlmClient findLlmClient() {
         try {
             if (this.llmClient != null) {
                 return this.llmClient;
             }
 
             synchronized (this) {
-                if (this.llmClient != null) {   // <-- add this
+                if (this.llmClient != null) {
                     return this.llmClient;
                 }
 
-                //otherwise use the core-cgo-llm-orchestrator
-                String pipelineStr = Resources.getResource("pipeline.json");
-                JsonObject pipeLineJson = JsonParser.parseString(pipelineStr).getAsJsonObject();
+                String pipelineStr =
+                        Resources.getResource("pipeline.json");
 
-                String llmOrchestratorClass = pipeLineJson.get("llm_client").getAsString();
-                LlmClient cgoLlmClient = (LlmClient) Thread.currentThread().getContextClassLoader().
-                        loadClass(llmOrchestratorClass).getDeclaredConstructor().newInstance();
+                JsonObject pipeLineJson =
+                        JsonParser.parseString(pipelineStr).getAsJsonObject();
+
+                String llmOrchestratorClass =
+                        pipeLineJson.get("llm_client").getAsString();
+
+                LlmClient cgoLlmClient =
+                        (LlmClient) Thread.currentThread()
+                                .getContextClassLoader()
+                                .loadClass(llmOrchestratorClass)
+                                .getDeclaredConstructor()
+                                .newInstance();
+
                 this.llmClient = cgoLlmClient;
 
                 return this.llmClient;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             throw new IllegalStateException("Failed to resolve LlmClient from pipeline.json", e);
         }
     }
 
-    private ScorerClient findScorerClient(){
+    private ScorerClient findScorerClient() {
         try {
             if (this.scorerClient != null) {
                 return this.scorerClient;
             }
 
             synchronized (this) {
-                if (this.scorerClient != null) {   // <-- add this
+                if (this.scorerClient != null) {
                     return this.scorerClient;
                 }
 
-                //otherwise use the core-cgo-llm-orchestrator
-                String pipelineStr = Resources.getResource("pipeline.json");
-                JsonObject pipeLineJson = JsonParser.parseString(pipelineStr).getAsJsonObject();
+                String pipelineStr =
+                        Resources.getResource("pipeline.json");
 
-                String scorerStr = pipeLineJson.get("scorer").getAsString();
-                ScorerClient scorer = (ScorerClient) Thread.currentThread().getContextClassLoader().
-                        loadClass(scorerStr).getDeclaredConstructor().newInstance();
+                JsonObject pipeLineJson =
+                        JsonParser.parseString(pipelineStr).getAsJsonObject();
+
+                String scorerStr =
+                        pipeLineJson.get("scorer").getAsString();
+
+                ScorerClient scorer =
+                        (ScorerClient) Thread.currentThread()
+                                .getContextClassLoader()
+                                .loadClass(scorerStr)
+                                .getDeclaredConstructor()
+                                .newInstance();
+
                 this.scorerClient = scorer;
 
                 return this.scorerClient;
             }
-        }catch (Exception e){
+        } catch (Exception e) {
             e.printStackTrace();
             throw new IllegalStateException("Failed to resolve ScorerClient from pipeline.json", e);
         }
     }
 
-    private void score(QueryExecution execution){
+    private void score(QueryExecution execution) {
         ScorerClient scorer = this.findScorerClient();
         scorer.orchestrate(execution);
     }
 
     private <T extends QueryTask> LLMResponse createLlmResponse(
             QueryRequest<T> request,
-            JsonObject prompt,
-            String rawResponse) {
+            JsonObject llmQuery,
+            String rawResponse
+    ) {
 
         LLMRequest llmRequest = new LLMRequest();
         llmRequest.setQueryRequest(request);
-        llmRequest.setLlmQuery(prompt);
+        llmRequest.setLlmQuery(llmQuery);
 
         LLMResponse llmResponse = new LLMResponse();
         llmResponse.setLlmRequest(llmRequest);
@@ -230,6 +266,3 @@ public final class CgoQueryPipeline implements QueryPipeline {
         return parser.parse(rawResponse);
     }
 }
-
-
-

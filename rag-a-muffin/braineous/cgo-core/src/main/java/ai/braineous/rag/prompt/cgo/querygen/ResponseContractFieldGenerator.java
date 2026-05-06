@@ -3,21 +3,23 @@ package ai.braineous.rag.prompt.cgo.querygen;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
+import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import com.google.gson.JsonObject;
 
+import java.util.List;
+
 /**
  * {
- *   "type": "validation_result",
- *   "description": "Deterministic response contract derived from selected fields.",
+ *   "type": "execution_result",
+ *   "description": "Deterministic execution response contract derived from selected fields.",
  *   "schema": {
  *     "result": {
  *       "fields": {
- *         "ok": "string",
- *         "code": "string",
- *         "message": "string",
- *         "anchorId": "string"
+ *         "decision": "string",
+ *         "reason": "string",
+ *         "code": "string"
  *       }
  *     }
  *   }
@@ -33,29 +35,40 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
         if (fieldDefinition == null) {
             return false;
         }
+
         if (fieldDefinition.getName() == null) {
             return false;
         }
+
         return "response_contract".equals(fieldDefinition.getName());
     }
 
     @Override
     public FieldGenerationResult generate(FieldDefinition fieldDefinition, QueryRequest request) {
-        ValidateTask task = (ValidateTask) request.getTask();
-
         JsonObject responseContract = new JsonObject();
-        responseContract.addProperty("type", "validation_result");
-        responseContract.addProperty("description", "Deterministic response contract derived from selected fields.");
+
+        responseContract.addProperty("type", "execution_result");
+        responseContract.addProperty(
+                "description",
+                "Deterministic execution response contract derived from selected fields."
+        );
 
         JsonObject schema = new JsonObject();
         JsonObject result = new JsonObject();
         JsonObject fields = new JsonObject();
 
-        if (task != null && task.getRequestedFields() != null) {
-            for (String requestedField : task.getRequestedFields()) {
+        List<String> requestedFields = getRequestedFields(request);
+
+        if (requestedFields != null) {
+            int i = 0;
+            while (i < requestedFields.size()) {
+                String requestedField = requestedFields.get(i);
+
                 if (requestedField != null) {
                     fields.addProperty(requestedField, "string");
                 }
+
+                i++;
             }
         }
 
@@ -74,5 +87,21 @@ public class ResponseContractFieldGenerator implements FieldGenerator {
                 );
 
         return new FieldGenerationResult(fieldDefinition, responseContract, validationResult);
+    }
+
+    private List<String> getRequestedFields(QueryRequest request) {
+        if (request == null) {
+            return null;
+        }
+
+        QueryTask queryTask = request.getTask();
+
+        if (!(queryTask instanceof ValidateTask)) {
+            return null;
+        }
+
+        ValidateTask task = (ValidateTask) queryTask;
+
+        return task.getRequestedFields();
     }
 }

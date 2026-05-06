@@ -1,367 +1,412 @@
 package ai.braineous.rag.prompt.cgo.prompt;
 
-import ai.braineous.rag.prompt.cgo.api.*;
-import ai.braineous.rag.prompt.cgo.query.*;
+import ai.braineous.rag.prompt.cgo.api.GraphContext;
+import ai.braineous.rag.prompt.cgo.api.Meta;
+import ai.braineous.rag.prompt.cgo.api.ValidateTask;
+import ai.braineous.rag.prompt.cgo.api.ValidationResult;
+import ai.braineous.rag.prompt.cgo.query.GsonPromptRequestValidator;
+import ai.braineous.rag.prompt.cgo.query.Node;
+import ai.braineous.rag.prompt.cgo.query.PhaseResultValidator;
+import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.observe.Console;
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
 import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
 
-class PromptBuilderTests {
+public class PromptBuilderTests {
+
+
 
     @Test
-    void generateRequestPrompt_shouldBuildExpectedJsonStructure() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
+    public void test_1() {
+        PromptBuilder builder =
+                new PromptBuilder(
+                        new SimpleResponseContractRegistry()
+                );
 
         QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
+                buildRequest();
 
-        PromptBuilder builder = new PromptBuilder(new SimpleResponseContractRegistry());
+        PromptRequestOutput output =
+                builder.generateRequestPrompt(request);
 
-        // act
-        PromptRequestOutput output = builder.generateRequestPrompt(request);
+        JsonObject root =
+                output.getRequestOutput();
 
-        // console inspect
-        Console.log("Prompt JSON Output", output.getRequestOutput());
+        Console.log("prompt.request.root", root.toString());
 
-        // assert
-        assertNotNull(output, "PromptRequestOutput should not be null");
-        JsonObject root = output.getRequestOutput();
-        assertNotNull(root, "Root JsonObject should not be null");
+        Assertions.assertNotNull(output);
+        Assertions.assertNotNull(root);
 
-        // ---- meta ----
-        assertTrue(root.has("meta"), "Root JSON should contain 'meta'");
-        JsonObject metaJson = root.getAsJsonObject("meta");
-        assertEquals("v1", metaJson.get("version").getAsString());
-        assertEquals("validate_flight_airports", metaJson.get("query_kind").getAsString());
-        assertEquals(meta.getDescription(), metaJson.get("description").getAsString());
+        Assertions.assertTrue(root.has("meta"));
+        Assertions.assertTrue(root.has("context"));
+        Assertions.assertTrue(root.has("task"));
+        Assertions.assertTrue(root.has("response_contract"));
+        Assertions.assertTrue(root.has("instructions"));
+        Assertions.assertTrue(root.has("llm_instructions"));
 
-        // ---- context.nodes ----
-        assertTrue(root.has("context"), "Root JSON should contain 'context'");
-        JsonObject contextJson = root.getAsJsonObject("context");
-        assertTrue(contextJson.has("nodes"), "Context should contain 'nodes'");
+        JsonObject meta =
+                root.getAsJsonObject("meta");
 
-        JsonObject nodesJson = contextJson.getAsJsonObject("nodes");
-        assertTrue(nodesJson.has(factId), "Nodes should contain the factId as key");
+        Assertions.assertEquals("v1", meta.get("version").getAsString());
+        Assertions.assertEquals("decision", meta.get("query_kind").getAsString());
 
-        JsonObject nodeJson = nodesJson.getAsJsonObject(factId);
-        assertEquals(factId, nodeJson.get("id").getAsString(), "Node id should match");
-        assertEquals(node.getText(), nodeJson.get("text").getAsString(), "Node text should match");
-        assertTrue(nodeJson.has("attributes"), "Node should contain 'attributes'");
-        assertTrue(nodeJson.getAsJsonArray("attributes").isEmpty(), "Attributes should be empty for this test node");
-        assertEquals(node.getMode().name().toLowerCase(), nodeJson.get("mode").getAsString());
+        JsonObject context =
+                root.getAsJsonObject("context");
 
-        // ---- task ----
-        assertTrue(root.has("task"), "Root JSON should contain 'task'");
-        JsonObject taskJson = root.getAsJsonObject("task");
-        assertEquals(taskDescription, taskJson.get("description").getAsString());
-        assertEquals(factId, taskJson.get("factId").getAsString());
+        Assertions.assertTrue(context.has("nodes"));
 
-        // ---- instructions ----
-        assertTrue(root.has("instructions"), "Root JSON should contain 'instructions'");
-        JsonArray instructions = root.getAsJsonArray("instructions");
-        assertEquals(3, instructions.size(), "There should be exactly 3 generic instructions");
+        JsonObject task =
+                root.getAsJsonObject("task");
 
-        assertEquals(
-                "Return a single JSON object that strictly follows this schema.",
-                instructions.get(0).getAsString()
-        );
-        assertEquals(
-                "Do not include any fields not listed in this schema.",
-                instructions.get(1).getAsString()
-        );
-        assertEquals(
-                "Do not add natural language outside of JSON.",
-                instructions.get(2).getAsString()
+        Assertions.assertEquals(
+                "PaymentRequest:PAY-1001",
+                task.get("factId").getAsString()
         );
 
-        // ---- response_contract ----
-        assertTrue(root.has("response_contract"), "Root JSON should contain 'response_contract'");
-        JsonObject rc = root.getAsJsonObject("response_contract");
-        assertEquals("validation_result", rc.get("type").getAsString());
-        assertTrue(rc.has("schema"), "response_contract should contain 'schema'");
+        JsonArray instructions =
+                root.getAsJsonArray("instructions");
 
-        // ---- llm_instructions ----
-        assertTrue(root.has("llm_instructions"), "Root JSON should contain 'llm_instructions'");
-        JsonArray llmInstructions = root.getAsJsonArray("llm_instructions");
-        assertFalse(llmInstructions.isEmpty(), "llm_instructions should not be empty for validate_flight_airports");
-        assertEquals(
-                "You are given a JSON object with 'meta', 'context', 'task', 'response_contract', and 'llm_instructions' fields.",
-                llmInstructions.get(0).getAsString()
+        Assertions.assertEquals(3, instructions.size());
+
+        JsonArray llmInstructions =
+                root.getAsJsonArray("llm_instructions");
+
+        Assertions.assertNotNull(llmInstructions);
+
+        JsonObject responseContract =
+                root.getAsJsonObject("response_contract");
+
+        Assertions.assertEquals(
+                "unknown",
+                responseContract.get("type").getAsString()
         );
     }
 
     @Test
-    void generateRequestPrompt_withValidator_shouldAttachValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
+    public void test_2() {
+        final String[] captured =
+                new String[1];
 
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
+        PhaseResultValidator validator = raw -> {
 
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+            captured[0] = raw;
 
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        // capture what the validator sees
-        final String[] capturedJson = new String[1];
-
-        PhaseResultValidator fakeValidator = raw -> {
-            capturedJson[0] = raw;
             return ValidationResult.createInternal(
                     true,
                     "prompt.contract.ok",
-                    "Prompt contract valid (fake validator)",
+                    "Prompt contract valid",
                     "prompt_contract_validation",
                     null,
-                    Map.of("phase", "prompt_builder_test")
+                    Collections.<String, Object>emptyMap()
             );
         };
 
-        PromptBuilder builder = new PromptBuilder(new SimpleResponseContractRegistry(), fakeValidator);
+        PromptBuilder builder =
+                new PromptBuilder(
+                        new SimpleResponseContractRegistry(),
+                        validator
+                );
 
-        // act
-        PromptRequestOutput output = builder.generateRequestPrompt(request);
+        PromptRequestOutput output =
+                builder.generateRequestPrompt(buildRequest());
 
-        // console inspect
-        Console.log("Prompt JSON Output (with validator)", output.getRequestOutput());
-        Console.log("Prompt ValidationResult", output.getValidationResult());
-        Console.log("Captured JSON in FakeValidator", capturedJson[0]);
+        Console.log("prompt.validation.ok", String.valueOf(output.getValidationResult()));
+        Console.log("prompt.validation.captured", captured[0]);
 
-        // assert
-        assertNotNull(output, "PromptRequestOutput should not be null");
-        assertNotNull(output.getRequestOutput(), "Request JSON should not be null");
+        Assertions.assertNotNull(output.getValidationResult());
+        Assertions.assertTrue(output.getValidationResult().isOk());
+        Assertions.assertEquals(
+                "prompt.contract.ok",
+                output.getValidationResult().getCode()
+        );
 
-        ValidationResult validationResult = output.getValidationResult();
-        assertNotNull(validationResult, "ValidationResult should be attached when validator is provided");
-        assertTrue(validationResult.isOk(), "Expected ValidationResult.isOk() to be true");
-        assertEquals("prompt.contract.ok", validationResult.getCode());
-        assertEquals("prompt_contract_validation", validationResult.getStage());
-
-        assertNotNull(capturedJson[0], "FakeValidator should have received the prompt JSON");
-        assertFalse(capturedJson[0].isBlank(), "Captured JSON should not be blank");
+        Assertions.assertNotNull(captured[0]);
+        Assertions.assertFalse(captured[0].isEmpty());
     }
 
     @Test
-    void generateRequestPrompt_withValidatorError_shouldAttachErrorValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        PhaseResultValidator fakeValidator = raw ->
+    public void test_3() {
+        PhaseResultValidator validator = raw ->
                 ValidationResult.createInternal(
                         false,
                         "prompt.contract.error",
-                        "Prompt contract invalid (fake validator error)",
+                        "Prompt invalid",
                         "prompt_contract_validation",
                         null,
-                        Map.of("phase", "prompt_builder_test_error")
+                        Collections.<String, Object>emptyMap()
                 );
 
-        PromptBuilder builder = new PromptBuilder(new SimpleResponseContractRegistry(), fakeValidator);
+        PromptBuilder builder =
+                new PromptBuilder(
+                        new SimpleResponseContractRegistry(),
+                        validator
+                );
 
-        // act
-        PromptRequestOutput output = builder.generateRequestPrompt(request);
+        PromptRequestOutput output =
+                builder.generateRequestPrompt(buildRequest());
 
-        // console inspect
-        Console.log("Prompt JSON Output (validator error)", output.getRequestOutput());
-        Console.log("Prompt ValidationResult (error)", output.getValidationResult());
+        Console.log("prompt.validation.error", String.valueOf(output.getValidationResult()));
 
-        // assert
-        assertNotNull(output, "PromptRequestOutput should not be null");
-        assertNotNull(output.getRequestOutput(), "Request JSON should not be null");
-
-        ValidationResult validationResult = output.getValidationResult();
-        assertNotNull(validationResult, "ValidationResult should be attached when validator is provided");
-        assertFalse(validationResult.isOk(), "Expected ValidationResult.isOk() to be false");
-        assertEquals("prompt.contract.error", validationResult.getCode());
-        assertEquals("prompt_contract_validation", validationResult.getStage());
-        assertEquals("Prompt contract invalid (fake validator error)", validationResult.getMessage());
+        Assertions.assertNotNull(output.getValidationResult());
+        Assertions.assertFalse(output.getValidationResult().isOk());
+        Assertions.assertEquals(
+                "prompt.contract.error",
+                output.getValidationResult().getCode()
+        );
     }
 
     @Test
-    void generateRequestPrompt_withRealValidator_shouldProduceOkValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
+    public void test_4() {
+        GsonPromptRequestValidator realValidator =
+                new GsonPromptRequestValidator();
 
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        PromptBuilder builder =
+                new PromptBuilder(
+                        new SimpleResponseContractRegistry(),
+                        realValidator::validate
+                );
+
+        PromptRequestOutput output =
+                builder.generateRequestPrompt(buildRequest());
+
+        Console.log("prompt.real.validator", String.valueOf(output.getValidationResult()));
+
+        Assertions.assertNotNull(output.getValidationResult());
+        Assertions.assertTrue(output.getValidationResult().isOk());
+        Assertions.assertEquals(
+                "prompt.contract.ok",
+                output.getValidationResult().getCode()
         );
-
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
-
-        ValidateTask task = new ValidateTask(taskDescription, factId);
-
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        // real validator wired through PhaseResultValidator
-        GsonPromptRequestValidator realValidator = new GsonPromptRequestValidator();
-        PhaseResultValidator phaseValidator = realValidator::validate;
-
-        PromptBuilder builder = new PromptBuilder(new SimpleResponseContractRegistry(), phaseValidator);
-
-        // act
-        PromptRequestOutput output = builder.generateRequestPrompt(request);
-
-        Console.log("Prompt JSON Output (real validator)", output.getRequestOutput());
-        Console.log("Prompt ValidationResult (real validator)", output.getValidationResult());
-
-        // assert
-        assertNotNull(output, "PromptRequestOutput should not be null");
-        assertNotNull(output.getRequestOutput(), "Request JSON should not be null");
-
-        ValidationResult validationResult = output.getValidationResult();
-        assertNotNull(validationResult, "ValidationResult should be attached in validation mode");
-        assertTrue(validationResult.isOk(), "Expected ValidationResult.isOk() to be true");
-        assertEquals("prompt.contract.ok", validationResult.getCode());
-        assertEquals("prompt_contract_validation", validationResult.getStage());
     }
 
     @Test
-    void generateRequestPrompt_withRealValidatorAndTamperedJson_shouldAttachErrorValidationResult() {
-        // arrange
-        String factId = "Flight:F100";
+    public void test_5() {
+        GsonPromptRequestValidator realValidator =
+                new GsonPromptRequestValidator();
 
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
-        );
+        PhaseResultValidator tamperingValidator = raw -> {
 
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+            JsonObject object =
+                    JsonParser.parseString(raw).getAsJsonObject();
 
-        ValidateTask task = new ValidateTask(taskDescription, factId);
+            object.remove("meta");
 
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
-        );
-
-        GraphContext context = new GraphContext(Map.of(factId, node));
-
-        QueryRequest<ValidateTask> request =
-                QueryRequests.validateTask(meta, task, context, factId);
-
-        // real validator
-        GsonPromptRequestValidator realValidator = new GsonPromptRequestValidator();
-
-        // PhaseResultValidator that TAMPERS the JSON before delegating
-        PhaseResultValidator phaseValidator = raw -> {
-            JsonObject obj = JsonParser.parseString(raw).getAsJsonObject();
-            // break the contract on purpose: remove 'meta'
-            obj.remove("meta");
-            String tampered = obj.toString();
-
-            Console.log("Tampered Prompt JSON", tampered);
-
-            return realValidator.validate(tampered);
+            return realValidator.validate(object.toString());
         };
 
-        PromptBuilder builder = new PromptBuilder(new SimpleResponseContractRegistry(), phaseValidator);
+        PromptBuilder builder =
+                new PromptBuilder(
+                        new SimpleResponseContractRegistry(),
+                        tamperingValidator
+                );
 
-        // act
-        PromptRequestOutput output = builder.generateRequestPrompt(request);
+        PromptRequestOutput output =
+                builder.generateRequestPrompt(buildRequest());
 
-        Console.log("Prompt JSON Output (original)", output.getRequestOutput());
-        Console.log("Prompt ValidationResult (real validator, tampered)", output.getValidationResult());
+        Console.log("prompt.real.validator.tampered",
+                String.valueOf(output.getValidationResult()));
 
-        // assert
-        assertNotNull(output, "PromptRequestOutput should not be null");
-        assertNotNull(output.getRequestOutput(), "Original request JSON should not be null");
+        Assertions.assertNotNull(output.getValidationResult());
+        Assertions.assertFalse(output.getValidationResult().isOk());
+        Assertions.assertEquals(
+                "prompt.contract.meta_missing_or_invalid",
+                output.getValidationResult().getCode()
+        );
+    }
 
-        ValidationResult validationResult = output.getValidationResult();
-        assertNotNull(validationResult, "ValidationResult should be attached in validation mode");
-        assertFalse(validationResult.isOk(), "Expected ValidationResult.isOk() to be false");
-        assertEquals("prompt.contract.meta_missing_or_invalid", validationResult.getCode());
-        assertEquals("prompt_contract_validation", validationResult.getStage());
+    @Test
+    public void test_6() {
+        PromptBuilder builder =
+                new PromptBuilder();
+
+        JsonObject llmQuery =
+                buildExecutionQuery();
+
+        PromptRequestOutput output =
+                builder.generateExecutionPrompt(llmQuery);
+
+        JsonObject result =
+                output.getRequestOutput();
+
+        String prompt =
+                result.get("prompt").getAsString();
+
+        Console.log("execution.prompt", prompt);
+
+        Assertions.assertNotNull(output);
+        Assertions.assertNotNull(result);
+
+        Assertions.assertTrue(prompt.contains(
+                "You are an execution engine, not a document reader."
+        ));
+
+        Assertions.assertTrue(prompt.contains(
+                "Return only JSON."
+        ));
+
+        Assertions.assertTrue(prompt.contains("INPUT:"));
+
+        Assertions.assertTrue(prompt.contains("\"task\""));
+        Assertions.assertTrue(prompt.contains("\"context\""));
+        Assertions.assertTrue(prompt.contains("\"output_template\""));
+
+        Assertions.assertFalse(prompt.contains("\"llm_instructions\""));
+
+        Assertions.assertNotNull(output.getValidationResult());
+        Assertions.assertTrue(output.getValidationResult().isOk());
+        Assertions.assertEquals(
+                "prompt.execution.ok",
+                output.getValidationResult().getCode()
+        );
+    }
+
+    @Test
+    public void test_7() {
+        PromptBuilder builder =
+                new PromptBuilder();
+
+        PromptRequestOutput output =
+                builder.generateExecutionPrompt(new JsonObject());
+
+        String prompt =
+                output.getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+
+        Console.log("execution.prompt.empty", prompt);
+
+        Assertions.assertTrue(prompt.contains("INPUT:"));
+        Assertions.assertFalse(prompt.contains("\"task\""));
+        Assertions.assertFalse(prompt.contains("\"context\""));
+        Assertions.assertFalse(prompt.contains("\"output_template\""));
+
+        Assertions.assertTrue(output.getValidationResult().isOk());
+    }
+
+    @Test
+    public void test_8() {
+        PromptBuilder builder =
+                new PromptBuilder();
+
+        JsonObject llmQuery =
+                buildExecutionQuery();
+
+        PromptRequestOutput output =
+                builder.generateExecutionPrompt(llmQuery);
+
+        String prompt =
+                output.getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+
+        Console.log("execution.prompt.order", prompt);
+
+        int instructionsIndex =
+                prompt.indexOf("You are an execution engine");
+
+        int inputIndex =
+                prompt.indexOf("INPUT:");
+
+        int taskIndex =
+                prompt.indexOf("\"task\"");
+
+        Assertions.assertTrue(instructionsIndex >= 0);
+        Assertions.assertTrue(inputIndex > instructionsIndex);
+        Assertions.assertTrue(taskIndex > inputIndex);
+    }
+
+    private QueryRequest<ValidateTask> buildRequest() {
+
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
+
+        ValidateTask task =
+                new ValidateTask(
+                        "pay decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList(
+                                "CustomerAccount:CUST-2001"
+                        )
+                );
+
+        Node payment =
+                new Node(
+                        "PaymentRequest:PAY-1001",
+                        "{\"amount\":\"125.00\"}",
+                        Collections.<String>emptyList(),
+                        Node.Mode.ATOMIC
+                );
+
+        Map<String, Node> nodes =
+                new HashMap<String, Node>();
+
+        nodes.put(payment.getId(), payment);
+
+        GraphContext context =
+                new GraphContext(nodes);
+
+        return new QueryRequest<ValidateTask>(
+                meta,
+                context,
+                task
+        );
+    }
+
+    private JsonObject buildExecutionQuery() {
+
+        JsonObject root =
+                new JsonObject();
+
+        JsonObject llmInstructions =
+                new JsonObject();
+
+        JsonArray instructions =
+                new JsonArray();
+
+        instructions.add("You are an execution engine, not a document reader.");
+        instructions.add("Return only JSON.");
+
+        llmInstructions.add("instructions", instructions);
+
+        JsonObject task =
+                new JsonObject();
+
+        task.addProperty("factId", "PaymentRequest:PAY-1001");
+
+        JsonObject context =
+                new JsonObject();
+
+        JsonObject outputTemplate =
+                new JsonObject();
+
+        JsonObject result =
+                new JsonObject();
+
+        result.addProperty("decision", "");
+        result.addProperty("reason", "");
+        result.addProperty("code", "");
+
+        outputTemplate.add("result", result);
+
+        root.add("llm_instructions", llmInstructions);
+        root.add("task", task);
+        root.add("context", context);
+        root.add("output_template", outputTemplate);
+
+        return root;
     }
 }
-

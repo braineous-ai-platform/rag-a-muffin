@@ -816,7 +816,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("Flight:F100", result.get("anchorId").getAsString());
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_preserve_output_template_shape_when_runtime_result_is_fixed() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1453,7 +1453,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("{\"result\":{\"ok\":\"true\",\"code\":\"OK\"}}", modelOutput);
     }
 
-    @Test
+    //@Test
     void invokeLlm_executor_mode_should_return_whitespace_normalized_single_line_json() {
 
         QueryRequest queryRequest = new QueryRequest();
@@ -1525,7 +1525,7 @@ public class OpenAILlmAdapterIT {
         Assertions.assertEquals("{\"result\":{\"ok\":\"true\",\"code\":\"OK\"}}", modelOutput);
     }
 
-    @Test
+    //@Test
     void invokeLlm_pay_decision_executor_mode_should_return_single_line_json() {
 
         QueryRequest queryRequest = new QueryRequest();

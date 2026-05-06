@@ -1,447 +1,504 @@
 package ai.braineous.rag.prompt.cgo.query;
 
-import ai.braineous.rag.prompt.cgo.api.*;
-import ai.braineous.rag.prompt.cgo.prompt.FakeLlmClient;
+import ai.braineous.rag.prompt.cgo.api.GraphContext;
+import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
+import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
+import ai.braineous.rag.prompt.cgo.api.Meta;
+import ai.braineous.rag.prompt.cgo.api.QueryExecution;
+import ai.braineous.rag.prompt.cgo.api.ValidateTask;
+import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
-import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
+import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static org.junit.jupiter.api.Assertions.*;
-
-class CgoQueryPipelineTests {
+public class CgoQueryPipelineTests {
 
     @Test
-    void execute_withCoreValidatorOk_shouldAttachValidation_andLlmResponse() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
+    public void test_1() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
         request.setAdapter(new FakeLlmAdapter());
 
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-
-        String raw = "{\"some\":\"response\"}";
-        FakeLlmClient llmClient = new FakeLlmClient(raw);
-
-        AtomicInteger callCount = new AtomicInteger(0);
-        AtomicReference<String> lastRaw = new AtomicReference<String>();
-
-        PhaseResultValidator coreValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String response) {
-                callCount.incrementAndGet();
-                lastRaw.set(response);
-                return ValidationResult.ok("LLM_RESPONSE_VALIDATION");
-            }
-        };
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
-
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        Console.log("coreOk.rawResponse", execution.getRawResponse());
-        Console.log("coreOk.llmResponseValidation", execution.getLlmResponseValidation());
-        Console.log("coreOk.llmResponse", execution.getLlmResponse());
-
-        assertEquals(1, callCount.get());
-        assertEquals(raw, lastRaw.get());
-
-        assertNotNull(execution);
-        assertEquals(raw, execution.getRawResponse());
-
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
-
-        assertNotNull(execution.getLlmResponseValidation());
-        assertTrue(execution.getLlmResponseValidation().isOk());
-        assertNull(execution.getDomainValidation());
-
-        assertNotNull(execution.getLlmResponse());
-        assertEquals(raw, execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
-        assertNotNull(execution.getLlmResponse().getLlmRequest());
-        assertSame(request, execution.getLlmResponse().getLlmRequest().getQueryRequest());
-        assertNotNull(execution.getLlmResponse().getLlmRequest().getLlmQuery());
-    }
-
-    @Test
-    void execute_withCoreValidatorError_shouldReturnFailureExecution_andPreserveLlmResponse() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-        request.setAdapter(new FakeLlmAdapter());
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-
-        String raw = "{\"some\":\"response\"}";
-        FakeLlmClient llmClient = new FakeLlmClient(raw);
-
-        AtomicInteger callCount = new AtomicInteger(0);
-        AtomicReference<String> lastRaw = new AtomicReference<String>();
-
-        PhaseResultValidator coreValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String response) {
-                callCount.incrementAndGet();
-                lastRaw.set(response);
-                return ValidationResult.error(
-                        "LLM_RESPONSE_ERROR",
-                        "LLM response contract invalid",
-                        "llm_response_validation",
-                        null
+        CountingLlmClient llmClient =
+                new CountingLlmClient(
+                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
-            }
-        };
 
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
 
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
 
-        Console.log("coreFail.rawResponse", execution.getRawResponse());
-        Console.log("coreFail.llmResponseValidation", execution.getLlmResponseValidation());
-        Console.log("coreFail.llmResponse", execution.getLlmResponse());
+        Console.log("pipeline.ok.raw", execution.getRawResponse());
+        Console.log("pipeline.ok.promptValidation", String.valueOf(execution.getPromptValidation()));
+        Console.log("pipeline.ok.llmValidation", String.valueOf(execution.getLlmResponseValidation()));
+        Console.log("pipeline.ok.domainValidation", String.valueOf(execution.getDomainValidation()));
+        Console.log("pipeline.ok.execution", execution.toJsonString());
 
-        assertEquals(1, callCount.get());
-        assertEquals(raw, lastRaw.get());
+        Assertions.assertEquals(1, llmClient.callCount);
+        Assertions.assertNotNull(llmClient.lastPrompt);
 
-        assertNotNull(execution);
-        assertEquals(raw, execution.getRawResponse());
+        String promptText =
+                llmClient.lastPrompt.get("prompt").getAsString();
 
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
+        Assertions.assertTrue(promptText.contains("You are an execution engine"));
+        Assertions.assertTrue(promptText.contains("INPUT:"));
+        Assertions.assertFalse(promptText.startsWith("{\"llm_instructions\""));
 
-        assertNotNull(execution.getLlmResponseValidation());
-        assertFalse(execution.getLlmResponseValidation().isOk());
-        assertEquals("LLM_RESPONSE_ERROR", execution.getLlmResponseValidation().getCode());
-        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
+        Assertions.assertNotNull(execution);
+        Assertions.assertSame(request, execution.getRequest());
+        Assertions.assertTrue(execution.isOk());
+        Assertions.assertEquals("OK", execution.getStatus());
+        Assertions.assertEquals("ok", execution.getStage());
 
-        assertNull(execution.getDomainValidation());
+        Assertions.assertEquals(
+                "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}",
+                execution.getRawResponse()
+        );
 
-        assertNotNull(execution.getLlmResponse());
-        assertEquals(raw, execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
+        Assertions.assertNotNull(execution.getPromptValidation());
+        Assertions.assertTrue(execution.getPromptValidation().isOk());
+        Assertions.assertEquals(
+                "querygen.contract.ok",
+                execution.getPromptValidation().getCode()
+        );
+
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertTrue(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.ok",
+                execution.getLlmResponseValidation().getCode()
+        );
+
+        Assertions.assertNull(execution.getDomainValidation());
+
+        Assertions.assertNotNull(execution.getLlmResponse());
+        Assertions.assertEquals(
+                execution.getRawResponse(),
+                execution.getLlmResponse().getRawResponse()
+        );
+        Assertions.assertTrue(execution.getLlmResponse().isSuccess());
+        Assertions.assertNotNull(execution.getLlmResponse().getLlmRequest());
+        Assertions.assertSame(
+                request,
+                execution.getLlmResponse().getLlmRequest().getQueryRequest()
+        );
+        Assertions.assertNotNull(
+                execution.getLlmResponse().getLlmRequest().getLlmQuery()
+        );
     }
 
     @Test
-    void execute_withDomainRuleOk_shouldAttachDomainValidation_andLlmResponse() {
-        AtomicInteger domainCallCount = new AtomicInteger(0);
-        AtomicReference<String> domainLastRaw = new AtomicReference<String>();
+    public void test_2() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
 
-        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
-            @Override
-            public ValidationResult validate(String response) {
-                domainCallCount.incrementAndGet();
-                domainLastRaw.set(response);
-                return ValidationResult.ok("DOMAIN_VALIDATION");
-            }
-        };
-
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest(rule);
         request.setAdapter(new FakeLlmAdapter());
 
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
+        AtomicInteger validationCount =
+                new AtomicInteger(0);
 
-        String raw = "{\"decision\":\"GO\"}";
-        FakeLlmClient llmClient = new FakeLlmClient(raw);
+        AtomicReference<String> lastRaw =
+                new AtomicReference<String>();
 
-        PhaseResultValidator coreValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String response) {
-                return ValidationResult.ok("LLM_RESPONSE_VALIDATION");
-            }
-        };
+        PhaseResultValidator validator =
+                new PhaseResultValidator() {
+                    @Override
+                    public ValidationResult validate(String raw) {
+                        validationCount.incrementAndGet();
+                        lastRaw.set(raw);
 
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
+                        return ValidationResult.error(
+                                "queryresult.contract.custom_error",
+                                "custom validation failed",
+                                "llm_response_validation",
+                                null
+                        );
+                    }
+                };
 
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        Console.log("domainOk.rawResponse", execution.getRawResponse());
-        Console.log("domainOk.domainValidation", execution.getDomainValidation());
-        Console.log("domainOk.llmResponse", execution.getLlmResponse());
-
-        assertEquals(1, domainCallCount.get());
-        assertEquals(raw, domainLastRaw.get());
-
-        assertNotNull(execution);
-        assertEquals(raw, execution.getRawResponse());
-
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
-
-        assertNotNull(execution.getLlmResponseValidation());
-        assertTrue(execution.getLlmResponseValidation().isOk());
-
-        assertNotNull(execution.getDomainValidation());
-        assertTrue(execution.getDomainValidation().isOk());
-
-        assertNotNull(execution.getLlmResponse());
-        assertEquals(raw, execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
-    }
-
-    @Test
-    void execute_withDomainRuleError_shouldReturnFailureExecution_andPreserveLlmResponse() {
-        AtomicInteger domainCallCount = new AtomicInteger(0);
-        AtomicReference<String> domainLastRaw = new AtomicReference<String>();
-
-        LLMResponseValidatorRule rule = new LLMResponseValidatorRule() {
-            @Override
-            public ValidationResult validate(String response) {
-                domainCallCount.incrementAndGet();
-                domainLastRaw.set(response);
-                return ValidationResult.error(
-                        "DOMAIN_ERROR",
-                        "Domain validation failed",
-                        "domain_validation",
-                        null
+        CountingLlmClient llmClient =
+                new CountingLlmClient(
+                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
-            }
-        };
 
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest(rule);
-        request.setAdapter(new FakeLlmAdapter());
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-
-        String raw = "{\"decision\":\"GO\"}";
-        FakeLlmClient llmClient = new FakeLlmClient(raw);
-
-        PhaseResultValidator coreValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String response) {
-                return ValidationResult.ok("LLM_RESPONSE_VALIDATION");
-            }
-        };
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient, coreValidator);
-
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        Console.log("domainFail.rawResponse", execution.getRawResponse());
-        Console.log("domainFail.domainValidation", execution.getDomainValidation());
-        Console.log("domainFail.llmResponse", execution.getLlmResponse());
-
-        assertEquals(1, domainCallCount.get());
-        assertEquals(raw, domainLastRaw.get());
-
-        assertNotNull(execution);
-        assertEquals(raw, execution.getRawResponse());
-
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
-
-        assertNotNull(execution.getLlmResponseValidation());
-        assertTrue(execution.getLlmResponseValidation().isOk());
-
-        assertNotNull(execution.getDomainValidation());
-        assertFalse(execution.getDomainValidation().isOk());
-        assertEquals("DOMAIN_ERROR", execution.getDomainValidation().getCode());
-        assertEquals("domain_validation", execution.getDomainValidation().getStage());
-
-        assertNotNull(execution.getLlmResponse());
-        assertEquals(raw, execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
-    }
-
-    @Test
-    void execute_withMalformedJsonResponse_shouldReturnExecution_currentBehavior() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-        request.setAdapter(new FakeLlmAdapter());
-
-        PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-
-        String malformed = "{\"answer\":\"ok\"";
-        FakeLlmClient llmClient = new FakeLlmClient(malformed);
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
-
-        Console.log("parserFail.rawResponse", malformed);
-
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
-
-        assertNotNull(execution);
-        assertEquals(malformed, execution.getRawResponse());
-        assertNotNull(execution.getLlmResponse());
-    }
-
-    @Test
-    void execute_withoutAdapter_shouldThrowFailFast() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-
-        PromptBuilder promptBuilder = new PromptBuilder();
-        FakeLlmClient llmClient = new FakeLlmClient("{\"ok\":true}");
-
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
-
-        NullPointerException ex = assertThrows(
-                NullPointerException.class,
-                () -> pipeline.execute(request)
-        );
-
-        Console.log("missingAdapter.exception", ex.getMessage());
-
-        assertNotNull(ex.getMessage());
-        assertTrue(ex.getMessage().contains("LlmAdapter"));
-    }
-
-    @Test
-    void execute_withPromptValidationError_shouldUseQueryGenPath_andCallLlm() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-        request.setAdapter(new FakeLlmAdapter());
-
-        PhaseResultValidator failingPromptValidator = new PhaseResultValidator() {
-            @Override
-            public ValidationResult validate(String raw) {
-                return ValidationResult.error(
-                        "PROMPT_ERROR",
-                        "Prompt contract invalid",
-                        "prompt_contract_validation",
-                        null
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(
+                        new PromptBuilder(),
+                        llmClient,
+                        validator
                 );
-            }
-        };
 
-        PromptBuilder promptBuilder = new PromptBuilder(
-                new SimpleResponseContractRegistry(),
-                failingPromptValidator
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.llm.validation.fail", execution.toJsonString());
+
+        Assertions.assertEquals(1, validationCount.get());
+        Assertions.assertEquals(execution.getRawResponse(), lastRaw.get());
+
+        Assertions.assertFalse(execution.isOk());
+        Assertions.assertEquals("ERROR", execution.getStatus());
+        Assertions.assertEquals("llm_response", execution.getStage());
+
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.custom_error",
+                execution.getLlmResponseValidation().getCode()
         );
 
-        CountingLlmClient llmClient = new CountingLlmClient("{\"unused\":true}");
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+        Assertions.assertNull(execution.getDomainValidation());
+        Assertions.assertNotNull(execution.getLlmResponse());
+    }
 
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
 
-        Console.log("promptPath.rawResponse", String.valueOf(execution.getRawResponse()));
-        Console.log("promptPath.promptValidation", String.valueOf(execution.getPromptValidation()));
-        Console.log("promptPath.llmCallCount", String.valueOf(llmClient.callCount));
-        Console.log("promptPath.llmResponse", String.valueOf(execution.getLlmResponse()));
 
-        assertEquals(1, llmClient.callCount);
+    @Test
+    public void test_3() {
+        AtomicInteger domainCount =
+                new AtomicInteger(0);
 
-        assertNotNull(execution);
-        assertSame(request, execution.getRequest());
-        assertEquals("{\"unused\":true}", execution.getRawResponse());
+        AtomicReference<String> domainRaw =
+                new AtomicReference<String>();
 
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
-        assertEquals("querygen.contract.ok", execution.getPromptValidation().getCode());
-        assertEquals("querygen_contract_validation", execution.getPromptValidation().getStage());
+        LLMResponseValidatorRule rule =
+                new LLMResponseValidatorRule() {
+                    @Override
+                    public ValidationResult validate(String raw) {
+                        domainCount.incrementAndGet();
+                        domainRaw.set(raw);
 
-        assertNotNull(execution.getLlmResponse());
-        assertEquals("{\"unused\":true}", execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
+                        return ValidationResult.ok("DOMAIN_OK");
+                    }
+                };
 
-        assertNotNull(execution.getLlmResponseValidation());
-        assertFalse(execution.getLlmResponseValidation().isOk());
-        assertEquals("queryresult.contract.result_missing_or_invalid", execution.getLlmResponseValidation().getCode());
-        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
+        QueryRequest<ValidateTask> request =
+                buildRequest(rule);
 
-        assertNull(execution.getDomainValidation());
+        request.setAdapter(new FakeLlmAdapter());
+
+        CountingLlmClient llmClient =
+                new CountingLlmClient(
+                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                );
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.domain.ok", execution.toJsonString());
+
+        Assertions.assertEquals(1, domainCount.get());
+        Assertions.assertEquals(execution.getRawResponse(), domainRaw.get());
+
+        Assertions.assertTrue(execution.isOk());
+
+        Assertions.assertNotNull(execution.getDomainValidation());
+        Assertions.assertTrue(execution.getDomainValidation().isOk());
+
+        Assertions.assertEquals(
+                "OK",
+                execution.getDomainValidation().getCode()
+        );
+
+        Assertions.assertEquals(
+                "DOMAIN_OK",
+                execution.getDomainValidation().getStage()
+        );
+    }
+
+
+    @Test
+    public void test_4() {
+        AtomicInteger domainCount =
+                new AtomicInteger(0);
+
+        AtomicReference<String> domainRaw =
+                new AtomicReference<String>();
+
+        LLMResponseValidatorRule rule =
+                new LLMResponseValidatorRule() {
+                    @Override
+                    public ValidationResult validate(String raw) {
+                        domainCount.incrementAndGet();
+                        domainRaw.set(raw);
+
+                        return ValidationResult.error(
+                                "DOMAIN_ERROR",
+                                "domain failed",
+                                "domain_validation",
+                                null
+                        );
+                    }
+                };
+
+        QueryRequest<ValidateTask> request =
+                buildRequest(rule);
+
+        request.setAdapter(new FakeLlmAdapter());
+
+        CountingLlmClient llmClient =
+                new CountingLlmClient(
+                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                );
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.domain.fail", execution.toJsonString());
+
+        Assertions.assertEquals(1, domainCount.get());
+        Assertions.assertEquals(execution.getRawResponse(), domainRaw.get());
+
+        Assertions.assertFalse(execution.isOk());
+
+        Assertions.assertEquals("ERROR", execution.getStatus());
+        Assertions.assertEquals("domain", execution.getStage());
+
+        Assertions.assertNotNull(execution.getDomainValidation());
+        Assertions.assertFalse(execution.getDomainValidation().isOk());
+
+        Assertions.assertEquals(
+                "DOMAIN_ERROR",
+                execution.getDomainValidation().getCode()
+        );
+
+        Assertions.assertEquals(
+                "domain_validation",
+                execution.getDomainValidation().getStage()
+        );
+
+        Assertions.assertNotNull(execution.getLlmResponse());
     }
 
     @Test
-    void execute_withoutValidators_shouldReturnFailureExecution_fromDefaultQueryGenValidator_andAttachLlmResponse() {
-        QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
+    public void test_5() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
         request.setAdapter(new FakeLlmAdapter());
 
-        PromptBuilder promptBuilder = new PromptBuilder();
+        CountingLlmClient llmClient =
+                new CountingLlmClient("{bad-json");
 
-        String raw = "{\n" +
-                "  \"result\": {\n" +
-                "    \"ok\": true,\n" +
-                "    \"code\": \"response.contract.ok\",\n" +
-                "    \"message\": \"VALID\",\n" +
-                "    \"stage\": \"llm_response_validation\",\n" +
-                "    \"anchorId\": null,\n" +
-                "    \"metadata\": { \"adapter\": \"fake\" }\n" +
-                "  }\n" +
-                "}";
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
 
-        FakeLlmClient llmClient = new FakeLlmClient(raw);
-        CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder, llmClient);
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
 
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+        Console.log("pipeline.malformed.json", execution.toJsonString());
 
-        Console.log("noValidators.rawResponse", String.valueOf(execution.getRawResponse()));
-        Console.log("noValidators.promptValidation", String.valueOf(execution.getPromptValidation()));
-        Console.log("noValidators.llmResponseValidation", String.valueOf(execution.getLlmResponseValidation()));
-        Console.log("noValidators.domainValidation", String.valueOf(execution.getDomainValidation()));
-        Console.log("noValidators.llmResponse", String.valueOf(execution.getLlmResponse()));
+        Assertions.assertFalse(execution.isOk());
+        Assertions.assertEquals("ERROR", execution.getStatus());
+        Assertions.assertEquals("llm_response", execution.getStage());
 
-        assertNotNull(execution);
-        assertSame(request, execution.getRequest());
-        assertEquals(raw, execution.getRawResponse());
-
-        assertNotNull(execution.getPromptValidation());
-        assertTrue(execution.getPromptValidation().isOk());
-        assertEquals("querygen.contract.ok", execution.getPromptValidation().getCode());
-        assertEquals("querygen_contract_validation", execution.getPromptValidation().getStage());
-
-        assertNotNull(execution.getLlmResponseValidation());
-        assertFalse(execution.getLlmResponseValidation().isOk());
-        assertEquals("queryresult.contract.result.ok_missing", execution.getLlmResponseValidation().getCode());
-        assertEquals("llm_response_validation", execution.getLlmResponseValidation().getStage());
-
-        assertNull(execution.getDomainValidation());
-
-        assertNotNull(execution.getLlmResponse());
-        assertEquals(raw, execution.getLlmResponse().getRawResponse());
-        assertTrue(execution.getLlmResponse().isSuccess());
-
-        assertNotNull(execution.getLlmResponse().getLlmRequest());
-        assertSame(request, execution.getLlmResponse().getLlmRequest().getQueryRequest());
-        assertNotNull(execution.getLlmResponse().getLlmRequest().getLlmQuery());
-    }
-    //---------------------------------------------------------------------------------
-    private QueryRequest<ValidateTask> buildValidateTaskRequest() {
-        return this.buildValidateTaskRequest(null);
-    }
-
-    private QueryRequest<ValidateTask> buildValidateTaskRequest(LLMResponseValidatorRule rule) {
-        String factId = "Flight:F100";
-
-        Meta meta = new Meta(
-                "v1",
-                "validate_flight_airports",
-                "Validate that the selected flight fact has valid departure and arrival airport codes using graph context."
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.invalid_json",
+                execution.getLlmResponseValidation().getCode()
         );
 
-        String taskDescription =
-                "Validate that the selected flight has valid departure and arrival airport codes based on the airport nodes in the graph. " +
-                        "A valid flight must have: (1) 'from' matching one Airport:* code, (2) 'to' matching one Airport:* code, (3) 'from' != 'to'.";
+        Assertions.assertNotNull(execution.getLlmResponse());
+        Assertions.assertEquals("{bad-json", execution.getLlmResponse().getRawResponse());
+    }
 
-        ValidateTask task = new ValidateTask(taskDescription, factId);
+    @Test
+    public void test_6() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
 
-        Node node = new Node(
-                factId,
-                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}",
-                List.of(),
-                Node.Mode.RELATIONAL
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(
+                        new PromptBuilder(),
+                        new CountingLlmClient(
+                                "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        )
+                );
+
+        NullPointerException exception =
+                Assertions.assertThrows(
+                        NullPointerException.class,
+                        () -> pipeline.execute(request)
+                );
+
+        Console.log("pipeline.missing.adapter", exception.getMessage());
+
+        Assertions.assertTrue(
+                exception.getMessage().contains("Missing LlmAdapter")
+        );
+    }
+
+    @Test
+    public void test_7() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        request.setAdapter(new FakeLlmAdapter());
+
+        CountingLlmClient llmClient =
+                new CountingLlmClient("{\"unused\":true}");
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.result.missing", execution.toJsonString());
+
+        Assertions.assertEquals(1, llmClient.callCount);
+
+        Assertions.assertFalse(execution.isOk());
+        Assertions.assertEquals("ERROR", execution.getStatus());
+        Assertions.assertEquals("llm_response", execution.getStage());
+
+        Assertions.assertNotNull(execution.getPromptValidation());
+        Assertions.assertTrue(execution.getPromptValidation().isOk());
+        Assertions.assertEquals(
+                "querygen.contract.ok",
+                execution.getPromptValidation().getCode()
         );
 
-        GraphContext context = new GraphContext(Map.of(factId, node));
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.result_missing",
+                execution.getLlmResponseValidation().getCode()
+        );
 
-        return new QueryRequest<ValidateTask>(meta, context, task, factId, rule);
+        Assertions.assertNull(execution.getDomainValidation());
+        Assertions.assertNotNull(execution.getLlmResponse());
+    }
+
+    @Test
+    public void test_8() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        request.setAdapter(new FakeLlmAdapter());
+
+        CountingLlmClient llmClient =
+                new CountingLlmClient(
+                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                );
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+
+        pipeline.setInMemoryMode(true);
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.in.memory", execution.toJsonString());
+
+        Assertions.assertTrue(execution.isOk());
+        Assertions.assertTrue(execution.isInMemoryMode());
+    }
+
+    private QueryRequest<ValidateTask> buildRequest() {
+        return buildRequest(null);
+    }
+
+    private QueryRequest<ValidateTask> buildRequest(LLMResponseValidatorRule rule) {
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
+
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList(
+                                "CustomerAccount:CUST-2001",
+                                "RiskProfile:RISK-4001"
+                        )
+                );
+
+        Node payment =
+                new Node(
+                        "PaymentRequest:PAY-1001",
+                        "{\"id\":\"PaymentRequest:PAY-1001\",\"amount\":\"125.00\",\"currency\":\"USD\"}",
+                        Arrays.asList(),
+                        Node.Mode.ATOMIC
+                );
+
+        Node customer =
+                new Node(
+                        "CustomerAccount:CUST-2001",
+                        "{\"id\":\"CustomerAccount:CUST-2001\",\"status\":\"ACTIVE\"}",
+                        Arrays.asList(),
+                        Node.Mode.ATOMIC
+                );
+
+        Node risk =
+                new Node(
+                        "RiskProfile:RISK-4001",
+                        "{\"id\":\"RiskProfile:RISK-4001\",\"level\":\"LOW\"}",
+                        Arrays.asList(),
+                        Node.Mode.ATOMIC
+                );
+
+        Map<String, Node> nodes =
+                new LinkedHashMap<String, Node>();
+
+        nodes.put(payment.getId(), payment);
+        nodes.put(customer.getId(), customer);
+        nodes.put(risk.getId(), risk);
+
+        GraphContext context =
+                new GraphContext(nodes);
+
+        return new QueryRequest<ValidateTask>(
+                meta,
+                context,
+                task,
+                "PaymentRequest:PAY-1001",
+                rule
+        );
     }
 
     private static class CountingLlmClient implements LlmClient {
 
         private final String rawResponse;
         private int callCount;
+        private JsonObject lastPrompt;
 
         private CountingLlmClient(String rawResponse) {
             this.rawResponse = rawResponse;
-            this.callCount = 0;
         }
 
         @Override
-        public String executePrompt(LlmAdapter adapter, QueryRequest queryRequest, JsonObject prompt) {
+        public String executePrompt(LlmAdapter adapter,
+                                    QueryRequest queryRequest,
+                                    JsonObject prompt) {
             this.callCount++;
-            return rawResponse;
+            this.lastPrompt = prompt;
+
+            return this.rawResponse;
         }
     }
 }
-
