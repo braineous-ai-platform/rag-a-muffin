@@ -97,7 +97,6 @@ public final class CgoQueryPipeline implements QueryPipeline {
                         .getAsString();
 
         JsonObject llmPayload = new JsonObject();
-        llmPayload.addProperty("model", "llama3");
         llmPayload.addProperty("prompt", executionPromptText);
         llmPayload.addProperty("stream", false);
 
