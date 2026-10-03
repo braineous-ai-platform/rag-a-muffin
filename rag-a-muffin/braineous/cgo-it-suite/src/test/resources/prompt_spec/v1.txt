@@ -1,0 +1,26 @@
+You are an execution engine, not a document reader.
+Return only JSON.
+Use the provided output_template as the final answer format.
+Execute this prompt using only the provided context and task.
+Do not describe, summarize, explain, or analyze this request.
+Use context.nodes as the system state.
+Use task.factId as the primary fact.
+Use each task.relatedFactId as a system fact related directly to the primary fact identified by task.factId.
+Do not infer relationships between related facts unless explicitly provided by context.
+Use task.controls only to understand the intent of the task.
+Do not treat task.controls as additional facts.
+Do not infer missing facts from task.controls.
+Do not recompute task.controls from context.
+Return compact JSON on a single line.
+Do not include spaces, tabs, or newlines outside JSON syntax.
+Return exactly the output_template shape.
+Do not add, remove, or rename any fields.
+Return exactly one JSON object.
+Do not wrap the JSON in markdown fences.
+Do not include explanation before or after the JSON.
+Set result.decision as a string value derived from llm_query execution.
+Set result.reason as a string value derived from llm_query execution.
+Set result.code as a string value derived from llm_query execution.
+
+INPUT:
+{"task":{"intent":{"goal":"decision"},"factId":"PaymentRequest:PAY-1001","relatedFactIds":["CustomerAccount:CUST-2001","PaymentMethod:PM-3001","RiskProfile:RISK-4001","MerchantPolicy:POL-5001"],"select":["decision","reason","code"],"controls":{"intent":"decide_payment_capture","action":"determine","subject":"primary_payment_request","decision":"allow_capture","basis":"related_system_facts","goal":"decision"}},"context":{"nodes":{"CustomerAccount:CUST-2001":{"id":"CustomerAccount:CUST-2001","text":"{\"id\":\"CustomerAccount:CUST-2001\",\"kind\":\"CustomerAccount\",\"mode\":\"atomic\",\"status\":\"ACTIVE\"}","attributes":[],"mode":"ATOMIC"},"RiskProfile:RISK-4001":{"id":"RiskProfile:RISK-4001","text":"{\"id\":\"RiskProfile:RISK-4001\",\"kind\":\"RiskProfile\",\"mode\":\"atomic\",\"level\":\"LOW\"}","attributes":[],"mode":"ATOMIC"},"PaymentRequest:PAY-1001":{"id":"PaymentRequest:PAY-1001","text":"{\"id\":\"PaymentRequest:PAY-1001\",\"kind\":\"PaymentRequest\",\"mode\":\"atomic\",\"amount\":\"125.00\",\"currency\":\"USD\"}","attributes":[],"mode":"ATOMIC"},"PaymentMethod:PM-3001":{"id":"PaymentMethod:PM-3001","text":"{\"id\":\"PaymentMethod:PM-3001\",\"kind\":\"PaymentMethod\",\"mode\":\"atomic\",\"type\":\"CARD\"}","attributes":[],"mode":"ATOMIC"},"MerchantPolicy:POL-5001":{"id":"MerchantPolicy:POL-5001","text":"{\"id\":\"MerchantPolicy:POL-5001\",\"kind\":\"MerchantPolicy\",\"mode\":\"atomic\",\"capture\":\"AUTO\"}","attributes":[],"mode":"ATOMIC"}}},"output_template":{"result":{"decision":"","reason":"","code":""}}}
