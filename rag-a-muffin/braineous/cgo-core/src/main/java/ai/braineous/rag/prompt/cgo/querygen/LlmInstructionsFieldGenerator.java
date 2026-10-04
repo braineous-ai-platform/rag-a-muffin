@@ -53,21 +53,42 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
     }
 
     private void addExecutionModeInstructions(JsonArray instructions) {
+        // instructions.add("You are an execution engine, not a document reader.");
+        // instructions.add("Return only JSON.");
+        // instructions.add("Use the provided output_template as the final answer format.");
+        // instructions.add("Execute the llm_query using only the provided context and task.");
+        // instructions.add("Do not describe, summarize, explain, or analyze this request.");
+        // instructions.add("Use context.nodes as the system state.");
+        // instructions.add("Use task.factId as the primary fact.");
+        // instructions.add("Use task.relatedFactIds as related system facts.");
+        // instructions.add("Use task.controls as execution controls only.");
+        // instructions.add("Do not treat task.controls as additional facts.");
+        // instructions.add("Do not infer missing facts from task.controls.");
+        // instructions.add("Do not recompute task.controls from context.");
+        // instructions.add("Return compact JSON on a single line.");
+        // instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
+        // instructions.add("Set every value in output_template as a string.");
+        // instructions.add("Return exactly the output_template shape.");
+        // instructions.add("Do not add, remove, or rename any fields.");
+        // instructions.add("Return exactly one JSON object.");
+        // instructions.add("Do not wrap the JSON in markdown fences.");
+        // instructions.add("Do not include explanation before or after the JSON.");
+
         instructions.add("You are an execution engine, not a document reader.");
         instructions.add("Return only JSON.");
         instructions.add("Use the provided output_template as the final answer format.");
-        instructions.add("Execute the llm_query using only the provided context and task.");
+        instructions.add("Execute this prompt using only the provided context and task.");
         instructions.add("Do not describe, summarize, explain, or analyze this request.");
         instructions.add("Use context.nodes as the system state.");
         instructions.add("Use task.factId as the primary fact.");
-        instructions.add("Use task.relatedFactIds as related system facts.");
-        instructions.add("Use task.controls as execution controls only.");
+        instructions.add("Use each task.relatedFactId as a system fact related directly to the primary fact identified by task.factId.");
+        instructions.add("Do not infer relationships between related facts unless explicitly provided by context.");
+        instructions.add("Use task.controls only to understand the intent of the task.");
         instructions.add("Do not treat task.controls as additional facts.");
         instructions.add("Do not infer missing facts from task.controls.");
         instructions.add("Do not recompute task.controls from context.");
         instructions.add("Return compact JSON on a single line.");
         instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
-        instructions.add("Set every value in output_template as a string.");
         instructions.add("Return exactly the output_template shape.");
         instructions.add("Do not add, remove, or rename any fields.");
         instructions.add("Return exactly one JSON object.");

@@ -116,7 +116,7 @@ public class QueryGenServiceTest {
         Assertions.assertTrue(nodes.has("CustomerAccount:CUST-2001"));
 
         JsonArray instructions = llmInstructions.getAsJsonArray("instructions");
-        assertInstructionExists(instructions, "Use task.controls as execution controls only.");
+        assertInstructionExists(instructions, "Use task.controls only to understand the intent of the task.");
         assertInstructionExists(instructions, "Do not treat task.controls as additional facts.");
         assertInstructionExists(instructions, "Do not infer missing facts from task.controls.");
         assertInstructionExists(instructions, "Return exactly the output_template shape.");
