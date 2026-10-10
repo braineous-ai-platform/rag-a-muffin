@@ -3,7 +3,6 @@ package ai.braineous.rag.prompt.cgo.query;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
-import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import com.google.gson.JsonObject;
 
 import java.util.Objects;
@@ -25,8 +24,6 @@ public final class QueryRequest<T extends QueryTask> {
     private String factId;
 
     private LLMResponseValidatorRule rule;
-
-    private LlmAdapter adapter;
 
     public QueryRequest() {
     }
@@ -80,14 +77,6 @@ public final class QueryRequest<T extends QueryTask> {
         return rule;
     }
 
-    public LlmAdapter getAdapter() {
-        return adapter;
-    }
-
-    public void setAdapter(LlmAdapter adapter) {
-        this.adapter = adapter;
-    }
-
     public String getFactId() {
         return factId;
     }
@@ -136,7 +125,6 @@ public final class QueryRequest<T extends QueryTask> {
 
     @Override
     public String toString() {
-        String adapterType = (adapter == null) ? "null" : adapter.getClass().getSimpleName();
         return "QueryRequest{" +
                 "meta=" + meta +
                 ", requestId = " + this.requestId +
@@ -144,7 +132,6 @@ public final class QueryRequest<T extends QueryTask> {
                 ", context=" + context +
                 ", task=" + task +
                 ", rule=" + rule +
-                ", adapterType=" + adapterType +
                 '}';
     }
 
@@ -196,13 +183,6 @@ public final class QueryRequest<T extends QueryTask> {
             out.addProperty("rule", this.rule.getClass().getName());
         } else {
             out.add("rule", null);
-        }
-
-        // ---- adapter (optional, identity only) ----
-        if (this.adapter != null) {
-            out.addProperty("adapter", this.adapter.getClass().getName());
-        } else {
-            out.add("adapter", null);
         }
 
         return out;
@@ -270,7 +250,7 @@ public final class QueryRequest<T extends QueryTask> {
             req.requestId = requestId;
         }
 
-        // rule/adapter identities are intentionally ignored here (wired later)
+        // rule identity is intentionally ignored here (wired later)
         return req;
     }
 

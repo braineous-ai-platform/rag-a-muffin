@@ -9,7 +9,6 @@ import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.observe.Console;
@@ -33,7 +32,6 @@ public class PayFunctionalExecutionIT {
     public void payFunctionalExecution_singleRequest_shouldReturnExecutionEnvelopeAndJsonResult() {
 
         QueryRequest<ValidateTask> request = this.buildPayDecisionRequest();
-        request.setAdapter(new OpenAILlmAdapter());
 
         PromptBuilder promptBuilder =
                 new PromptBuilder(new SimpleResponseContractRegistry());
@@ -208,107 +206,6 @@ public class PayFunctionalExecutionIT {
         );
     }
 
-    private static class OpenAIAdapterBridgeClient implements LlmClient {
-
-        @Override
-        public String executePrompt(ai.braineous.rag.prompt.cgo.api.LlmAdapter adapter,
-                                    QueryRequest queryRequest,
-                                    JsonObject prompt) {
-
-            JsonObject llmPayload = new JsonObject();
-            llmPayload.addProperty("model", "qwen2.5:0.5b");
-            llmPayload.addProperty("prompt", prompt.toString());
-            llmPayload.addProperty("stream", false);
-
-            return ((OpenAILlmAdapter) adapter).invokeLlm(queryRequest, llmPayload);
-        }
-    }
-
-    @Test
-    public void payFunctionalExecution_legacy_threeIndependentRuns_diagnostic() {
-        java.util.List<String> rawResponses = new java.util.ArrayList<String>();
-        java.util.List<String> outcomes = new java.util.ArrayList<String>();
-
-        int i = 1;
-        while (i <= 3) {
-            String requestId = null;
-            String status = null;
-            String stage = null;
-            String isOk = null;
-            String rawResponse = null;
-            String failure = "NONE";
-            String outcome = "OK";
-            QueryRequest<ValidateTask> request = null;
-
-            try {
-                request = this.buildPayDecisionRequest();
-
-                request.setAdapter(new OpenAILlmAdapter());
-
-                PromptBuilder promptBuilder =
-                        new PromptBuilder(new SimpleResponseContractRegistry());
-
-                CgoQueryPipeline pipeline =
-                        new CgoQueryPipeline(promptBuilder, new OpenAIAdapterBridgeClient());
-
-                QueryExecution<ValidateTask> execution =
-                        pipeline.execute(request);
-
-                requestId = String.valueOf(request.getRequestId());
-                status = String.valueOf(execution.getStatus());
-                stage = String.valueOf(execution.getStage());
-                isOk = String.valueOf(execution.isOk());
-                rawResponse = execution.getRawResponse();
-            } catch (Throwable t) {
-                outcome = "FAIL";
-                failure = t.getClass().getName() + ": " + t.getMessage();
-                if (request != null) {
-                    requestId = String.valueOf(request.getRequestId());
-                }
-            }
-
-            if (rawResponse != null) {
-                rawResponses.add(rawResponse);
-            }
-
-            outcomes.add(outcome);
-
-            System.out.println("================ PAY LEGACY RUN " + i + " ================");
-            System.out.println("requestId:");
-            System.out.println(requestId);
-            System.out.println("status:");
-            System.out.println(status);
-            System.out.println("stage:");
-            System.out.println(stage);
-            System.out.println("isOk:");
-            System.out.println(isOk);
-            System.out.println("rawResponse:");
-            if (rawResponse == null) {
-                System.out.println("null");
-            } else {
-                System.out.print(rawResponse);
-                if (!rawResponse.endsWith("\n")) {
-                    System.out.println();
-                }
-            }
-            System.out.println("failure:");
-            System.out.println(failure);
-            System.out.println("==================================================");
-
-            i++;
-        }
-
-        java.util.Set<String> distinct = new java.util.LinkedHashSet<String>();
-        distinct.addAll(rawResponses);
-
-        System.out.println("================ PAY LEGACY SUMMARY ================");
-        System.out.println("run 1: " + outcomes.get(0));
-        System.out.println("run 2: " + outcomes.get(1));
-        System.out.println("run 3: " + outcomes.get(2));
-        System.out.println("distinct exact raw responses: " + distinct.size() + "/3");
-        System.out.println("====================================================");
-    }
-
     //---------------drift assertion-----------------------
     @Test
     public void payFunctionalExecution_drift_shouldKeepContractStableAcrossRuns() {
@@ -345,8 +242,6 @@ public class PayFunctionalExecutionIT {
                                 new Control("goal", "decision")
                         )
                 );
-
-                request.setAdapter(new OpenAILlmAdapter());
 
                 PromptBuilder promptBuilder =
                         new PromptBuilder(new SimpleResponseContractRegistry());

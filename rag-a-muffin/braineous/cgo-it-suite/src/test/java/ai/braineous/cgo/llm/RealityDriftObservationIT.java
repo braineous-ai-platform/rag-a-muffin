@@ -8,7 +8,6 @@ import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.observe.Console;
@@ -29,11 +28,8 @@ public class RealityDriftObservationIT {
     void realityDriftObservation_sameRequest_multipleExecutions_shouldLogAndCompareEnvelopeStability() {
 
         QueryRequest<ValidateTask> request = this.buildValidateTaskRequest();
-        request.setAdapter(new OpenAILlmAdapter());
 
         PromptBuilder promptBuilder = new PromptBuilder(new SimpleResponseContractRegistry());
-
-        LlmClient bridgingClient = new OpenAIAdapterBridgeClient();
 
         // IMPORTANT:
         // - keep pipeline as experiment surface
@@ -134,21 +130,5 @@ public class RealityDriftObservationIT {
         );
 
         return new QueryRequest<ValidateTask>(meta, context, task, factId, rule);
-    }
-
-    private static class OpenAIAdapterBridgeClient implements LlmClient {
-
-        @Override
-        public String executePrompt(ai.braineous.rag.prompt.cgo.api.LlmAdapter adapter,
-                                    QueryRequest queryRequest,
-                                    JsonObject prompt) {
-
-            JsonObject llmPayload = new JsonObject();
-            llmPayload.addProperty("model", "llama3");
-            llmPayload.addProperty("prompt", prompt.toString());
-            llmPayload.addProperty("stream", false);
-
-            return ((OpenAILlmAdapter) adapter).invokeLlm(queryRequest, llmPayload);
-        }
     }
 }

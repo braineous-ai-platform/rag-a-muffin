@@ -12,7 +12,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class QueryRequestToJsonTest {
 
     @Test
-    void fromJson_rehydrates_task_meta_context_and_leaves_rule_adapter_null() {
+    void fromJson_rehydrates_task_meta_context_and_leaves_rule_null() {
 
         // Arrange
         Meta meta = new Meta("v1", "validate_fact", "rehydrate test");
@@ -46,7 +46,6 @@ public class QueryRequestToJsonTest {
 
         // identity-only fields not rehydrated
         org.junit.jupiter.api.Assertions.assertNull(rehydrated.getRule());
-        org.junit.jupiter.api.Assertions.assertNull(rehydrated.getAdapter());
     }
 
     @Test
@@ -495,14 +494,13 @@ public class QueryRequestToJsonTest {
         assertTrue(json.has("task"));
         assertTrue(json.has("taskType"));
         assertTrue(json.has("rule"));
-        assertTrue(json.has("adapter"));
+        assertFalse(json.has("adapter"));
 
         // Assert taskType is exact class name
         assertEquals(ValidateTask.class.getName(), json.get("taskType").getAsString());
 
-        // Assert rule/adapter are explicitly null (shape stability)
+        // Assert rule is explicitly null (shape stability)
         assertTrue(json.get("rule").isJsonNull());
-        assertTrue(json.get("adapter").isJsonNull());
 
         // Assert nested meta fields
         JsonObject metaJson = json.getAsJsonObject("meta");

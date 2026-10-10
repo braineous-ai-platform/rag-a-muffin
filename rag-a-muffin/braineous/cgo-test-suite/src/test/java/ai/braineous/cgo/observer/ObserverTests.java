@@ -8,7 +8,6 @@ import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.observe.Console;
-import com.google.gson.JsonObject;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -68,26 +67,6 @@ class ObserverTests {
         GraphContext context = new GraphContext(Map.of(factId, node));
         QueryRequest<ValidateTask> request = QueryRequests.validateTask(meta, task, context, factId);
 
-        request.setAdapter(new LlmAdapter() {
-            @Override
-            public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
-                Console.log("fake_adapter_invoked", prompt == null ? "prompt=null" : "prompt=ok");
-                return """
-                {
-                  "result": {
-                    "ok": true,
-                    "code": "response.contract.ok",
-                    "message": "VALID",
-                    "stage": "llm_response_validation",
-                    "anchorId": null,
-                    "metadata": { "adapter": "fake" }
-                  }
-                }
-                """;
-
-            }
-        });
-
         PromptBuilder promptBuilder = new PromptBuilder();
         CgoQueryPipeline pipeline = new CgoQueryPipeline(promptBuilder);
         pipeline.setInMemoryMode(true);
@@ -144,26 +123,6 @@ class ObserverTests {
         GraphContext context = new GraphContext(Map.of(factId, node));
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
-
-        request.setAdapter(new LlmAdapter() {
-            @Override
-            public String invokeLlm(QueryRequest queryRequest,JsonObject prompt) {
-                Console.log("fake_adapter_invoked", "ok");
-                return """
-                {
-                  "result": {
-                    "ok": true,
-                    "code": "response.contract.ok",
-                    "message": "VALID",
-                    "stage": "llm_response_validation",
-                    "anchorId": null,
-                    "metadata": { "adapter": "fake" }
-                  }
-                }
-                """;
-
-            }
-        });
 
         PromptBuilder promptBuilder =
                 new PromptBuilder();

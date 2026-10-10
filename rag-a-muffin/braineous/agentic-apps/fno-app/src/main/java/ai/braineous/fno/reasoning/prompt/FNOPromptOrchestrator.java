@@ -1,6 +1,5 @@
 package ai.braineous.fno.reasoning.prompt;
 
-import ai.braineous.cgo.llm.OpenAILlmAdapter;
 import ai.braineous.rag.prompt.cgo.api.*;
 
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
@@ -36,13 +35,8 @@ public class FNOPromptOrchestrator {
             throw new IllegalArgumentException("task.factId must be non-empty");
         }
 
-        // v1: adapter config placeholder (keep stable shape, no assumptions)
-        JsonObject config = new JsonObject();
-        LlmAdapter adapter = new OpenAILlmAdapter(config);
-
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
-        request.setAdapter(adapter);
 
         // PromptBuilder (no prompt validator for v1)
         PromptBuilder promptBuilder = new PromptBuilder();

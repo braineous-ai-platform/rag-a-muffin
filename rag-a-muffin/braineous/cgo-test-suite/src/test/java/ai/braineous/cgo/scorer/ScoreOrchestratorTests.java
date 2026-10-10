@@ -1,5 +1,6 @@
 package ai.braineous.cgo.scorer;
 
+import ai.braineous.arc.IntelligenceBridge;
 import ai.braineous.cgo.history.HistoryRecord;
 import ai.braineous.cgo.history.HistoryStore;
 import ai.braineous.cgo.history.ScorerResult;
@@ -166,12 +167,9 @@ public class ScoreOrchestratorTests {
 
         QueryRequest<ValidateTask> request =
                 QueryRequests.validateTask(meta, task, context, factId);
-        request.setAdapter(new FakeLlmAdapter());
-
         PromptBuilder promptBuilder =
                 new PromptBuilder();
 
-        // IMPORTANT: null LlmClient → pipeline.json used
         String raw = """
         {
           "result": {
@@ -186,8 +184,7 @@ public class ScoreOrchestratorTests {
         """;
         CgoQueryPipeline pipeline =
                 new CgoQueryPipeline(promptBuilder,
-                        new FakeLlmClient(
-                                raw)
+                        new FakeIntelligenceBridge(raw)
                 );
 
 
@@ -391,11 +388,17 @@ public class ScoreOrchestratorTests {
         return new QueryExecution<>(request, "", ok, err, null);
     }
 
-    private static class FakeLlmAdapter extends LlmAdapter{
+    private static class FakeIntelligenceBridge extends IntelligenceBridge {
+
+        private final String rawResponse;
+
+        private FakeIntelligenceBridge(String rawResponse) {
+            this.rawResponse = rawResponse;
+        }
 
         @Override
-        public String invokeLlm(QueryRequest queryRequest, JsonObject prompt) {
-            return "STUBBED";
+        public String invoke(String requestJson, String environmentJson) {
+            return this.rawResponse;
         }
     }
 }

@@ -9,7 +9,6 @@ import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.cgo.prompt.SimpleResponseContractRegistry;
 import ai.braineous.rag.prompt.observe.Console;
@@ -33,7 +32,6 @@ public class InterpretFunctionalExecutionIT {
     public void interpretFunctionalExecution_singleRequest_shouldReturnExecutionEnvelopeAndJsonResult() {
 
         QueryRequest<ValidateTask> request = this.buildInterpretRequest();
-        request.setAdapter(new OpenAILlmAdapter());
 
         PromptBuilder promptBuilder =
                 new PromptBuilder(new SimpleResponseContractRegistry());
@@ -188,22 +186,6 @@ public class InterpretFunctionalExecutionIT {
         );
     }
 
-    private static class OpenAIAdapterBridgeClient implements LlmClient {
-
-        @Override
-        public String executePrompt(ai.braineous.rag.prompt.cgo.api.LlmAdapter adapter,
-                                    QueryRequest queryRequest,
-                                    JsonObject prompt) {
-
-            JsonObject llmPayload = new JsonObject();
-            llmPayload.addProperty("model", "llama3");
-            llmPayload.addProperty("prompt", prompt.toString());
-            llmPayload.addProperty("stream", false);
-
-            return ((OpenAILlmAdapter) adapter).invokeLlm(queryRequest, llmPayload);
-        }
-    }
-
     //---------------drift assertion-----------------------
     @Test
     public void interpretFunctionalExecution_drift_shouldKeepContractStableAcrossRuns() {
@@ -220,8 +202,6 @@ public class InterpretFunctionalExecutionIT {
 
             QueryRequest<ValidateTask> request =
                     this.buildInterpretRequest();
-
-            request.setAdapter(new OpenAILlmAdapter());
 
             PromptBuilder promptBuilder =
                     new PromptBuilder(new SimpleResponseContractRegistry());

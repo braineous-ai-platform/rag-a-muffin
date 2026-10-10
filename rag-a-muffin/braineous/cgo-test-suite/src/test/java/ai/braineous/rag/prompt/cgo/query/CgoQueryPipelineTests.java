@@ -1,16 +1,16 @@
 package ai.braineous.rag.prompt.cgo.query;
 
+import ai.braineous.arc.IntelligenceBridge;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
-import ai.braineous.rag.prompt.cgo.api.LlmAdapter;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
-import ai.braineous.rag.prompt.cgo.prompt.LlmClient;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
@@ -27,15 +27,13 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient(
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(
                         "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
                 pipeline.execute(request);
@@ -46,11 +44,11 @@ public class CgoQueryPipelineTests {
         Console.log("pipeline.ok.domainValidation", String.valueOf(execution.getDomainValidation()));
         Console.log("pipeline.ok.execution", execution.toJsonString());
 
-        Assertions.assertEquals(1, llmClient.callCount);
-        Assertions.assertNotNull(llmClient.lastPrompt);
+        Assertions.assertEquals(1, intelligenceBridge.callCount);
+        Assertions.assertNotNull(intelligenceBridge.lastPrompt);
 
         String promptText =
-                llmClient.lastPrompt.get("prompt").getAsString();
+                intelligenceBridge.lastPrompt.get("prompt").getAsString();
 
         Assertions.assertTrue(promptText.contains("You are an execution engine"));
         Assertions.assertTrue(promptText.contains("INPUT:"));
@@ -104,8 +102,6 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
-        request.setAdapter(new FakeLlmAdapter());
-
         AtomicInteger validationCount =
                 new AtomicInteger(0);
 
@@ -128,15 +124,15 @@ public class CgoQueryPipelineTests {
                     }
                 };
 
-        CountingLlmClient llmClient =
-                new CountingLlmClient(
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(
                         "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
 
         CgoQueryPipeline pipeline =
                 new CgoQueryPipeline(
                         new PromptBuilder(),
-                        llmClient,
+                        intelligenceBridge,
                         validator
                 );
 
@@ -187,15 +183,13 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest(rule);
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient(
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(
                         "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
                 pipeline.execute(request);
@@ -249,15 +243,13 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest(rule);
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient(
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(
                         "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
                 pipeline.execute(request);
@@ -293,13 +285,11 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient("{bad-json");
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge("{bad-json");
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
                 pipeline.execute(request);
@@ -322,50 +312,22 @@ public class CgoQueryPipelineTests {
     }
 
     @Test
-    public void test_6() {
-        QueryRequest<ValidateTask> request =
-                buildRequest();
-
-        CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(
-                        new PromptBuilder(),
-                        new CountingLlmClient(
-                                "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
-                        )
-                );
-
-        NullPointerException exception =
-                Assertions.assertThrows(
-                        NullPointerException.class,
-                        () -> pipeline.execute(request)
-                );
-
-        Console.log("pipeline.missing.adapter", exception.getMessage());
-
-        Assertions.assertTrue(
-                exception.getMessage().contains("Missing LlmAdapter")
-        );
-    }
-
-    @Test
     public void test_7() {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient("{\"unused\":true}");
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge("{\"unused\":true}");
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
                 pipeline.execute(request);
 
         Console.log("pipeline.result.missing", execution.toJsonString());
 
-        Assertions.assertEquals(1, llmClient.callCount);
+        Assertions.assertEquals(1, intelligenceBridge.callCount);
 
         Assertions.assertFalse(execution.isOk());
         Assertions.assertEquals("ERROR", execution.getStatus());
@@ -394,15 +356,13 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
-        request.setAdapter(new FakeLlmAdapter());
-
-        CountingLlmClient llmClient =
-                new CountingLlmClient(
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(
                         "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
                 );
 
         CgoQueryPipeline pipeline =
-                new CgoQueryPipeline(new PromptBuilder(), llmClient);
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         pipeline.setInMemoryMode(true);
 
@@ -481,23 +441,20 @@ public class CgoQueryPipelineTests {
         );
     }
 
-    private static class CountingLlmClient implements LlmClient {
+    private static class CountingIntelligenceBridge extends IntelligenceBridge {
 
         private final String rawResponse;
         private int callCount;
         private JsonObject lastPrompt;
 
-        private CountingLlmClient(String rawResponse) {
+        private CountingIntelligenceBridge(String rawResponse) {
             this.rawResponse = rawResponse;
         }
 
         @Override
-        public String executePrompt(LlmAdapter adapter,
-                                    QueryRequest queryRequest,
-                                    JsonObject prompt) {
+        public String invoke(String requestJson, String environmentJson) {
             this.callCount++;
-            this.lastPrompt = prompt;
-
+            this.lastPrompt = JsonParser.parseString(requestJson).getAsJsonObject();
             return this.rawResponse;
         }
     }
