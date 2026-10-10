@@ -33,6 +33,17 @@ public class PayFunctionalExecutionIT {
 
         QueryRequest<ValidateTask> request = this.buildPayDecisionRequest();
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control("intent", "decide_payment_capture"),
+                        new Control("action", "determine"),
+                        new Control("subject", "primary_payment_request"),
+                        new Control("decision", "allow_capture"),
+                        new Control("basis", "related_system_facts"),
+                        new Control("goal", "decision")
+                )
+        );
+
         PromptBuilder promptBuilder =
                 new PromptBuilder(new SimpleResponseContractRegistry());
 
