@@ -72,12 +72,7 @@ public class OutputTemplateFieldGeneratorTest {
         FieldGenerationResult result =
                 generator.generate(fieldDefinition, request);
 
-        JsonObject expected = new JsonObject();
-        JsonObject expectedResult = new JsonObject();
-        expectedResult.addProperty("decision", "");
-        expectedResult.addProperty("reason", "");
-        expectedResult.addProperty("code", "");
-        expected.add("result", expectedResult);
+        JsonObject expected = this.fixedOutputTemplate();
 
         Console.log("output.template.actual", result.getFieldValue().toString());
         Console.log("output.template.expected", expected.toString());
@@ -115,14 +110,7 @@ public class OutputTemplateFieldGeneratorTest {
 
         Console.log("output.template.result", resultObject.toString());
 
-        Assertions.assertEquals(3, resultObject.size());
-        Assertions.assertTrue(resultObject.has("decision"));
-        Assertions.assertTrue(resultObject.has("reason"));
-        Assertions.assertTrue(resultObject.has("code"));
-
-        Assertions.assertEquals("", resultObject.get("decision").getAsString());
-        Assertions.assertEquals("", resultObject.get("reason").getAsString());
-        Assertions.assertEquals("", resultObject.get("code").getAsString());
+        this.assertFixedResultObject(resultObject);
     }
 
     @Test
@@ -136,12 +124,7 @@ public class OutputTemplateFieldGeneratorTest {
         FieldGenerationResult result =
                 generator.generate(fieldDefinition, request);
 
-        JsonObject expected = new JsonObject();
-        JsonObject expectedResult = new JsonObject();
-        expectedResult.addProperty("code", "");
-        expectedResult.addProperty("decision", "");
-        expectedResult.addProperty("reason", "");
-        expected.add("result", expectedResult);
+        JsonObject expected = this.fixedOutputTemplate();
 
         Console.log("output.template.order.actual", result.getFieldValue().toString());
         Console.log("output.template.order.expected", expected.toString());
@@ -164,8 +147,7 @@ public class OutputTemplateFieldGeneratorTest {
 
         Console.log("output.template.null.fields", outputTemplate.toString());
 
-        Assertions.assertNotNull(resultObject);
-        Assertions.assertEquals(0, resultObject.size());
+        this.assertFixedResultObject(resultObject);
     }
 
     @Test
@@ -184,8 +166,7 @@ public class OutputTemplateFieldGeneratorTest {
 
         Console.log("output.template.empty.fields", outputTemplate.toString());
 
-        Assertions.assertNotNull(resultObject);
-        Assertions.assertEquals(0, resultObject.size());
+        this.assertFixedResultObject(resultObject);
     }
 
     @Test
@@ -204,13 +185,7 @@ public class OutputTemplateFieldGeneratorTest {
 
         Console.log("output.template.null.item", outputTemplate.toString());
 
-        Assertions.assertEquals(2, resultObject.size());
-        Assertions.assertTrue(resultObject.has("decision"));
-        Assertions.assertTrue(resultObject.has("code"));
-        Assertions.assertFalse(resultObject.has("null"));
-
-        Assertions.assertEquals("", resultObject.get("decision").getAsString());
-        Assertions.assertEquals("", resultObject.get("code").getAsString());
+        this.assertFixedResultObject(resultObject);
     }
 
     @Test
@@ -226,9 +201,28 @@ public class OutputTemplateFieldGeneratorTest {
 
         Console.log("output.template.null.request", outputTemplate.toString());
 
-        Assertions.assertNotNull(resultObject);
-        Assertions.assertEquals(0, resultObject.size());
+        this.assertFixedResultObject(resultObject);
         Assertions.assertTrue(result.getValidationResult().isOk());
+    }
+
+    private JsonObject fixedOutputTemplate() {
+        JsonObject expected = new JsonObject();
+        JsonObject expectedResult = new JsonObject();
+        expectedResult.addProperty("result", "");
+        expected.add("result", expectedResult);
+        return expected;
+    }
+
+    private void assertFixedResultObject(JsonObject resultObject) {
+        Assertions.assertNotNull(resultObject);
+        Assertions.assertEquals(1, resultObject.size());
+        Assertions.assertTrue(resultObject.has("result"));
+        Assertions.assertFalse(resultObject.has("reason"));
+        Assertions.assertFalse(resultObject.has("decision"));
+        Assertions.assertFalse(resultObject.has("code"));
+        Assertions.assertEquals("", resultObject.get("result").getAsString());
+        Assertions.assertTrue(resultObject.get("result").isJsonPrimitive());
+        Assertions.assertTrue(resultObject.get("result").getAsJsonPrimitive().isString());
     }
 
     private QueryRequest buildRequest(java.util.List<String> requestedFields) {

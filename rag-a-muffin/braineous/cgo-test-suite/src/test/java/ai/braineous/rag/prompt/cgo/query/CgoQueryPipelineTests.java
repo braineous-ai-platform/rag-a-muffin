@@ -8,6 +8,7 @@ import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
+import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -373,6 +374,86 @@ public class CgoQueryPipelineTests {
 
         Assertions.assertTrue(execution.isOk());
         Assertions.assertTrue(execution.isInMemoryMode());
+    }
+
+    @Test
+    public void test_9() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        String arcResponse =
+                "result.decision: allow_capture\n"
+                        + "result.reason: primary_payment_request\n"
+                        + "result.code: 200";
+
+        String expectedJson =
+                "{\"result\":{\"decision\":\"allow_capture\",\"reason\":\"primary_payment_request\",\"code\":\"200\"}}";
+
+        AtomicInteger validationCount =
+                new AtomicInteger(0);
+
+        AtomicReference<String> validatorRaw =
+                new AtomicReference<String>();
+
+        final QueryResultValidator queryResultValidator =
+                new QueryResultValidator();
+
+        PhaseResultValidator validator =
+                new PhaseResultValidator() {
+                    @Override
+                    public ValidationResult validate(String raw) {
+                        validationCount.incrementAndGet();
+                        validatorRaw.set(raw);
+                        return queryResultValidator.validate(raw);
+                    }
+                };
+
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(arcResponse);
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(
+                        new PromptBuilder(),
+                        intelligenceBridge,
+                        validator
+                );
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(request);
+
+        Console.log("pipeline.map.arc", arcResponse);
+        Console.log("pipeline.map.constructed", String.valueOf(validatorRaw.get()));
+        Console.log("pipeline.map.validation", String.valueOf(execution.getLlmResponseValidation()));
+        Console.log("pipeline.map.status", String.valueOf(execution.getStatus()));
+        Console.log("pipeline.map.stage", String.valueOf(execution.getStage()));
+        Console.log("pipeline.map.execution.rawResponse", String.valueOf(execution.getRawResponse()));
+
+        Assertions.assertEquals(1, intelligenceBridge.callCount);
+        Assertions.assertEquals(1, validationCount.get());
+        Assertions.assertEquals(expectedJson, validatorRaw.get());
+
+        Assertions.assertTrue(execution.isOk());
+        Assertions.assertEquals("OK", execution.getStatus());
+        Assertions.assertEquals("ok", execution.getStage());
+
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertTrue(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.ok",
+                execution.getLlmResponseValidation().getCode()
+        );
+
+        Assertions.assertEquals(expectedJson, execution.getRawResponse());
+        Assertions.assertNotNull(execution.getLlmResponse());
+        Assertions.assertEquals(expectedJson, execution.getLlmResponse().getRawResponse());
+        Assertions.assertEquals(
+                execution.getRawResponse(),
+                execution.getLlmResponse().getRawResponse()
+        );
+        Assertions.assertEquals(
+                execution.getRawResponse(),
+                validatorRaw.get()
+        );
     }
 
     private QueryRequest<ValidateTask> buildRequest() {

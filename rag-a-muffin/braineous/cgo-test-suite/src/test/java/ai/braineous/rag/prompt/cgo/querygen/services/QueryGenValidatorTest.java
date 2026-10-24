@@ -21,8 +21,10 @@ public class QueryGenValidatorTest {
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.valid.payload____", payload.toString());
-        Console.log("____queryGenValidator.valid.result____", String.valueOf(result));
+        Console.log("querygen.validator.valid.payload", payload.toString());
+        Console.log("querygen.validator.valid.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.valid.code", result.getCode());
+        Console.log("querygen.validator.valid.result", String.valueOf(result));
 
         assertNotNull(result);
         assertTrue(result.isOk());
@@ -120,38 +122,42 @@ public class QueryGenValidatorTest {
     }
 
     @Test
-    public void validate_shouldReturnError_whenTaskIntentIsMissing() {
+    public void validate_shouldReturnError_whenTaskControlsIsMissing() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
-        payload.getAsJsonObject("task").remove("intent");
+        payload.getAsJsonObject("task").remove("controls");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.taskIntentMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.taskIntentMissing.result____", String.valueOf(result));
+        Console.log("querygen.validator.taskControlsMissing.payload", payload.toString());
+        Console.log("querygen.validator.taskControlsMissing.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.taskControlsMissing.code", result.getCode());
+        Console.log("querygen.validator.taskControlsMissing.result", String.valueOf(result));
 
         assertNotNull(result);
         assertFalse(result.isOk());
-        assertEquals("querygen.contract.task.intent_missing_or_invalid", result.getCode());
-        assertEquals("Missing or invalid 'task.intent' object", result.getMessage());
+        assertEquals("querygen.contract.task.controls_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.controls' object", result.getMessage());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
     @Test
-    public void validate_shouldReturnError_whenTaskIntentGoalIsMissing() {
+    public void validate_shouldReturnError_whenTaskControlsIsNotObject() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
-        payload.getAsJsonObject("task").getAsJsonObject("intent").remove("goal");
+        payload.getAsJsonObject("task").addProperty("controls", "not-an-object");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.taskIntentGoalMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.taskIntentGoalMissing.result____", String.valueOf(result));
+        Console.log("querygen.validator.taskControlsNotObject.payload", payload.toString());
+        Console.log("querygen.validator.taskControlsNotObject.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.taskControlsNotObject.code", result.getCode());
+        Console.log("querygen.validator.taskControlsNotObject.result", String.valueOf(result));
 
         assertNotNull(result);
         assertFalse(result.isOk());
-        assertEquals("querygen.contract.task.intent.goal_missing", result.getCode());
-        assertEquals("Missing or invalid 'task.intent.goal'", result.getMessage());
+        assertEquals("querygen.contract.task.controls_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.controls' object", result.getMessage());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
@@ -175,38 +181,26 @@ public class QueryGenValidatorTest {
     }
 
     @Test
-    public void validate_shouldReturnError_whenOutputTemplateIsMissing() {
+    public void validate_shouldReturnOk_whenObsoleteSectionsAreAbsent() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
         payload.remove("output_template");
-
-        ValidationResult result = validator.validate(payload.toString());
-
-        Console.log("____queryGenValidator.outputTemplateMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.outputTemplateMissing.result____", String.valueOf(result));
-
-        assertNotNull(result);
-        assertFalse(result.isOk());
-        assertEquals("querygen.contract.output_template_missing_or_invalid", result.getCode());
-        assertEquals("Missing or invalid 'output_template' object", result.getMessage());
-        assertEquals("querygen_contract_validation", result.getStage());
-    }
-
-    @Test
-    public void validate_shouldReturnError_whenResponseContractIsMissing() {
-        QueryGenValidator validator = new QueryGenValidator();
-        JsonObject payload = buildValidPayload();
         payload.remove("response_contract");
+        payload.getAsJsonObject("task").remove("intent");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.responseContractMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.responseContractMissing.result____", String.valueOf(result));
+        Console.log("querygen.validator.obsoleteAbsent.payload", payload.toString());
+        Console.log("querygen.validator.obsoleteAbsent.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.obsoleteAbsent.code", result.getCode());
+        Console.log("querygen.validator.obsoleteAbsent.result", String.valueOf(result));
 
+        assertFalse(payload.has("output_template"));
+        assertFalse(payload.has("response_contract"));
+        assertFalse(payload.getAsJsonObject("task").has("intent"));
         assertNotNull(result);
-        assertFalse(result.isOk());
-        assertEquals("querygen.contract.response_contract_missing_or_invalid", result.getCode());
-        assertEquals("Missing or invalid 'response_contract' object", result.getMessage());
+        assertTrue(result.isOk());
+        assertEquals("querygen.contract.ok", result.getCode());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
@@ -301,9 +295,7 @@ public class QueryGenValidatorTest {
         root.add("context", context);
 
         JsonObject task = new JsonObject();
-        JsonObject intent = new JsonObject();
-        intent.addProperty("goal", "Validate departure and arrival airport codes");
-        task.add("intent", intent);
+        task.add("controls", new JsonObject());
         task.addProperty("factId", "Flight:F100");
 
         JsonArray select = new JsonArray();
@@ -319,31 +311,6 @@ public class QueryGenValidatorTest {
         task.add("relatedFactIds", relatedFactIds);
 
         root.add("task", task);
-
-        JsonObject outputTemplate = new JsonObject();
-        JsonObject outputTemplateResult = new JsonObject();
-        outputTemplateResult.addProperty("ok", "");
-        outputTemplateResult.addProperty("code", "");
-        outputTemplateResult.addProperty("message", "");
-        outputTemplateResult.addProperty("anchorId", "");
-        outputTemplate.add("result", outputTemplateResult);
-        root.add("output_template", outputTemplate);
-
-        JsonObject responseContract = new JsonObject();
-        responseContract.addProperty("type", "validation_result");
-        responseContract.addProperty("description", "Deterministic response contract derived from selected fields.");
-
-        JsonObject schema = new JsonObject();
-        JsonObject result = new JsonObject();
-        JsonObject fields = new JsonObject();
-        fields.addProperty("ok", "string");
-        fields.addProperty("code", "string");
-        fields.addProperty("message", "string");
-        fields.addProperty("anchorId", "string");
-        result.add("fields", fields);
-        schema.add("result", result);
-        responseContract.add("schema", schema);
-        root.add("response_contract", responseContract);
 
         JsonObject llmInstructions = new JsonObject();
         JsonArray instructions = new JsonArray();

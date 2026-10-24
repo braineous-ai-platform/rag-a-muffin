@@ -49,11 +49,11 @@ public class QueryGenServiceTest {
         Assertions.assertTrue(payload.has("llm_instructions"));
         Assertions.assertTrue(payload.has("meta"));
         Assertions.assertTrue(payload.has("task"));
-        Assertions.assertTrue(payload.has("output_template"));
-        Assertions.assertTrue(payload.has("response_contract"));
         Assertions.assertTrue(payload.has("context"));
         Assertions.assertTrue(payload.has("llm_trace"));
         Assertions.assertTrue(payload.has("llm_trace_instructions"));
+        Assertions.assertFalse(payload.has("output_template"));
+        Assertions.assertFalse(payload.has("response_contract"));
     }
 
     @Test
@@ -70,9 +70,9 @@ public class QueryGenServiceTest {
 
         Assertions.assertTrue(serialized.indexOf("\"llm_instructions\"") < serialized.indexOf("\"meta\""));
         Assertions.assertTrue(serialized.indexOf("\"meta\"") < serialized.indexOf("\"task\""));
-        Assertions.assertTrue(serialized.indexOf("\"task\"") < serialized.indexOf("\"output_template\""));
-        Assertions.assertTrue(serialized.indexOf("\"output_template\"") < serialized.indexOf("\"response_contract\""));
-        Assertions.assertTrue(serialized.indexOf("\"response_contract\"") < serialized.indexOf("\"context\""));
+        Assertions.assertTrue(serialized.indexOf("\"task\"") < serialized.indexOf("\"context\""));
+        Assertions.assertTrue(serialized.indexOf("\"context\"") < serialized.indexOf("\"llm_trace\""));
+        Assertions.assertTrue(serialized.indexOf("\"llm_trace\"") < serialized.indexOf("\"llm_trace_instructions\""));
     }
 
     @Test
@@ -84,14 +84,17 @@ public class QueryGenServiceTest {
         JsonObject payload = output.getPayload();
 
         JsonObject task = payload.getAsJsonObject("task");
-        JsonObject outputTemplate = payload.getAsJsonObject("output_template");
         JsonObject context = payload.getAsJsonObject("context");
         JsonObject llmInstructions = payload.getAsJsonObject("llm_instructions");
 
         Console.log("querygen.task", task.toString());
-        Console.log("querygen.output.template", outputTemplate.toString());
+        Console.log("querygen.output.template.absent", String.valueOf(payload.has("output_template")));
+        Console.log("querygen.response.contract.absent", String.valueOf(payload.has("response_contract")));
         Console.log("querygen.context", context.toString());
         Console.log("querygen.instructions", llmInstructions.toString());
+
+        Assertions.assertFalse(payload.has("output_template"));
+        Assertions.assertFalse(payload.has("response_contract"));
 
         Assertions.assertEquals("decision", task.getAsJsonObject("intent").get("goal").getAsString());
         Assertions.assertEquals("PaymentRequest:PAY-1001", task.get("factId").getAsString());
@@ -106,20 +109,35 @@ public class QueryGenServiceTest {
         Assertions.assertEquals("true", controls.get("include_reason").getAsString());
         Assertions.assertEquals("true", controls.get("include_code").getAsString());
 
-        JsonObject result = outputTemplate.getAsJsonObject("result");
-        Assertions.assertEquals("", result.get("decision").getAsString());
-        Assertions.assertEquals("", result.get("reason").getAsString());
-        Assertions.assertEquals("", result.get("code").getAsString());
-
         JsonObject nodes = context.getAsJsonObject("nodes");
         Assertions.assertTrue(nodes.has("PaymentRequest:PAY-1001"));
         Assertions.assertTrue(nodes.has("CustomerAccount:CUST-2001"));
 
         JsonArray instructions = llmInstructions.getAsJsonArray("instructions");
-        assertInstructionExists(instructions, "Use task.controls only to understand the intent of the task.");
-        assertInstructionExists(instructions, "Do not treat task.controls as additional facts.");
-        assertInstructionExists(instructions, "Do not infer missing facts from task.controls.");
-        assertInstructionExists(instructions, "Return exactly the output_template shape.");
+        Console.log("querygen.instructions.verbatim", instructions.toString());
+        int instructionIndex = 0;
+        while (instructionIndex < instructions.size()) {
+            Console.log(
+                    "querygen.instruction." + instructionIndex,
+                    instructions.get(instructionIndex).getAsString()
+            );
+            instructionIndex = instructionIndex + 1;
+        }
+        assertInstructionExists(instructions, "Execute task.controls.method.");
+        assertInstructionExists(instructions, "Resolve task.controls.parameters from context.nodes.");
+        assertInstructionExists(instructions, "Use task.controls.expression with the resolved parameters.");
+        assertInstructionExists(instructions, "Use task.controls.spec as the definition of the expression.");
+        assertInstructionExists(instructions, "Place the computed value in the field named by task.controls.result.");
+        assertInstructionExists(instructions, "Return exactly one field named result.");
+        assertInstructionExists(instructions, "Return a field called result at any cost.");
+        assertInstructionExists(instructions, "Use result=value.");
+        assertInstructionExists(instructions, "Return the value as a string.");
+        assertInstructionExists(instructions, "No other fields or text.");
+
+        assertInstructionDoesNotExist(instructions, "Use the requested SELECT fields as keys.");
+        assertInstructionDoesNotExist(instructions, "Set result.decision as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.reason as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.code as a string value derived from llm_query execution.");
     }
 
     @Test
@@ -150,6 +168,23 @@ public class QueryGenServiceTest {
         }
 
         Assertions.assertTrue(found, expected);
+    }
+
+    private void assertInstructionDoesNotExist(JsonArray instructions, String unexpected) {
+        boolean found = false;
+
+        int i = 0;
+        while (i < instructions.size()) {
+            String instruction = instructions.get(i).getAsString();
+
+            if (unexpected.equals(instruction)) {
+                found = true;
+            }
+
+            i++;
+        }
+
+        Assertions.assertFalse(found, unexpected);
     }
 
     private QueryRequest buildRequest() {

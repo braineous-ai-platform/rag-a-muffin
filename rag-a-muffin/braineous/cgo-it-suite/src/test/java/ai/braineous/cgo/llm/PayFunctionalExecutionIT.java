@@ -35,12 +35,11 @@ public class PayFunctionalExecutionIT {
 
         request.getTask().setControls(
                 Arrays.asList(
-                        new Control("intent", "decide_payment_capture"),
-                        new Control("action", "determine"),
-                        new Control("subject", "primary_payment_request"),
-                        new Control("decision", "allow_capture"),
-                        new Control("basis", "related_system_facts"),
-                        new Control("goal", "decision")
+                        new Control("method", "payment_capture_eligibility"),
+                        new Control("parameters", "CustomerAccount.status, PaymentMethod.type, RiskProfile.level, MerchantPolicy.capture"),
+                        new Control("expression", "CustomerAccount.status is equal to ACTIVE and PaymentMethod.type is equal to CARD and RiskProfile.level is equal to LOW and MerchantPolicy.capture is equal to AUTO"),
+                        new Control("spec", "result: the value corresponding to the expression outcome. Return field: result. Final output: the computed result as the string value of the field named result. The field named result is mandatory as part of the response."),
+                        new Control("result", "result")
                 )
         );
 
@@ -107,19 +106,14 @@ public class PayFunctionalExecutionIT {
                 root.getAsJsonObject("result");
 
         assertNotNull(result);
-        assertEquals(3, result.size());
+        assertTrue(result.isJsonObject());
+        assertEquals(1, result.size());
 
-        assertTrue(result.has("decision"));
-        assertTrue(result.has("reason"));
-        assertTrue(result.has("code"));
+        assertTrue(result.has("result"));
+        assertTrue(result.get("result").isJsonPrimitive());
+        assertEquals("allow_capture", result.get("result").getAsString());
 
-        assertTrue(result.get("decision").isJsonPrimitive());
-        assertTrue(result.get("reason").isJsonPrimitive());
-        assertTrue(result.get("code").isJsonPrimitive());
-
-        Console.log("pay.functional.result.decision", result.get("decision").getAsString());
-        Console.log("pay.functional.result.reason", result.get("reason").getAsString());
-        Console.log("pay.functional.result.code", result.get("code").getAsString());
+        Console.log("pay.functional.result.result", result.get("result").getAsString());
     }
 
     private QueryRequest<ValidateTask> buildPayDecisionRequest() {

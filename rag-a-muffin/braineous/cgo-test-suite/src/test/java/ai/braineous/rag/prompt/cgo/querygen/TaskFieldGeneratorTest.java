@@ -9,7 +9,6 @@ import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import ai.braineous.rag.prompt.observe.Console;
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -104,28 +103,19 @@ public class TaskFieldGeneratorTest {
         FieldGenerationResult result = generator.generate(fieldDefinition, request);
 
         JsonObject task = result.getFieldValue();
-        JsonObject intent = task.getAsJsonObject("intent");
-        JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
-        JsonArray select = task.getAsJsonArray("select");
         JsonObject controls = task.getAsJsonObject("controls");
 
-        Console.log("task.intent.goal", intent.get("goal").getAsString());
-        Console.log("task.factId", task.get("factId").getAsString());
-        Console.log("task.relatedFactIds", relatedFactIds.toString());
-        Console.log("task.select", select.toString());
+        Console.log("task.generate.complete", task.toString());
+        Console.log("task.keys.size", String.valueOf(task.size()));
         Console.log("task.controls", controls.toString());
 
-        Assertions.assertEquals("decision", intent.get("goal").getAsString());
-        Assertions.assertEquals("PaymentRequest:PAY-1001", task.get("factId").getAsString());
-
-        Assertions.assertEquals(2, relatedFactIds.size());
-        Assertions.assertEquals("CustomerAccount:CUST-2001", relatedFactIds.get(0).getAsString());
-        Assertions.assertEquals("PaymentMethod:PM-3001", relatedFactIds.get(1).getAsString());
-
-        Assertions.assertEquals(3, select.size());
-        Assertions.assertEquals("decision", select.get(0).getAsString());
-        Assertions.assertEquals("reason", select.get(1).getAsString());
-        Assertions.assertEquals("code", select.get(2).getAsString());
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
+        Assertions.assertTrue(controls.isJsonObject());
+        Assertions.assertFalse(task.has("intent"));
+        Assertions.assertFalse(task.has("factId"));
+        Assertions.assertFalse(task.has("relatedFactIds"));
+        Assertions.assertFalse(task.has("select"));
 
         Assertions.assertEquals("decide_payment_capture", controls.get("intent").getAsString());
         Assertions.assertEquals("true", controls.get("include_reason").getAsString());
@@ -145,7 +135,13 @@ public class TaskFieldGeneratorTest {
 
         Console.log("task.no.constraints", task.toString());
 
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
         Assertions.assertFalse(task.has("constraints"));
+        Assertions.assertFalse(task.has("intent"));
+        Assertions.assertFalse(task.has("factId"));
+        Assertions.assertFalse(task.has("relatedFactIds"));
+        Assertions.assertFalse(task.has("select"));
     }
 
     @Test
@@ -165,10 +161,12 @@ public class TaskFieldGeneratorTest {
 
         Assertions.assertNotNull(controls);
         Assertions.assertEquals(0, controls.size());
-        Assertions.assertTrue(task.has("intent"));
-        Assertions.assertTrue(task.has("factId"));
-        Assertions.assertTrue(task.has("relatedFactIds"));
-        Assertions.assertTrue(task.has("select"));
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
+        Assertions.assertFalse(task.has("intent"));
+        Assertions.assertFalse(task.has("factId"));
+        Assertions.assertFalse(task.has("relatedFactIds"));
+        Assertions.assertFalse(task.has("select"));
     }
 
     @Test
@@ -185,6 +183,8 @@ public class TaskFieldGeneratorTest {
 
         Console.log("task.controls.order", actual);
 
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
         Assertions.assertTrue(actual.indexOf("\"intent\"") < actual.indexOf("\"include_reason\""));
         Assertions.assertTrue(actual.indexOf("\"include_reason\"") < actual.indexOf("\"include_code\""));
     }
@@ -205,6 +205,12 @@ public class TaskFieldGeneratorTest {
         Console.log("task.controls.has.include_reason", String.valueOf(controls.has("include_reason")));
         Console.log("task.controls.include_reason.isJsonNull", String.valueOf(controls.get("include_reason").isJsonNull()));
 
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
+        Assertions.assertFalse(task.has("intent"));
+        Assertions.assertFalse(task.has("factId"));
+        Assertions.assertFalse(task.has("relatedFactIds"));
+        Assertions.assertFalse(task.has("select"));
         Assertions.assertFalse(controls.has("ignored_null_key"));
         Assertions.assertEquals("decide_payment_capture", controls.get("intent").getAsString());
         Assertions.assertTrue(controls.has("include_reason"));
@@ -324,23 +330,6 @@ public class TaskFieldGeneratorTest {
 
     private JsonObject buildExpectedTaskWithControls() {
         JsonObject expected = new JsonObject();
-
-        JsonObject intent = new JsonObject();
-        intent.addProperty("goal", "decision");
-        expected.add("intent", intent);
-
-        expected.addProperty("factId", "PaymentRequest:PAY-1001");
-
-        JsonArray relatedFactIds = new JsonArray();
-        relatedFactIds.add("CustomerAccount:CUST-2001");
-        relatedFactIds.add("PaymentMethod:PM-3001");
-        expected.add("relatedFactIds", relatedFactIds);
-
-        JsonArray select = new JsonArray();
-        select.add("decision");
-        select.add("reason");
-        select.add("code");
-        expected.add("select", select);
 
         JsonObject controls = new JsonObject();
         controls.addProperty("intent", "decide_payment_capture");

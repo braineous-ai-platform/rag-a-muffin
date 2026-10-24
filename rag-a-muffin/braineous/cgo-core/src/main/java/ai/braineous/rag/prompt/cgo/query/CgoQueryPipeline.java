@@ -23,6 +23,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
     private volatile ScorerClient scorerClient;
 
     private final PhaseResultValidator llmResponseValidator;
+    private final MapToJsonResponseConverter mapToJsonResponseConverter;
 
     private boolean inMemoryMode = false;
 
@@ -31,6 +32,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.queryGenService = new QueryGenService();
         this.intelligenceBridge = new IntelligenceBridge();
         this.llmResponseValidator = new QueryResultValidator();
+        this.mapToJsonResponseConverter = new MapToJsonResponseConverter();
     }
 
     public CgoQueryPipeline(PromptBuilder promptBuilder, IntelligenceBridge intelligenceBridge) {
@@ -38,6 +40,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.queryGenService = new QueryGenService();
         this.intelligenceBridge = Objects.requireNonNull(intelligenceBridge, "intelligenceBridge must not be null");
         this.llmResponseValidator = new QueryResultValidator();
+        this.mapToJsonResponseConverter = new MapToJsonResponseConverter();
     }
 
     CgoQueryPipeline(PromptBuilder promptBuilder,
@@ -47,6 +50,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         this.intelligenceBridge = Objects.requireNonNull(intelligenceBridge, "intelligenceBridge must not be null");
         this.llmResponseValidator = llmResponseValidator;
         this.queryGenService = new QueryGenService();
+        this.mapToJsonResponseConverter = new MapToJsonResponseConverter();
     }
 
     public ScorerClient getScorerClient() {
@@ -84,6 +88,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         request.generateRequestId();
         String rawResponse =
                 this.intelligenceBridge.invoke(llmPayload.toString(), "{}");
+        // rawResponse = this.mapToJsonResponseConverter.convert(rawResponse);
 
         LLMResponse llmResponse =
                 this.createLlmResponse(request, llmQuery, rawResponse);

@@ -105,21 +105,10 @@ public final class QueryGenValidator implements PhaseResultValidator {
 
             JsonObject task = root.getAsJsonObject("task");
 
-            if (!task.has("intent") || !task.get("intent").isJsonObject()) {
+            if (!task.has("controls") || !task.get("controls").isJsonObject()) {
                 return error(
-                        "querygen.contract.task.intent_missing_or_invalid",
-                        "Missing or invalid 'task.intent' object",
-                        Collections.singletonMap("task", task.toString())
-                );
-            }
-
-            JsonObject intent = task.getAsJsonObject("intent");
-
-            String goal = requireString(intent, "goal");
-            if (goal == null) {
-                return error(
-                        "querygen.contract.task.intent.goal_missing",
-                        "Missing or invalid 'task.intent.goal'",
+                        "querygen.contract.task.controls_missing_or_invalid",
+                        "Missing or invalid 'task.controls' object",
                         Collections.singletonMap("task", task.toString())
                 );
             }
@@ -170,31 +159,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
                             Collections.singletonMap("relatedFactIds", relatedFactIds.toString())
                     );
                 }
-            }
-
-            if (!root.has("output_template") || !root.get("output_template").isJsonObject()) {
-                return error(
-                        "querygen.contract.output_template_missing_or_invalid",
-                        "Missing or invalid 'output_template' object",
-                        Collections.singletonMap("rawQuery", rawQuery)
-                );
-            }
-
-            JsonObject outputTemplate = root.getAsJsonObject("output_template");
-            if (!outputTemplate.has("result") || !outputTemplate.get("result").isJsonObject()) {
-                return error(
-                        "querygen.contract.output_template.result_missing_or_invalid",
-                        "Missing or invalid 'output_template.result' object",
-                        Collections.singletonMap("output_template", outputTemplate.toString())
-                );
-            }
-
-            if (!root.has("response_contract") || !root.get("response_contract").isJsonObject()) {
-                return error(
-                        "querygen.contract.response_contract_missing_or_invalid",
-                        "Missing or invalid 'response_contract' object",
-                        Collections.singletonMap("rawQuery", rawQuery)
-                );
             }
 
             if (!root.has("llm_instructions") || !root.get("llm_instructions").isJsonObject()) {

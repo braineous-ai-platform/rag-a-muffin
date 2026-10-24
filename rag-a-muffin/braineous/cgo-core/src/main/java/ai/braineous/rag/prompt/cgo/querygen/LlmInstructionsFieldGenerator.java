@@ -1,15 +1,11 @@
 package ai.braineous.rag.prompt.cgo.querygen;
 
-import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
-import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-
-import java.util.List;
 
 public class LlmInstructionsFieldGenerator implements FieldGenerator {
 
@@ -35,7 +31,6 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         JsonArray instructions = new JsonArray();
 
         addExecutionModeInstructions(instructions);
-        addRequestedFieldInstructions(instructions, request);
 
         fieldValue.add("instructions", instructions);
 
@@ -74,58 +69,15 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         // instructions.add("Do not wrap the JSON in markdown fences.");
         // instructions.add("Do not include explanation before or after the JSON.");
 
-        instructions.add("You are an execution engine, not a document reader.");
-        instructions.add("Return only JSON.");
-        instructions.add("Use the provided output_template as the final answer format.");
-        instructions.add("Execute this prompt using only the provided context and task.");
-        instructions.add("Do not describe, summarize, explain, or analyze this request.");
-        instructions.add("Use context.nodes as the system state.");
-        instructions.add("Use task.factId as the primary fact.");
-        instructions.add("Use each task.relatedFactId as a system fact related directly to the primary fact identified by task.factId.");
-        instructions.add("Do not infer relationships between related facts unless explicitly provided by context.");
-        instructions.add("Use task.controls only to understand the intent of the task.");
-        instructions.add("Do not treat task.controls as additional facts.");
-        instructions.add("Do not infer missing facts from task.controls.");
-        instructions.add("Do not recompute task.controls from context.");
-        instructions.add("Return compact JSON on a single line.");
-        instructions.add("Do not include spaces, tabs, or newlines outside JSON syntax.");
-        instructions.add("Return exactly the output_template shape.");
-        instructions.add("Do not add, remove, or rename any fields.");
-        instructions.add("Return exactly one JSON object.");
-        instructions.add("Do not wrap the JSON in markdown fences.");
-        instructions.add("Do not include explanation before or after the JSON.");
-    }
-
-    private void addRequestedFieldInstructions(JsonArray instructions, QueryRequest request) {
-        List<String> requestedFields = getRequestedFields(request);
-
-        if (requestedFields == null) {
-            return;
-        }
-
-        int i = 0;
-        while (i < requestedFields.size()) {
-            String fieldName = requestedFields.get(i);
-
-            if (fieldName != null) {
-                instructions.add("Set result." + fieldName + " as a string value derived from llm_query execution.");
-            }
-
-            i++;
-        }
-    }
-
-    private List<String> getRequestedFields(QueryRequest request) {
-        if (request == null) {
-            return null;
-        }
-
-        QueryTask queryTask = request.getTask();
-        if (!(queryTask instanceof ValidateTask)) {
-            return null;
-        }
-
-        ValidateTask validateTask = (ValidateTask) queryTask;
-        return validateTask.getRequestedFields();
+        instructions.add("Execute task.controls.method.");
+        instructions.add("Resolve task.controls.parameters from context.nodes.");
+        instructions.add("Use task.controls.expression with the resolved parameters.");
+        instructions.add("Use task.controls.spec as the definition of the expression.");
+        instructions.add("Place the computed value in the field named by task.controls.result.");
+        instructions.add("Return exactly one field named result.");
+        instructions.add("Return a field called result at any cost.");
+        instructions.add("Use result=value.");
+        instructions.add("Return the value as a string.");
+        instructions.add("No other fields or text.");
     }
 }

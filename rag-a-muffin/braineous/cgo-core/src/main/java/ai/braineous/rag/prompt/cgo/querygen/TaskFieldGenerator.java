@@ -59,10 +59,8 @@ public class TaskFieldGenerator implements FieldGenerator {
 
         ValidateTask task = (ValidateTask) queryTask;
 
-        JsonObject fieldValue = task.toJson();
-
-        JsonObject controlsObject = buildControlsObject(task.getControls());
-        fieldValue.add("controls", controlsObject);
+        JsonObject fieldValue = new JsonObject();
+        fieldValue.add("controls", buildControlsObject(task.getControls()));
 
         return fieldValue;
     }

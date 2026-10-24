@@ -48,30 +48,48 @@ public class LlmInstructionsFieldGeneratorTest {
         JsonArray instructions = fieldValue.getAsJsonArray("instructions");
 
         Console.log("llm.instructions.generated", instructions.toString());
+        int instructionIndex = 0;
+        while (instructionIndex < instructions.size()) {
+            Console.log(
+                    "llm.instruction." + instructionIndex,
+                    instructions.get(instructionIndex).getAsString()
+            );
+            instructionIndex = instructionIndex + 1;
+        }
 
         Assertions.assertNotNull(result);
         Assertions.assertNotNull(fieldValue);
+        Assertions.assertTrue(fieldValue.has("instructions"));
         Assertions.assertNotNull(instructions);
+        Assertions.assertEquals(10, instructions.size());
 
-        assertInstructionExists(instructions, "You are an execution engine, not a document reader.");
-        assertInstructionExists(instructions, "Return only JSON.");
-        assertInstructionExists(instructions, "Use the provided output_template as the final answer format.");
-        assertInstructionExists(instructions, "Execute this prompt using only the provided context and task.");
-        assertInstructionExists(instructions, "Do not describe, summarize, explain, or analyze this request.");
-        assertInstructionExists(instructions, "Use context.nodes as the system state.");
-        assertInstructionExists(instructions, "Use task.factId as the primary fact.");
-        assertInstructionExists(instructions, "Use each task.relatedFactId as a system fact related directly to the primary fact identified by task.factId.");
-        assertInstructionExists(instructions, "Use task.controls only to understand the intent of the task.");
-        assertInstructionExists(instructions, "Do not treat task.controls as additional facts.");
-        assertInstructionExists(instructions, "Do not infer missing facts from task.controls.");
-        assertInstructionExists(instructions, "Do not recompute task.controls from context.");
-        assertInstructionExists(instructions, "Return compact JSON on a single line.");
-        assertInstructionExists(instructions, "Do not include spaces, tabs, or newlines outside JSON syntax.");
-        assertInstructionExists(instructions, "Return exactly the output_template shape.");
-        assertInstructionExists(instructions, "Do not add, remove, or rename any fields.");
-        assertInstructionExists(instructions, "Return exactly one JSON object.");
-        assertInstructionExists(instructions, "Do not wrap the JSON in markdown fences.");
-        assertInstructionExists(instructions, "Do not include explanation before or after the JSON.");
+        Assertions.assertEquals("Execute task.controls.method.", instructions.get(0).getAsString());
+        Assertions.assertEquals("Resolve task.controls.parameters from context.nodes.", instructions.get(1).getAsString());
+        Assertions.assertEquals("Use task.controls.expression with the resolved parameters.", instructions.get(2).getAsString());
+        Assertions.assertEquals("Use task.controls.spec as the definition of the expression.", instructions.get(3).getAsString());
+        Assertions.assertEquals("Place the computed value in the field named by task.controls.result.", instructions.get(4).getAsString());
+        Assertions.assertEquals("Return exactly one field named result.", instructions.get(5).getAsString());
+        Assertions.assertEquals("Return a field called result at any cost.", instructions.get(6).getAsString());
+        Assertions.assertEquals("Use result=value.", instructions.get(7).getAsString());
+        Assertions.assertEquals("Return the value as a string.", instructions.get(8).getAsString());
+        Assertions.assertEquals("No other fields or text.", instructions.get(9).getAsString());
+
+        assertInstructionDoesNotExist(instructions, "You are an execution engine, not a document reader.");
+        assertInstructionDoesNotExist(instructions, "Return only key=value pairs.");
+        assertInstructionDoesNotExist(instructions, "Return exactly one result=value pair.");
+        assertInstructionDoesNotExist(instructions, "The result key is mandatory.");
+        assertInstructionDoesNotExist(instructions, "The final response must contain a field named result.");
+        assertInstructionDoesNotExist(instructions, "The task.controls object defines a cognitive method.");
+        assertInstructionDoesNotExist(instructions, "Use task.controls.method as the method name.");
+        assertInstructionDoesNotExist(instructions, "Use task.controls.spec as the definition of the expression and its result.");
+        assertInstructionDoesNotExist(instructions, "Use task.controls.result as the name of the output field.");
+        assertInstructionDoesNotExist(instructions, "The output field named result contains the value produced by the expression.");
+        assertInstructionDoesNotExist(instructions, "The reason key is optional.");
+        assertInstructionDoesNotExist(instructions, "Return at most one reason=value pair.");
+        assertInstructionDoesNotExist(instructions, "Use the requested SELECT fields as keys.");
+        assertInstructionDoesNotExist(instructions, "Set result.decision as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.reason as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.code as a string value derived from llm_query execution.");
 
         Assertions.assertTrue(result.getValidationResult().isOk());
         Assertions.assertEquals("field.llm_instructions.ok", result.getValidationResult().getCode());
@@ -99,9 +117,9 @@ public class LlmInstructionsFieldGeneratorTest {
 
         Console.log("llm.instructions.with.fields", instructions.toString());
 
-        assertInstructionExists(instructions, "Set result.decision as a string value derived from llm_query execution.");
-        assertInstructionExists(instructions, "Set result.reason as a string value derived from llm_query execution.");
-        assertInstructionExists(instructions, "Set result.code as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.decision as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.reason as a string value derived from llm_query execution.");
+        assertInstructionDoesNotExist(instructions, "Set result.code as a string value derived from llm_query execution.");
 
         Assertions.assertTrue(result.getValidationResult().isOk());
     }

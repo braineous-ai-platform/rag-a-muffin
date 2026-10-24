@@ -1,14 +1,10 @@
 package ai.braineous.rag.prompt.cgo.querygen;
 
-import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
-import ai.braineous.rag.prompt.cgo.query.QueryTask;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldDefinition;
 import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import com.google.gson.JsonObject;
-
-import java.util.List;
 
 public class OutputTemplateFieldGenerator implements FieldGenerator {
 
@@ -33,9 +29,7 @@ public class OutputTemplateFieldGenerator implements FieldGenerator {
         JsonObject fieldValue = new JsonObject();
         JsonObject result = new JsonObject();
 
-        List<String> selectedFields = getSelectedFields(request);
-
-        addSelectedFields(result, selectedFields);
+        result.addProperty("result", "");
 
         fieldValue.add("result", result);
 
@@ -50,38 +44,5 @@ public class OutputTemplateFieldGenerator implements FieldGenerator {
                 );
 
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
-    }
-
-    private List<String> getSelectedFields(QueryRequest request) {
-        if (request == null) {
-            return null;
-        }
-
-        QueryTask queryTask = request.getTask();
-
-        if (!(queryTask instanceof ValidateTask)) {
-            return null;
-        }
-
-        ValidateTask validateTask = (ValidateTask) queryTask;
-
-        return validateTask.getRequestedFields();
-    }
-
-    private void addSelectedFields(JsonObject result, List<String> selectedFields) {
-        if (selectedFields == null) {
-            return;
-        }
-
-        int i = 0;
-        while (i < selectedFields.size()) {
-            String fieldName = selectedFields.get(i);
-
-            if (fieldName != null) {
-                result.addProperty(fieldName, "");
-            }
-
-            i++;
-        }
     }
 }
