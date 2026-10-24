@@ -41,43 +41,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
 
             JsonObject root = rootElement.getAsJsonObject();
 
-            if (!root.has("meta") || !root.get("meta").isJsonObject()) {
-                return error(
-                        "querygen.contract.meta_missing_or_invalid",
-                        "Missing or invalid 'meta' object",
-                        Collections.singletonMap("rawQuery", rawQuery)
-                );
-            }
-
-            JsonObject meta = root.getAsJsonObject("meta");
-
-            String version = requireString(meta, "version");
-            if (version == null) {
-                return error(
-                        "querygen.contract.meta.version_missing",
-                        "Missing or invalid 'meta.version'",
-                        Collections.singletonMap("meta", meta.toString())
-                );
-            }
-
-            String queryKind = requireString(meta, "queryKind");
-            if (queryKind == null) {
-                return error(
-                        "querygen.contract.meta.queryKind_missing",
-                        "Missing or invalid 'meta.queryKind'",
-                        Collections.singletonMap("meta", meta.toString())
-                );
-            }
-
-            String description = requireString(meta, "description");
-            if (description == null) {
-                return error(
-                        "querygen.contract.meta.description_missing",
-                        "Missing or invalid 'meta.description'",
-                        Collections.singletonMap("meta", meta.toString())
-                );
-            }
-
             if (!root.has("context") || !root.get("context").isJsonObject()) {
                 return error(
                         "querygen.contract.context_missing_or_invalid",
@@ -230,8 +193,6 @@ public final class QueryGenValidator implements PhaseResultValidator {
             }
 
             Map<String, Object> metadata = new HashMap<String, Object>();
-            metadata.put("version", version);
-            metadata.put("queryKind", queryKind);
 
             return ValidationResult.createInternal(
                     true,

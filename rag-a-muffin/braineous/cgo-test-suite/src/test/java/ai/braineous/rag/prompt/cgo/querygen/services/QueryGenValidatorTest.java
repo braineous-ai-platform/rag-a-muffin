@@ -24,8 +24,10 @@ public class QueryGenValidatorTest {
         Console.log("querygen.validator.valid.payload", payload.toString());
         Console.log("querygen.validator.valid.status", String.valueOf(result.isOk()));
         Console.log("querygen.validator.valid.code", result.getCode());
+        Console.log("querygen.validator.valid.stage", result.getStage());
         Console.log("querygen.validator.valid.result", String.valueOf(result));
 
+        assertFalse(payload.has("meta"));
         assertNotNull(result);
         assertTrue(result.isOk());
         assertEquals("querygen.contract.ok", result.getCode());
@@ -33,8 +35,8 @@ public class QueryGenValidatorTest {
         assertEquals("querygen_contract_validation", result.getStage());
         assertNull(result.getAnchorId());
         assertNotNull(result.getMetadata());
-        assertEquals("v1", result.getMetadata().get("version"));
-        assertEquals("validate_flight_airports", result.getMetadata().get("queryKind"));
+        assertNull(result.getMetadata().get("version"));
+        assertNull(result.getMetadata().get("queryKind"));
     }
 
     @Test
@@ -68,38 +70,47 @@ public class QueryGenValidatorTest {
     }
 
     @Test
-    public void validate_shouldReturnError_whenMetaIsMissing() {
+    public void validate_shouldReturnOk_whenMetaIsMissing() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
         payload.remove("meta");
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.metaMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.metaMissing.result____", String.valueOf(result));
+        Console.log("querygen.validator.metaMissing.payload", payload.toString());
+        Console.log("querygen.validator.metaMissing.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.metaMissing.code", result.getCode());
+        Console.log("querygen.validator.metaMissing.stage", result.getStage());
+        Console.log("querygen.validator.metaMissing.result", String.valueOf(result));
 
+        assertFalse(payload.has("meta"));
         assertNotNull(result);
-        assertFalse(result.isOk());
-        assertEquals("querygen.contract.meta_missing_or_invalid", result.getCode());
-        assertEquals("Missing or invalid 'meta' object", result.getMessage());
+        assertTrue(result.isOk());
+        assertEquals("querygen.contract.ok", result.getCode());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
     @Test
-    public void validate_shouldReturnError_whenMetaQueryKindIsMissing() {
+    public void validate_shouldReturnOk_whenMetaQueryKindIsMissing() {
         QueryGenValidator validator = new QueryGenValidator();
         JsonObject payload = buildValidPayload();
-        payload.getAsJsonObject("meta").remove("queryKind");
+        JsonObject meta = new JsonObject();
+        meta.addProperty("version", "v1");
+        meta.addProperty("description", "Validate departure and arrival airport codes");
+        payload.add("meta", meta);
 
         ValidationResult result = validator.validate(payload.toString());
 
-        Console.log("____queryGenValidator.metaQueryKindMissing.payload____", payload.toString());
-        Console.log("____queryGenValidator.metaQueryKindMissing.result____", String.valueOf(result));
+        Console.log("querygen.validator.metaQueryKindMissing.payload", payload.toString());
+        Console.log("querygen.validator.metaQueryKindMissing.status", String.valueOf(result.isOk()));
+        Console.log("querygen.validator.metaQueryKindMissing.code", result.getCode());
+        Console.log("querygen.validator.metaQueryKindMissing.stage", result.getStage());
+        Console.log("querygen.validator.metaQueryKindMissing.result", String.valueOf(result));
 
+        assertFalse(payload.getAsJsonObject("meta").has("queryKind"));
         assertNotNull(result);
-        assertFalse(result.isOk());
-        assertEquals("querygen.contract.meta.queryKind_missing", result.getCode());
-        assertEquals("Missing or invalid 'meta.queryKind'", result.getMessage());
+        assertTrue(result.isOk());
+        assertEquals("querygen.contract.ok", result.getCode());
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
@@ -276,12 +287,6 @@ public class QueryGenValidatorTest {
 
     private JsonObject buildValidPayload() {
         JsonObject root = new JsonObject();
-
-        JsonObject meta = new JsonObject();
-        meta.addProperty("version", "v1");
-        meta.addProperty("queryKind", "validate_flight_airports");
-        meta.addProperty("description", "Validate departure and arrival airport codes");
-        root.add("meta", meta);
 
         JsonObject context = new JsonObject();
         JsonObject nodes = new JsonObject();

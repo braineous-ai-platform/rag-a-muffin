@@ -45,13 +45,16 @@ public class QueryGenServiceTest {
         JsonObject payload = output.getPayload();
 
         Console.log("querygen.payload", payload.toString());
+        Console.log("querygen.payload.keys", payload.keySet().toString());
+        Console.log("querygen.payload.size", String.valueOf(payload.size()));
 
+        Assertions.assertEquals(5, payload.size());
         Assertions.assertTrue(payload.has("llm_instructions"));
-        Assertions.assertTrue(payload.has("meta"));
         Assertions.assertTrue(payload.has("task"));
         Assertions.assertTrue(payload.has("context"));
         Assertions.assertTrue(payload.has("llm_trace"));
         Assertions.assertTrue(payload.has("llm_trace_instructions"));
+        Assertions.assertFalse(payload.has("meta"));
         Assertions.assertFalse(payload.has("output_template"));
         Assertions.assertFalse(payload.has("response_contract"));
     }
@@ -68,8 +71,8 @@ public class QueryGenServiceTest {
 
         Console.log("querygen.payload.order", serialized);
 
-        Assertions.assertTrue(serialized.indexOf("\"llm_instructions\"") < serialized.indexOf("\"meta\""));
-        Assertions.assertTrue(serialized.indexOf("\"meta\"") < serialized.indexOf("\"task\""));
+        Assertions.assertFalse(payload.has("meta"));
+        Assertions.assertTrue(serialized.indexOf("\"llm_instructions\"") < serialized.indexOf("\"task\""));
         Assertions.assertTrue(serialized.indexOf("\"task\"") < serialized.indexOf("\"context\""));
         Assertions.assertTrue(serialized.indexOf("\"context\"") < serialized.indexOf("\"llm_trace\""));
         Assertions.assertTrue(serialized.indexOf("\"llm_trace\"") < serialized.indexOf("\"llm_trace_instructions\""));
@@ -96,15 +99,16 @@ public class QueryGenServiceTest {
         Assertions.assertFalse(payload.has("output_template"));
         Assertions.assertFalse(payload.has("response_contract"));
 
-        Assertions.assertEquals("decision", task.getAsJsonObject("intent").get("goal").getAsString());
-        Assertions.assertEquals("PaymentRequest:PAY-1001", task.get("factId").getAsString());
-
-        JsonArray select = task.getAsJsonArray("select");
-        Assertions.assertEquals("decision", select.get(0).getAsString());
-        Assertions.assertEquals("reason", select.get(1).getAsString());
-        Assertions.assertEquals("code", select.get(2).getAsString());
+        Assertions.assertTrue(task.isJsonObject());
+        Assertions.assertEquals(1, task.size());
+        Assertions.assertTrue(task.has("controls"));
+        Assertions.assertFalse(task.has("intent"));
+        Assertions.assertFalse(task.has("factId"));
+        Assertions.assertFalse(task.has("relatedFactIds"));
+        Assertions.assertFalse(task.has("select"));
 
         JsonObject controls = task.getAsJsonObject("controls");
+        Assertions.assertTrue(controls.isJsonObject());
         Assertions.assertEquals("decide_payment_capture", controls.get("intent").getAsString());
         Assertions.assertEquals("true", controls.get("include_reason").getAsString());
         Assertions.assertEquals("true", controls.get("include_code").getAsString());
