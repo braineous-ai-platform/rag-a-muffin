@@ -14,7 +14,7 @@ public class QueryResultValidatorTest {
 
         ValidationResult result =
                 validator.validate(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        "{\"result\":\"ELIGIBLE\"}"
                 );
 
         Console.log("queryresult.valid", String.valueOf(result));
@@ -26,7 +26,7 @@ public class QueryResultValidatorTest {
         Assertions.assertEquals("llm_response_validation", result.getStage());
         Assertions.assertNull(result.getAnchorId());
         Assertions.assertNotNull(result.getMetadata());
-        Assertions.assertEquals("[decision, reason, code]", result.getMetadata().get("resultFields"));
+        Assertions.assertEquals("ELIGIBLE", result.getMetadata().get("result"));
     }
 
     @Test
@@ -91,7 +91,7 @@ public class QueryResultValidatorTest {
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
         Assertions.assertEquals("queryresult.contract.result_missing", result.getCode());
-        Assertions.assertEquals("Missing 'result' object", result.getMessage());
+        Assertions.assertEquals("Missing 'result'", result.getMessage());
     }
 
     @Test
@@ -100,14 +100,17 @@ public class QueryResultValidatorTest {
                 new QueryResultValidator();
 
         ValidationResult result =
-                validator.validate("{\"result\":\"CAPTURE\"}");
+                validator.validate("{\"result\":\"ELIGIBLE\",\"other\":\"x\"}");
 
-        Console.log("queryresult.result.invalid", String.valueOf(result));
+        Console.log("queryresult.unexpected.fields", String.valueOf(result));
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
-        Assertions.assertEquals("queryresult.contract.result_invalid", result.getCode());
-        Assertions.assertEquals("'result' must be a JSON object", result.getMessage());
+        Assertions.assertEquals("queryresult.contract.unexpected_fields", result.getCode());
+        Assertions.assertEquals(
+                "Root must contain exactly one field named 'result'",
+                result.getMessage()
+        );
     }
 
     @Test
@@ -116,14 +119,14 @@ public class QueryResultValidatorTest {
                 new QueryResultValidator();
 
         ValidationResult result =
-                validator.validate("{\"result\":{}}");
+                validator.validate("{\"result\":\"\"}");
 
         Console.log("queryresult.result.empty", String.valueOf(result));
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
         Assertions.assertEquals("queryresult.contract.result_empty", result.getCode());
-        Assertions.assertEquals("'result' object is empty", result.getMessage());
+        Assertions.assertEquals("'result' is empty", result.getMessage());
     }
 
     @Test
@@ -132,16 +135,14 @@ public class QueryResultValidatorTest {
                 new QueryResultValidator();
 
         ValidationResult result =
-                validator.validate(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":null,\"code\":\"00\"}}"
-                );
+                validator.validate("{\"result\":null}");
 
-        Console.log("queryresult.field.null", String.valueOf(result));
+        Console.log("queryresult.result.null", String.valueOf(result));
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
-        Assertions.assertEquals("queryresult.contract.result.field_invalid", result.getCode());
-        Assertions.assertEquals("Result field must be a string: reason", result.getMessage());
+        Assertions.assertEquals("queryresult.contract.result_invalid", result.getCode());
+        Assertions.assertEquals("'result' must be a JSON string", result.getMessage());
     }
 
     @Test
@@ -151,15 +152,15 @@ public class QueryResultValidatorTest {
 
         ValidationResult result =
                 validator.validate(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":{\"value\":\"LOW\"},\"code\":\"00\"}}"
+                        "{\"result\":{\"decision\":\"CAPTURE\"}}"
                 );
 
-        Console.log("queryresult.field.object", String.valueOf(result));
+        Console.log("queryresult.result.object", String.valueOf(result));
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
-        Assertions.assertEquals("queryresult.contract.result.field_invalid", result.getCode());
-        Assertions.assertEquals("Result field must be a string: reason", result.getMessage());
+        Assertions.assertEquals("queryresult.contract.result_invalid", result.getCode());
+        Assertions.assertEquals("'result' must be a JSON string", result.getMessage());
     }
 
     @Test
@@ -168,16 +169,14 @@ public class QueryResultValidatorTest {
                 new QueryResultValidator();
 
         ValidationResult result =
-                validator.validate(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":true,\"code\":\"00\"}}"
-                );
+                validator.validate("{\"result\":true}");
 
-        Console.log("queryresult.field.boolean", String.valueOf(result));
+        Console.log("queryresult.result.boolean", String.valueOf(result));
 
         Assertions.assertNotNull(result);
         Assertions.assertFalse(result.isOk());
-        Assertions.assertEquals("queryresult.contract.result.field_invalid", result.getCode());
-        Assertions.assertEquals("Result field must be a string: reason", result.getMessage());
+        Assertions.assertEquals("queryresult.contract.result_invalid", result.getCode());
+        Assertions.assertEquals("'result' must be a JSON string", result.getMessage());
     }
 
     @Test
@@ -186,15 +185,14 @@ public class QueryResultValidatorTest {
                 new QueryResultValidator();
 
         ValidationResult result =
-                validator.validate(
-                        "{\"result\":{\"decision\":\"\",\"reason\":\"\",\"code\":\"\"}}"
-                );
+                validator.validate("{\"result\":1}");
 
-        Console.log("queryresult.empty.strings.valid", String.valueOf(result));
+        Console.log("queryresult.result.number", String.valueOf(result));
 
         Assertions.assertNotNull(result);
-        Assertions.assertTrue(result.isOk());
-        Assertions.assertEquals("queryresult.contract.ok", result.getCode());
+        Assertions.assertFalse(result.isOk());
+        Assertions.assertEquals("queryresult.contract.result_invalid", result.getCode());
+        Assertions.assertEquals("'result' must be a JSON string", result.getMessage());
     }
 
     @Test

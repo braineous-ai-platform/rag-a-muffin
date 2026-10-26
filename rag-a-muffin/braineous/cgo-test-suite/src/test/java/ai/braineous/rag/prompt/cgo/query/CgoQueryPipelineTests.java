@@ -30,7 +30,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        "{\"result\":\"ELIGIBLE\"}"
                 );
 
         CgoQueryPipeline pipeline =
@@ -51,9 +51,15 @@ public class CgoQueryPipelineTests {
         String promptText =
                 intelligenceBridge.lastPrompt.get("prompt").getAsString();
 
-        Assertions.assertTrue(promptText.contains("You are an execution engine"));
-        Assertions.assertTrue(promptText.contains("INPUT:"));
-        Assertions.assertFalse(promptText.startsWith("{\"llm_instructions\""));
+        JsonObject parsedPrompt =
+                JsonParser.parseString(promptText).getAsJsonObject();
+
+        JsonObject llmQuery =
+                execution.getLlmResponse()
+                        .getLlmRequest()
+                        .getLlmQuery();
+
+        Assertions.assertEquals(llmQuery, parsedPrompt);
 
         Assertions.assertNotNull(execution);
         Assertions.assertSame(request, execution.getRequest());
@@ -62,7 +68,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertEquals("ok", execution.getStage());
 
         Assertions.assertEquals(
-                "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}",
+                "{\"result\":\"ELIGIBLE\"}",
                 execution.getRawResponse()
         );
 
@@ -186,7 +192,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        "{\"result\":\"ELIGIBLE\"}"
                 );
 
         CgoQueryPipeline pipeline =
@@ -246,7 +252,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        "{\"result\":\"ELIGIBLE\"}"
                 );
 
         CgoQueryPipeline pipeline =
@@ -359,7 +365,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":{\"decision\":\"CAPTURE\",\"reason\":\"RISK_LEVEL_LOW\",\"code\":\"00\"}}"
+                        "{\"result\":\"ELIGIBLE\"}"
                 );
 
         CgoQueryPipeline pipeline =
@@ -382,12 +388,10 @@ public class CgoQueryPipelineTests {
                 buildRequest();
 
         String arcResponse =
-                "result.decision: allow_capture\n"
-                        + "result.reason: primary_payment_request\n"
-                        + "result.code: 200";
+                "result=ELIGIBLE";
 
         String expectedJson =
-                "{\"result\":{\"decision\":\"allow_capture\",\"reason\":\"primary_payment_request\",\"code\":\"200\"}}";
+                "{\"result\":\"ELIGIBLE\"}";
 
         AtomicInteger validationCount =
                 new AtomicInteger(0);

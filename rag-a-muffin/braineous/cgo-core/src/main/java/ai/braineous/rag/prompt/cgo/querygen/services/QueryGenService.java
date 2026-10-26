@@ -47,9 +47,7 @@ public class QueryGenService {
 
         addField(llmQuery, "llm_instructions", this.llmInstructionsFieldGenerator, queryRequest); // MUST be first
         addField(llmQuery, "task", this.taskFieldGenerator, queryRequest);
-        addField(llmQuery, "context", this.contextFieldGenerator, queryRequest); // MUST be late
-        addField(llmQuery, "llm_trace", this.llmTraceFieldGenerator, queryRequest);
-        addField(llmQuery, "llm_trace_instructions", this.llmTraceInstructionsFieldGenerator, queryRequest);
+        addField(llmQuery, "context", this.contextFieldGenerator, queryRequest);
 
         ValidationResult validationResult = validateQueryOutput(llmQuery);
 

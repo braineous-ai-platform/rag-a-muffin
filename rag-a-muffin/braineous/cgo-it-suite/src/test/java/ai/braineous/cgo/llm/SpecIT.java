@@ -12,25 +12,34 @@ import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenService;
 import ai.braineous.rag.prompt.observe.Console;
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Test;
 
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class SpecIT {
 
     @Test
     public void test_2() throws Exception {
 
+        JsonObject reference =
+                this.loadV14Query();
+
         QueryRequest<ValidateTask> request =
-                this.buildPayDecisionRequest();
+                this.buildPayV14Request(reference);
 
         QueryGenService queryGenService =
                 new QueryGenService();
@@ -52,23 +61,39 @@ public class SpecIT {
                         .get("prompt")
                         .getAsString();
 
-        String expected =
-                this.readClasspathResource("prompt_spec/v1.txt");
+        JsonObject parsedPrompt =
+                JsonParser.parseString(actual).getAsJsonObject();
 
-        String actualInstructions =
-                this.extractInstructionsBeforeInput(actual);
+        Console.log("spec.v14.actual.prompt", actual);
+        Console.log("spec.v14.reference", reference.toString());
 
-        String expectedInstructions =
-                this.extractInstructionsBeforeInput(expected);
+        assertEquals(3, parsedPrompt.size());
+        assertTrue(parsedPrompt.has("llm_instructions"));
+        assertTrue(parsedPrompt.has("task"));
+        assertTrue(parsedPrompt.has("context"));
 
-        Console.log("spec.v1.actual.instructions", actualInstructions);
-        Console.log("spec.v1.expected.instructions", expectedInstructions);
-        Console.log(
-                "spec.v1.instructions.matches",
-                Boolean.valueOf(expectedInstructions.equals(actualInstructions))
+        JsonArray actualInstructions =
+                parsedPrompt.getAsJsonObject("llm_instructions")
+                        .getAsJsonArray("instructions");
+
+        JsonArray expectedInstructions =
+                reference.getAsJsonObject("llm_instructions")
+                        .getAsJsonArray("instructions");
+
+        assertEquals(12, actualInstructions.size());
+        assertEquals(expectedInstructions, actualInstructions);
+
+        assertEquals(
+                reference.getAsJsonObject("task").getAsJsonObject("controls"),
+                parsedPrompt.getAsJsonObject("task").getAsJsonObject("controls")
         );
 
-        assertEquals(expectedInstructions, actualInstructions);
+        assertEquals(
+                reference.getAsJsonObject("context").getAsJsonObject("nodes"),
+                parsedPrompt.getAsJsonObject("context").getAsJsonObject("nodes")
+        );
+
+        assertEquals(reference, parsedPrompt);
     }
 
     private QueryRequest<ValidateTask> buildPayDecisionRequest() {
@@ -149,6 +174,88 @@ public class SpecIT {
         nodes.put("PaymentMethod:PM-3001", paymentMethod);
         nodes.put("RiskProfile:RISK-4001", riskProfile);
         nodes.put("MerchantPolicy:POL-5001", merchantPolicy);
+
+        GraphContext context =
+                new GraphContext(nodes);
+
+        return new QueryRequest<ValidateTask>(
+                meta,
+                context,
+                task,
+                factId,
+                null
+        );
+    }
+
+    private JsonObject loadV14Query() throws Exception {
+        String raw =
+                this.readClasspathResource(
+                        "ai/braineous/rag/prompt/cgo/prompt/v14-query.json"
+                );
+
+        return JsonParser.parseString(raw).getAsJsonObject();
+    }
+
+    private QueryRequest<ValidateTask> buildPayV14Request(JsonObject reference) {
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
+
+        JsonObject controlsJson =
+                reference.getAsJsonObject("task")
+                        .getAsJsonObject("controls");
+
+        List<Control> controls =
+                new ArrayList<Control>();
+
+        for (Map.Entry<String, JsonElement> entry : controlsJson.entrySet()) {
+            String value = null;
+
+            if (entry.getValue() != null && !entry.getValue().isJsonNull()) {
+                value = entry.getValue().getAsString();
+            }
+
+            controls.add(new Control(entry.getKey(), value));
+        }
+
+        JsonObject nodesJson =
+                reference.getAsJsonObject("context")
+                        .getAsJsonObject("nodes");
+
+        Map<String, Node> nodes =
+                new HashMap<String, Node>();
+
+        List<String> relatedFactIds =
+                new ArrayList<String>();
+
+        String factId = null;
+
+        for (Map.Entry<String, JsonElement> entry : nodesJson.entrySet()) {
+            Node node =
+                    Node.fromJson(entry.getValue().getAsJsonObject());
+
+            nodes.put(entry.getKey(), node);
+
+            if (entry.getKey() != null
+                    && entry.getKey().indexOf("PaymentRequest:") == 0) {
+                factId = entry.getKey();
+            } else {
+                relatedFactIds.add(entry.getKey());
+            }
+        }
+
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        factId,
+                        Arrays.asList(),
+                        relatedFactIds
+                );
+
+        task.setControls(controls);
 
         GraphContext context =
                 new GraphContext(nodes);

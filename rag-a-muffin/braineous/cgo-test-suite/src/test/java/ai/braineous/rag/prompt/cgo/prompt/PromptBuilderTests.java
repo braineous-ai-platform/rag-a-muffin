@@ -15,6 +15,9 @@ import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
@@ -229,7 +232,7 @@ public class PromptBuilderTests {
                 new PromptBuilder();
 
         JsonObject llmQuery =
-                buildExecutionQuery();
+                loadV14Query();
 
         PromptRequestOutput output =
                 builder.generateExecutionPrompt(llmQuery);
@@ -245,21 +248,12 @@ public class PromptBuilderTests {
         Assertions.assertNotNull(output);
         Assertions.assertNotNull(result);
 
-        Assertions.assertTrue(prompt.contains(
-                "You are an execution engine, not a document reader."
-        ));
+        Assertions.assertEquals(llmQuery.toString(), prompt);
 
-        Assertions.assertTrue(prompt.contains(
-                "Return only JSON."
-        ));
+        JsonObject parsedPrompt =
+                JsonParser.parseString(prompt).getAsJsonObject();
 
-        Assertions.assertTrue(prompt.contains("INPUT:"));
-
-        Assertions.assertTrue(prompt.contains("\"task\""));
-        Assertions.assertTrue(prompt.contains("\"context\""));
-        Assertions.assertTrue(prompt.contains("\"output_template\""));
-
-        Assertions.assertFalse(prompt.contains("\"llm_instructions\""));
+        Assertions.assertEquals(llmQuery, parsedPrompt);
 
         Assertions.assertNotNull(output.getValidationResult());
         Assertions.assertTrue(output.getValidationResult().isOk());
@@ -284,11 +278,7 @@ public class PromptBuilderTests {
 
         Console.log("execution.prompt.empty", prompt);
 
-        Assertions.assertTrue(prompt.contains("INPUT:"));
-        Assertions.assertFalse(prompt.contains("\"task\""));
-        Assertions.assertFalse(prompt.contains("\"context\""));
-        Assertions.assertFalse(prompt.contains("\"output_template\""));
-
+        Assertions.assertEquals("{}", prompt);
         Assertions.assertTrue(output.getValidationResult().isOk());
     }
 
@@ -298,7 +288,7 @@ public class PromptBuilderTests {
                 new PromptBuilder();
 
         JsonObject llmQuery =
-                buildExecutionQuery();
+                loadV14Query();
 
         PromptRequestOutput output =
                 builder.generateExecutionPrompt(llmQuery);
@@ -310,18 +300,19 @@ public class PromptBuilderTests {
 
         Console.log("execution.prompt.order", prompt);
 
-        int instructionsIndex =
-                prompt.indexOf("You are an execution engine");
+        Assertions.assertEquals(llmQuery.toString(), prompt);
 
-        int inputIndex =
-                prompt.indexOf("INPUT:");
+        JsonObject parsedPrompt =
+                JsonParser.parseString(prompt).getAsJsonObject();
 
-        int taskIndex =
-                prompt.indexOf("\"task\"");
-
-        Assertions.assertTrue(instructionsIndex >= 0);
-        Assertions.assertTrue(inputIndex > instructionsIndex);
-        Assertions.assertTrue(taskIndex > inputIndex);
+        Assertions.assertEquals(llmQuery, parsedPrompt);
+        Assertions.assertEquals(3, parsedPrompt.size());
+        Assertions.assertTrue(
+                prompt.indexOf("\"llm_instructions\"") < prompt.indexOf("\"task\"")
+        );
+        Assertions.assertTrue(
+                prompt.indexOf("\"task\"") < prompt.indexOf("\"context\"")
+        );
     }
 
     private QueryRequest<ValidateTask> buildRequest() {
@@ -366,47 +357,16 @@ public class PromptBuilderTests {
         );
     }
 
-    private JsonObject buildExecutionQuery() {
+    private JsonObject loadV14Query() {
+        InputStream stream =
+                PromptBuilderTests.class.getResourceAsStream(
+                        "/ai/braineous/rag/prompt/cgo/prompt/v14-query.json"
+                );
 
-        JsonObject root =
-                new JsonObject();
+        Assertions.assertNotNull(stream);
 
-        JsonObject llmInstructions =
-                new JsonObject();
-
-        JsonArray instructions =
-                new JsonArray();
-
-        instructions.add("You are an execution engine, not a document reader.");
-        instructions.add("Return only JSON.");
-
-        llmInstructions.add("instructions", instructions);
-
-        JsonObject task =
-                new JsonObject();
-
-        task.addProperty("factId", "PaymentRequest:PAY-1001");
-
-        JsonObject context =
-                new JsonObject();
-
-        JsonObject outputTemplate =
-                new JsonObject();
-
-        JsonObject result =
-                new JsonObject();
-
-        result.addProperty("decision", "");
-        result.addProperty("reason", "");
-        result.addProperty("code", "");
-
-        outputTemplate.add("result", result);
-
-        root.add("llm_instructions", llmInstructions);
-        root.add("task", task);
-        root.add("context", context);
-        root.add("output_template", outputTemplate);
-
-        return root;
+        return JsonParser.parseReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8)
+        ).getAsJsonObject();
     }
 }

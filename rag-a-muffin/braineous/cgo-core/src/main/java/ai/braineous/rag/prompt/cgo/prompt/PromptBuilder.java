@@ -81,7 +81,7 @@ public class PromptBuilder {
     }
 
     public PromptRequestOutput generateExecutionPrompt(JsonObject llmQuery) {
-        String promptText = buildExecutionPromptText(llmQuery);
+        String promptText = llmQuery.toString();
 
         JsonObject root = new JsonObject();
         root.addProperty("prompt", promptText);

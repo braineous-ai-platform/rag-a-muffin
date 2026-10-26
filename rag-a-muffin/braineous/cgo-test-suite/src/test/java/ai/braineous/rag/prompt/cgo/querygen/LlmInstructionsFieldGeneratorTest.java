@@ -7,9 +7,13 @@ import ai.braineous.rag.prompt.cgo.querygen.model.FieldGenerationResult;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 
 public class LlmInstructionsFieldGeneratorTest {
@@ -61,18 +65,21 @@ public class LlmInstructionsFieldGeneratorTest {
         Assertions.assertNotNull(fieldValue);
         Assertions.assertTrue(fieldValue.has("instructions"));
         Assertions.assertNotNull(instructions);
-        Assertions.assertEquals(10, instructions.size());
 
-        Assertions.assertEquals("Execute task.controls.method.", instructions.get(0).getAsString());
-        Assertions.assertEquals("Resolve task.controls.parameters from context.nodes.", instructions.get(1).getAsString());
-        Assertions.assertEquals("Use task.controls.expression with the resolved parameters.", instructions.get(2).getAsString());
-        Assertions.assertEquals("Use task.controls.spec as the definition of the expression.", instructions.get(3).getAsString());
-        Assertions.assertEquals("Place the computed value in the field named by task.controls.result.", instructions.get(4).getAsString());
-        Assertions.assertEquals("Return exactly one field named result.", instructions.get(5).getAsString());
-        Assertions.assertEquals("Return a field called result at any cost.", instructions.get(6).getAsString());
-        Assertions.assertEquals("Use result=value.", instructions.get(7).getAsString());
-        Assertions.assertEquals("Return the value as a string.", instructions.get(8).getAsString());
-        Assertions.assertEquals("No other fields or text.", instructions.get(9).getAsString());
+        JsonArray expectedInstructions =
+                loadExpectedV14Instructions();
+
+        Assertions.assertEquals(12, expectedInstructions.size());
+        Assertions.assertEquals(expectedInstructions.size(), instructions.size());
+
+        int expectedIndex = 0;
+        while (expectedIndex < expectedInstructions.size()) {
+            Assertions.assertEquals(
+                    expectedInstructions.get(expectedIndex).getAsString(),
+                    instructions.get(expectedIndex).getAsString()
+            );
+            expectedIndex = expectedIndex + 1;
+        }
 
         assertInstructionDoesNotExist(instructions, "You are an execution engine, not a document reader.");
         assertInstructionDoesNotExist(instructions, "Return only key=value pairs.");
@@ -174,5 +181,26 @@ public class LlmInstructionsFieldGeneratorTest {
         }
 
         Assertions.assertFalse(found, unexpected);
+    }
+
+    private JsonArray loadExpectedV14Instructions() {
+        InputStream stream =
+                LlmInstructionsFieldGeneratorTest.class.getResourceAsStream(
+                        "/ai/braineous/rag/prompt/cgo/querygen/v14-llm-instructions.json"
+                );
+
+        Assertions.assertNotNull(stream);
+
+        JsonObject root =
+                JsonParser.parseReader(
+                        new InputStreamReader(stream, StandardCharsets.UTF_8)
+                ).getAsJsonObject();
+
+        JsonArray expected =
+                root.getAsJsonArray("instructions");
+
+        Assertions.assertNotNull(expected);
+
+        return expected;
     }
 }

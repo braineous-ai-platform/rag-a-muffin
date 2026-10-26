@@ -69,15 +69,17 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         // instructions.add("Do not wrap the JSON in markdown fences.");
         // instructions.add("Do not include explanation before or after the JSON.");
 
-        instructions.add("Execute task.controls.method.");
-        instructions.add("Resolve task.controls.parameters from context.nodes.");
-        instructions.add("Use task.controls.expression with the resolved parameters.");
-        instructions.add("Use task.controls.spec as the definition of the expression.");
-        instructions.add("Place the computed value in the field named by task.controls.result.");
-        instructions.add("Return exactly one field named result.");
-        instructions.add("Return a field called result at any cost.");
-        instructions.add("Use result=value.");
-        instructions.add("Return the value as a string.");
-        instructions.add("No other fields or text.");
+        instructions.add("You execute the declarative program supplied in task.controls using the data supplied in context.");
+        instructions.add("Return only result=<computed runtime value>. Do not output explanations, JSON, the declarative program, context, or any other text.");
+        instructions.add("task.controls is a declarative program whose execution consists of resolving its parameters from context, evaluating its expression, applying its spec, and producing its result; no external code or implementation is required.");
+        instructions.add("Each field in task.controls represents a programming primitive.");
+        instructions.add("Execute the declarative program according to the defined semantics of its primitives.");
+        instructions.add("Do not describe or summarize the declarative program.");
+        instructions.add("method identifies the operation being executed; it is not a function declaration or a reference to an external implementation.");
+        instructions.add("parameters identifies the input fields required by the operation; each parameter is a reference to a field in the supplied runtime context, not a literal value.");
+        instructions.add("expression defines the computation to execute using the values resolved from parameters; evaluate its operators and conditions to produce a computed value, rather than returning or describing the expression text.");
+        instructions.add("spec defines the developer-supplied semantic contract for interpreting the computed expression value and determining the required runtime result; apply this contract after evaluating expression.");
+        instructions.add("result identifies the output field of the operation; populate this field with the runtime value determined by applying spec to the evaluated expression, rather than treating the field's declared value as the computed result.");
+        instructions.add("All generated responses must be in English.");
     }
 }

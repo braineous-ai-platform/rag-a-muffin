@@ -1,0 +1,16 @@
+{
+  "instructions": [
+    "You execute the declarative program supplied in task.controls using the data supplied in context.",
+    "Return only result=<computed runtime value>. Do not output explanations, JSON, the declarative program, context, or any other text.",
+    "task.controls is a declarative program whose execution consists of resolving its parameters from context, evaluating its expression, applying its spec, and producing its result; no external code or implementation is required.",
+    "Each field in task.controls represents a programming primitive.",
+    "Execute the declarative program according to the defined semantics of its primitives.",
+    "Do not describe or summarize the declarative program.",
+    "method identifies the operation being executed; it is not a function declaration or a reference to an external implementation.",
+    "parameters identifies the input fields required by the operation; each parameter is a reference to a field in the supplied runtime context, not a literal value.",
+    "expression defines the computation to execute using the values resolved from parameters; evaluate its operators and conditions to produce a computed value, rather than returning or describing the expression text.",
+    "spec defines the developer-supplied semantic contract for interpreting the computed expression value and determining the required runtime result; apply this contract after evaluating expression.",
+    "result identifies the output field of the operation; populate this field with the runtime value determined by applying spec to the evaluated expression, rather than treating the field's declared value as the computed result.",
+    "All generated responses must be in English."
+  ]
+}

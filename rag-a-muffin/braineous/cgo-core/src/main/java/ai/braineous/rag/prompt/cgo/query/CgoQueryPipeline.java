@@ -88,7 +88,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
         request.generateRequestId();
         String rawResponse =
                 this.intelligenceBridge.invoke(llmPayload.toString(), "{}");
-        // rawResponse = this.mapToJsonResponseConverter.convert(rawResponse);
+        rawResponse = this.mapToJsonResponseConverter.convert(rawResponse);
 
         LLMResponse llmResponse =
                 this.createLlmResponse(request, llmQuery, rawResponse);

@@ -1,0 +1,61 @@
+{
+  "llm_instructions": {
+    "instructions": [
+      "You execute the declarative program supplied in task.controls using the data supplied in context.",
+      "Return only result=<computed runtime value>. Do not output explanations, JSON, the declarative program, context, or any other text.",
+      "task.controls is a declarative program whose execution consists of resolving its parameters from context, evaluating its expression, applying its spec, and producing its result; no external code or implementation is required.",
+      "Each field in task.controls represents a programming primitive.",
+      "Execute the declarative program according to the defined semantics of its primitives.",
+      "Do not describe or summarize the declarative program.",
+      "method identifies the operation being executed; it is not a function declaration or a reference to an external implementation.",
+      "parameters identifies the input fields required by the operation; each parameter is a reference to a field in the supplied runtime context, not a literal value.",
+      "expression defines the computation to execute using the values resolved from parameters; evaluate its operators and conditions to produce a computed value, rather than returning or describing the expression text.",
+      "spec defines the developer-supplied semantic contract for interpreting the computed expression value and determining the required runtime result; apply this contract after evaluating expression.",
+      "result identifies the output field of the operation; populate this field with the runtime value determined by applying spec to the evaluated expression, rather than treating the field's declared value as the computed result.",
+      "All generated responses must be in English."
+    ]
+  },
+  "task": {
+    "controls": {
+      "method": "payment_capture_eligibility",
+      "parameters": "CustomerAccount.status, PaymentMethod.type, RiskProfile.level, MerchantPolicy.capture",
+      "expression": "CustomerAccount.status is equal to ACTIVE and PaymentMethod.type is equal to CARD and RiskProfile.level is equal to LOW and MerchantPolicy.capture is equal to AUTO",
+      "spec": "The expression determines whether payment capture is eligible. When the expression evaluates to true, payment capture is eligible and the runtime result is ELIGIBLE. When the expression evaluates to false, payment capture is not eligible and the runtime result is INELIGIBLE.",
+      "result": "result"
+    }
+  },
+  "context": {
+    "nodes": {
+      "CustomerAccount:CUST-2001": {
+        "id": "CustomerAccount:CUST-2001",
+        "text": "{\"id\":\"CustomerAccount:CUST-2001\",\"kind\":\"CustomerAccount\",\"mode\":\"atomic\",\"status\":\"ACTIVE\"}",
+        "attributes": [],
+        "mode": "ATOMIC"
+      },
+      "MerchantPolicy:POL-5001": {
+        "id": "MerchantPolicy:POL-5001",
+        "text": "{\"id\":\"MerchantPolicy:POL-5001\",\"kind\":\"MerchantPolicy\",\"mode\":\"atomic\",\"capture\":\"AUTO\"}",
+        "attributes": [],
+        "mode": "ATOMIC"
+      },
+      "PaymentMethod:PM-3001": {
+        "id": "PaymentMethod:PM-3001",
+        "text": "{\"id\":\"PaymentMethod:PM-3001\",\"kind\":\"PaymentMethod\",\"mode\":\"atomic\",\"type\":\"CARD\"}",
+        "attributes": [],
+        "mode": "ATOMIC"
+      },
+      "PaymentRequest:PAY-1001": {
+        "id": "PaymentRequest:PAY-1001",
+        "text": "{\"id\":\"PaymentRequest:PAY-1001\",\"kind\":\"PaymentRequest\",\"mode\":\"atomic\",\"amount\":\"125.00\",\"currency\":\"USD\"}",
+        "attributes": [],
+        "mode": "ATOMIC"
+      },
+      "RiskProfile:RISK-4001": {
+        "id": "RiskProfile:RISK-4001",
+        "text": "{\"id\":\"RiskProfile:RISK-4001\",\"kind\":\"RiskProfile\",\"mode\":\"atomic\",\"level\":\"LOW\"}",
+        "attributes": [],
+        "mode": "ATOMIC"
+      }
+    }
+  }
+}

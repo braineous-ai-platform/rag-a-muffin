@@ -9,11 +9,18 @@ import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -48,12 +55,12 @@ public class QueryGenServiceTest {
         Console.log("querygen.payload.keys", payload.keySet().toString());
         Console.log("querygen.payload.size", String.valueOf(payload.size()));
 
-        Assertions.assertEquals(5, payload.size());
+        Assertions.assertEquals(3, payload.size());
         Assertions.assertTrue(payload.has("llm_instructions"));
         Assertions.assertTrue(payload.has("task"));
         Assertions.assertTrue(payload.has("context"));
-        Assertions.assertTrue(payload.has("llm_trace"));
-        Assertions.assertTrue(payload.has("llm_trace_instructions"));
+        Assertions.assertFalse(payload.has("llm_trace"));
+        Assertions.assertFalse(payload.has("llm_trace_instructions"));
         Assertions.assertFalse(payload.has("meta"));
         Assertions.assertFalse(payload.has("output_template"));
         Assertions.assertFalse(payload.has("response_contract"));
@@ -72,10 +79,10 @@ public class QueryGenServiceTest {
         Console.log("querygen.payload.order", serialized);
 
         Assertions.assertFalse(payload.has("meta"));
+        Assertions.assertFalse(payload.has("llm_trace"));
+        Assertions.assertFalse(payload.has("llm_trace_instructions"));
         Assertions.assertTrue(serialized.indexOf("\"llm_instructions\"") < serialized.indexOf("\"task\""));
         Assertions.assertTrue(serialized.indexOf("\"task\"") < serialized.indexOf("\"context\""));
-        Assertions.assertTrue(serialized.indexOf("\"context\"") < serialized.indexOf("\"llm_trace\""));
-        Assertions.assertTrue(serialized.indexOf("\"llm_trace\"") < serialized.indexOf("\"llm_trace_instructions\""));
     }
 
     @Test
@@ -127,16 +134,14 @@ public class QueryGenServiceTest {
             );
             instructionIndex = instructionIndex + 1;
         }
-        assertInstructionExists(instructions, "Execute task.controls.method.");
-        assertInstructionExists(instructions, "Resolve task.controls.parameters from context.nodes.");
-        assertInstructionExists(instructions, "Use task.controls.expression with the resolved parameters.");
-        assertInstructionExists(instructions, "Use task.controls.spec as the definition of the expression.");
-        assertInstructionExists(instructions, "Place the computed value in the field named by task.controls.result.");
-        assertInstructionExists(instructions, "Return exactly one field named result.");
-        assertInstructionExists(instructions, "Return a field called result at any cost.");
-        assertInstructionExists(instructions, "Use result=value.");
-        assertInstructionExists(instructions, "Return the value as a string.");
-        assertInstructionExists(instructions, "No other fields or text.");
+
+        JsonArray expectedInstructions =
+                loadV14LlmInstructions();
+
+        Console.log("querygen.instructions.expected", expectedInstructions.toString());
+
+        Assertions.assertEquals(12, instructions.size());
+        Assertions.assertEquals(expectedInstructions, instructions);
 
         assertInstructionDoesNotExist(instructions, "Use the requested SELECT fields as keys.");
         assertInstructionDoesNotExist(instructions, "Set result.decision as a string value derived from llm_query execution.");
@@ -155,6 +160,52 @@ public class QueryGenServiceTest {
         Console.log("querygen.no.constraints", payload.toString());
 
         Assertions.assertFalse(payload.getAsJsonObject("task").has("constraints"));
+    }
+
+    @Test
+    public void test_6() {
+        QueryGenService service = new QueryGenService();
+
+        JsonObject reference =
+                loadV14Query();
+
+        QueryRequest request =
+                buildPayV14Request(reference);
+
+        QueryGenOutput output =
+                service.generateQuery(request);
+
+        JsonObject generated =
+                output.getPayload();
+
+        Console.log("querygen.v14.generated", generated.toString());
+        Console.log("querygen.v14.reference", reference.toString());
+
+        Assertions.assertNotNull(generated);
+        Assertions.assertEquals(3, generated.size());
+        Assertions.assertTrue(generated.has("llm_instructions"));
+        Assertions.assertTrue(generated.has("task"));
+        Assertions.assertTrue(generated.has("context"));
+
+        JsonObject generatedControls =
+                generated.getAsJsonObject("task")
+                        .getAsJsonObject("controls");
+
+        JsonObject referenceControls =
+                reference.getAsJsonObject("task")
+                        .getAsJsonObject("controls");
+
+        Assertions.assertEquals(referenceControls, generatedControls);
+
+        JsonObject generatedNodes =
+                generated.getAsJsonObject("context")
+                        .getAsJsonObject("nodes");
+
+        JsonObject referenceNodes =
+                reference.getAsJsonObject("context")
+                        .getAsJsonObject("nodes");
+
+        Assertions.assertEquals(referenceNodes, generatedNodes);
     }
 
     private void assertInstructionExists(JsonArray instructions, String expected) {
@@ -245,5 +296,99 @@ public class QueryGenServiceTest {
         task.setControls(controls);
 
         return new QueryRequest(meta, context, task);
+    }
+
+    private QueryRequest buildPayV14Request(JsonObject reference) {
+        Meta meta =
+                new Meta(
+                        "v1",
+                        "decision",
+                        "pay decision"
+                );
+
+        JsonObject controlsJson =
+                reference.getAsJsonObject("task")
+                        .getAsJsonObject("controls");
+
+        List<Control> controls =
+                new ArrayList<Control>();
+
+        for (Map.Entry<String, JsonElement> entry : controlsJson.entrySet()) {
+            String value = null;
+
+            if (entry.getValue() != null && !entry.getValue().isJsonNull()) {
+                value = entry.getValue().getAsString();
+            }
+
+            controls.add(new Control(entry.getKey(), value));
+        }
+
+        JsonObject nodesJson =
+                reference.getAsJsonObject("context")
+                        .getAsJsonObject("nodes");
+
+        Map<String, Node> nodes =
+                new HashMap<String, Node>();
+
+        for (Map.Entry<String, JsonElement> entry : nodesJson.entrySet()) {
+            Node node =
+                    Node.fromJson(entry.getValue().getAsJsonObject());
+
+            nodes.put(entry.getKey(), node);
+        }
+
+        ValidateTask task =
+                new ValidateTask(
+                        "decision",
+                        "PaymentRequest:PAY-1001",
+                        Arrays.asList("decision", "reason", "code"),
+                        Arrays.asList(
+                                "CustomerAccount:CUST-2001",
+                                "PaymentMethod:PM-3001",
+                                "RiskProfile:RISK-4001",
+                                "MerchantPolicy:POL-5001"
+                        )
+                );
+
+        task.setControls(controls);
+
+        GraphContext context =
+                new GraphContext(nodes);
+
+        return new QueryRequest(meta, context, task);
+    }
+
+    private JsonArray loadV14LlmInstructions() {
+        InputStream stream =
+                QueryGenServiceTest.class.getResourceAsStream(
+                        "/ai/braineous/rag/prompt/cgo/querygen/v14-llm-instructions.json"
+                );
+
+        Assertions.assertNotNull(stream);
+
+        JsonObject root =
+                JsonParser.parseReader(
+                        new InputStreamReader(stream, StandardCharsets.UTF_8)
+                ).getAsJsonObject();
+
+        JsonArray expected =
+                root.getAsJsonArray("instructions");
+
+        Assertions.assertNotNull(expected);
+
+        return expected;
+    }
+
+    private JsonObject loadV14Query() {
+        InputStream stream =
+                QueryGenServiceTest.class.getResourceAsStream(
+                        "/ai/braineous/rag/prompt/cgo/prompt/v14-query.json"
+                );
+
+        Assertions.assertNotNull(stream);
+
+        return JsonParser.parseReader(
+                new InputStreamReader(stream, StandardCharsets.UTF_8)
+        ).getAsJsonObject();
     }
 }

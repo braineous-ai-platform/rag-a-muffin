@@ -48,55 +48,48 @@ public final class QueryResultValidator implements PhaseResultValidator {
             if (!root.has("result")) {
                 return error(
                         "queryresult.contract.result_missing",
-                        "Missing 'result' object",
+                        "Missing 'result'",
                         Collections.singletonMap("rawResponse", rawResponse)
                 );
             }
 
-            if (!root.get("result").isJsonObject()) {
+            if (root.size() != 1) {
+                return error(
+                        "queryresult.contract.unexpected_fields",
+                        "Root must contain exactly one field named 'result'",
+                        Collections.singletonMap("rawResponse", rawResponse)
+                );
+            }
+
+            JsonElement resultElement =
+                    root.get("result");
+
+            if (resultElement == null
+                    || resultElement.isJsonNull()
+                    || !resultElement.isJsonPrimitive()
+                    || !resultElement.getAsJsonPrimitive().isString()) {
                 return error(
                         "queryresult.contract.result_invalid",
-                        "'result' must be a JSON object",
+                        "'result' must be a JSON string",
                         Collections.singletonMap("rawResponse", rawResponse)
                 );
             }
 
-            JsonObject result =
-                    root.getAsJsonObject("result");
+            String resultValue =
+                    resultElement.getAsString();
 
-            if (result.entrySet().isEmpty()) {
+            if (resultValue == null || resultValue.isEmpty()) {
                 return error(
                         "queryresult.contract.result_empty",
-                        "'result' object is empty",
+                        "'result' is empty",
                         Collections.singletonMap("rawResponse", rawResponse)
                 );
-            }
-
-            for (Map.Entry<String, JsonElement> entry : result.entrySet()) {
-
-                String fieldName =
-                        entry.getKey();
-
-                JsonElement fieldValue =
-                        entry.getValue();
-
-                if (fieldValue == null
-                        || fieldValue.isJsonNull()
-                        || !fieldValue.isJsonPrimitive()
-                        || !fieldValue.getAsJsonPrimitive().isString()) {
-
-                    return error(
-                            "queryresult.contract.result.field_invalid",
-                            "Result field must be a string: " + fieldName,
-                            Collections.singletonMap("result", result.toString())
-                    );
-                }
             }
 
             Map<String, Object> metadata =
                     new HashMap<String, Object>();
 
-            metadata.put("resultFields", result.keySet().toString());
+            metadata.put("result", resultValue);
 
             return ValidationResult.createInternal(
                     true,
