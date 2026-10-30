@@ -203,4 +203,39 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
         Assertions.assertEquals(0, relatedFactIds.size());
     }
+
+    @Test
+    public void test_9() {
+        DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
+
+        String sql = ""
+                + "select result "
+                + "from llm "
+                + "where factId = 'Payment:P100' "
+                + "control "
+                + "method = 'decide_payment_capture', "
+                + "parameters = 'amount, currency, merchant', "
+                + "expression = 'amount > 0 AND currency = USD', "
+                + "spec = 'if expression is true then allow, else deny', "
+                + "result = 'decision'";
+
+        JsonObject json = compiler.compile(sql);
+
+        Console.log("test_9_json", json.toString());
+
+        JsonObject controls = json
+                .getAsJsonObject("task")
+                .getAsJsonObject("constraints")
+                .getAsJsonObject("control");
+
+        Assertions.assertEquals(5, controls.size());
+        Assertions.assertEquals("decide_payment_capture", controls.get("method").getAsString());
+        Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
+        Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
+        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
+        Assertions.assertEquals("decision", controls.get("result").getAsString());
+        Assertions.assertFalse(controls.has("currency"));
+        Assertions.assertFalse(controls.has("merchant"));
+        Assertions.assertFalse(controls.has("else deny"));
+    }
 }

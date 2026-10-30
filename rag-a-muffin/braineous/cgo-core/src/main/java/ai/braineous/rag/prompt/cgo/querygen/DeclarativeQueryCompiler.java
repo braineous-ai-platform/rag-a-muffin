@@ -209,7 +209,42 @@ public class DeclarativeQueryCompiler {
             return controls;
         }
 
-        List<String> pairs = splitCsv(block);
+        List<String> pairs = new ArrayList<String>();
+        StringBuilder current = new StringBuilder();
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+
+        for (int i = 0; i < block.length(); i++) {
+            char c = block.charAt(i);
+
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                current.append(c);
+                continue;
+            }
+
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                current.append(c);
+                continue;
+            }
+
+            if (c == ',' && !inSingleQuote && !inDoubleQuote) {
+                String pair = current.toString().trim();
+                if (pair.length() > 0) {
+                    pairs.add(pair);
+                }
+                current.setLength(0);
+                continue;
+            }
+
+            current.append(c);
+        }
+
+        String last = current.toString().trim();
+        if (last.length() > 0) {
+            pairs.add(last);
+        }
 
         for (int i = 0; i < pairs.size(); i++) {
             String pair = pairs.get(i);
