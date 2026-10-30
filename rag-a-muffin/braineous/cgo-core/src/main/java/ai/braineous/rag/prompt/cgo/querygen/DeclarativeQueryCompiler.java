@@ -263,10 +263,38 @@ public class DeclarativeQueryCompiler {
                 continue;
             }
 
+            if (!isLegalControlKey(controlKey)) {
+                throw new IllegalArgumentException("unknown control key: " + controlKey);
+            }
+
             controls.addProperty(controlKey, controlValue);
         }
 
         return controls;
+    }
+
+    private boolean isLegalControlKey(String controlKey) {
+        if ("method".equals(controlKey)) {
+            return true;
+        }
+
+        if ("parameters".equals(controlKey)) {
+            return true;
+        }
+
+        if ("expression".equals(controlKey)) {
+            return true;
+        }
+
+        if ("spec".equals(controlKey)) {
+            return true;
+        }
+
+        if ("result".equals(controlKey)) {
+            return true;
+        }
+
+        return false;
     }
 
     private String readIntentType(JsonObject controls, List<String> selectFields) {

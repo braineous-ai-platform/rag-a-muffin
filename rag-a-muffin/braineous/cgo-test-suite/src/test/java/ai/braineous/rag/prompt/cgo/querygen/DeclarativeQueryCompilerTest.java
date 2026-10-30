@@ -18,9 +18,11 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW' "
                 + "control "
-                + "decision_mode = 'validate_customer_address', "
-                + "validation.departure_code_required = 'true', "
-                + "validation.arrival_code_required = 'true'";
+                + "method = 'validate_customer_address', "
+                + "parameters = 'departure_code, arrival_code', "
+                + "expression = 'departure_code is present AND arrival_code is present', "
+                + "spec = 'if expression is true then allow, else deny', "
+                + "result = 'decision'";
 
         JsonObject json = compiler.compile(sql);
 
@@ -32,8 +34,8 @@ public class DeclarativeQueryCompilerTest {
         JsonArray select = task.getAsJsonArray("select");
         JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
-        Assertions.assertEquals("validate_customer_address", intent.get("type").getAsString());
-        Assertions.assertEquals("validate_customer_address", intent.get("goal").getAsString());
+        Assertions.assertEquals("ok", intent.get("type").getAsString());
+        Assertions.assertEquals("ok", intent.get("goal").getAsString());
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
 
         Assertions.assertEquals(2, relatedFactIds.size());
@@ -44,9 +46,11 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertEquals("ok", select.get(0).getAsString());
         Assertions.assertEquals("code", select.get(1).getAsString());
 
-        Assertions.assertEquals("validate_customer_address", controls.get("decision_mode").getAsString());
-        Assertions.assertEquals("true", controls.get("validation.departure_code_required").getAsString());
-        Assertions.assertEquals("true", controls.get("validation.arrival_code_required").getAsString());
+        Assertions.assertEquals("validate_customer_address", controls.get("method").getAsString());
+        Assertions.assertEquals("departure_code, arrival_code", controls.get("parameters").getAsString());
+        Assertions.assertEquals("departure_code is present AND arrival_code is present", controls.get("expression").getAsString());
+        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
+        Assertions.assertEquals("decision", controls.get("result").getAsString());
     }
 
     @Test
@@ -154,8 +158,11 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Flight:F100'\n"
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW'\n"
                 + "control\n"
-                + "decision_mode = 'validate_customer_address',\n"
-                + "validation.departure_arrival_must_differ = 'true'\n";
+                + "method = 'validate_customer_address',\n"
+                + "parameters = 'departure_code, arrival_code',\n"
+                + "expression = 'departure_code != arrival_code',\n"
+                + "spec = 'if expression is true then allow, else deny',\n"
+                + "result = 'decision'\n";
 
         JsonObject json = compiler.compile(sql);
 
@@ -165,10 +172,18 @@ public class DeclarativeQueryCompilerTest {
         JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
-        Assertions.assertEquals("validate_customer_address",
+        Assertions.assertEquals("ok",
                 task.getAsJsonObject("intent").get("type").getAsString());
-        Assertions.assertEquals("true",
-                controls.get("validation.departure_arrival_must_differ").getAsString());
+        Assertions.assertEquals("validate_customer_address",
+                controls.get("method").getAsString());
+        Assertions.assertEquals("departure_code, arrival_code",
+                controls.get("parameters").getAsString());
+        Assertions.assertEquals("departure_code != arrival_code",
+                controls.get("expression").getAsString());
+        Assertions.assertEquals("if expression is true then allow, else deny",
+                controls.get("spec").getAsString());
+        Assertions.assertEquals("decision",
+                controls.get("result").getAsString());
     }
 
     @Test
@@ -237,5 +252,75 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertFalse(controls.has("currency"));
         Assertions.assertFalse(controls.has("merchant"));
         Assertions.assertFalse(controls.has("else deny"));
+    }
+
+    @Test
+    public void test_10() {
+        DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
+
+        String sql = ""
+                + "select result "
+                + "from llm "
+                + "where factId = 'Payment:P200' "
+                + "control "
+                + "method = 'decide_refund_release', "
+                + "parameters = 'amount, currency, merchant', "
+                + "expression = 'amount > 0 AND currency = USD', "
+                + "spec = 'if expression is true then allow, else deny', "
+                + "result = 'decision'";
+
+        JsonObject json = compiler.compile(sql);
+
+        Console.log("test_10_json", json.toString());
+
+        JsonObject controls = json
+                .getAsJsonObject("task")
+                .getAsJsonObject("constraints")
+                .getAsJsonObject("control");
+
+        Assertions.assertEquals(5, controls.size());
+        Assertions.assertEquals("decide_refund_release", controls.get("method").getAsString());
+        Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
+        Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
+        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
+        Assertions.assertEquals("decision", controls.get("result").getAsString());
+        Assertions.assertFalse(controls.has("currency"));
+        Assertions.assertFalse(controls.has("merchant"));
+        Assertions.assertFalse(controls.has("else deny"));
+    }
+
+    @Test
+    public void test_11() {
+        DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
+
+        String unknownSql = ""
+                + "select result "
+                + "from llm "
+                + "where factId = 'Payment:P200' "
+                + "control "
+                + "unknown_flag = 'true'";
+
+        try {
+            compiler.compile(unknownSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_unknown_exception", e.getMessage());
+            Assertions.assertEquals("unknown control key: unknown_flag", e.getMessage());
+        }
+
+        String decisionModeSql = ""
+                + "select result "
+                + "from llm "
+                + "where factId = 'Payment:P200' "
+                + "control "
+                + "decision_mode = 'validate_customer_address'";
+
+        try {
+            compiler.compile(decisionModeSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_decision_mode_exception", e.getMessage());
+            Assertions.assertEquals("unknown control key: decision_mode", e.getMessage());
+        }
     }
 }
