@@ -13,15 +13,14 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select ok, code "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW' "
                 + "control "
-                + "method = 'validate_customer_address', "
-                + "parameters = 'departure_code, arrival_code', "
-                + "expression = 'departure_code is present AND arrival_code is present', "
-                + "spec = 'if expression is true then allow, else deny', "
+                + "method = 'validate_customer_address' "
+                + "parameters = 'departure_code, arrival_code' "
+                + "expression = 'departure_code is present AND arrival_code is present' "
+                + "spec = 'if expression is true then allow, else deny' "
                 + "result = 'decision'";
 
         JsonObject json = compiler.compile(sql);
@@ -34,17 +33,14 @@ public class DeclarativeQueryCompilerTest {
         JsonArray select = task.getAsJsonArray("select");
         JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
-        Assertions.assertEquals("ok", intent.get("type").getAsString());
-        Assertions.assertEquals("ok", intent.get("goal").getAsString());
+        Assertions.assertEquals(0, intent.size());
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
 
         Assertions.assertEquals(2, relatedFactIds.size());
         Assertions.assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         Assertions.assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
 
-        Assertions.assertEquals(2, select.size());
-        Assertions.assertEquals("ok", select.get(0).getAsString());
-        Assertions.assertEquals("code", select.get(1).getAsString());
+        Assertions.assertEquals(0, select.size());
 
         Assertions.assertEquals("validate_customer_address", controls.get("method").getAsString());
         Assertions.assertEquals("departure_code, arrival_code", controls.get("parameters").getAsString());
@@ -58,8 +54,7 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select ok, code "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS, Airport:DFW'";
 
@@ -73,17 +68,14 @@ public class DeclarativeQueryCompilerTest {
         JsonArray select = task.getAsJsonArray("select");
         JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
-        Assertions.assertEquals("ok", intent.get("type").getAsString());
-        Assertions.assertEquals("ok", intent.get("goal").getAsString());
+        Assertions.assertEquals(0, intent.size());
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
 
         Assertions.assertEquals(2, relatedFactIds.size());
         Assertions.assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         Assertions.assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
 
-        Assertions.assertEquals(2, select.size());
-        Assertions.assertEquals("ok", select.get(0).getAsString());
-        Assertions.assertEquals("code", select.get(1).getAsString());
+        Assertions.assertEquals(0, select.size());
 
         Assertions.assertEquals(0, controls.size());
     }
@@ -93,8 +85,7 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select ok, code "
-                + "from llm "
+                + "select from llm "
                 + "where relatedFactIds = 'Airport:AUS,Airport:DFW'";
 
         try {
@@ -129,8 +120,7 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select ok "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS, Airport:DFW, Airport:JFK'";
 
@@ -153,15 +143,14 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = "\n"
-                + "select ok, code\n"
-                + "from llm\n"
+                + "select from llm\n"
                 + "where factId = 'Flight:F100'\n"
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW'\n"
                 + "control\n"
-                + "method = 'validate_customer_address',\n"
-                + "parameters = 'departure_code, arrival_code',\n"
-                + "expression = 'departure_code != arrival_code',\n"
-                + "spec = 'if expression is true then allow, else deny',\n"
+                + "method = 'validate_customer_address'\n"
+                + "parameters = 'departure_code, arrival_code'\n"
+                + "expression = 'departure_code != arrival_code'\n"
+                + "spec = 'if expression is true then allow, else deny'\n"
                 + "result = 'decision'\n";
 
         JsonObject json = compiler.compile(sql);
@@ -172,8 +161,10 @@ public class DeclarativeQueryCompilerTest {
         JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
-        Assertions.assertEquals("ok",
-                task.getAsJsonObject("intent").get("type").getAsString());
+        Assertions.assertEquals(
+                0,
+                task.getAsJsonObject("intent").size()
+        );
         Assertions.assertEquals("validate_customer_address",
                 controls.get("method").getAsString());
         Assertions.assertEquals("departure_code, arrival_code",
@@ -204,8 +195,7 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select ok "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Flight:F100'";
 
         JsonObject json = compiler.compile(sql);
@@ -224,14 +214,13 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select result "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Payment:P100' "
                 + "control "
-                + "method = 'decide_payment_capture', "
-                + "parameters = 'amount, currency, merchant', "
-                + "expression = 'amount > 0 AND currency = USD', "
-                + "spec = 'if expression is true then allow, else deny', "
+                + "method = 'decide_payment_capture' "
+                + "parameters = 'amount, currency, merchant' "
+                + "expression = 'amount > 0 AND currency = USD' "
+                + "spec = 'if expression is true then allow, else deny' "
                 + "result = 'decision'";
 
         JsonObject json = compiler.compile(sql);
@@ -259,14 +248,13 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select result "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Payment:P200' "
                 + "control "
-                + "method = 'decide_refund_release', "
-                + "parameters = 'amount, currency, merchant', "
-                + "expression = 'amount > 0 AND currency = USD', "
-                + "spec = 'if expression is true then allow, else deny', "
+                + "method = 'decide_refund_release' "
+                + "parameters = 'amount, currency, merchant' "
+                + "expression = 'amount > 0 AND currency = USD' "
+                + "spec = 'if expression is true then allow, else deny' "
                 + "result = 'decision'";
 
         JsonObject json = compiler.compile(sql);
@@ -294,8 +282,7 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String unknownSql = ""
-                + "select result "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Payment:P200' "
                 + "control "
                 + "unknown_flag = 'true'";
@@ -309,8 +296,7 @@ public class DeclarativeQueryCompilerTest {
         }
 
         String decisionModeSql = ""
-                + "select result "
-                + "from llm "
+                + "select from llm "
                 + "where factId = 'Payment:P200' "
                 + "control "
                 + "decision_mode = 'validate_customer_address'";
@@ -322,5 +308,63 @@ public class DeclarativeQueryCompilerTest {
             Console.log("test_11_decision_mode_exception", e.getMessage());
             Assertions.assertEquals("unknown control key: decision_mode", e.getMessage());
         }
+    }
+
+    @Test
+    public void test_12() {
+        DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
+
+        String multilineSql = ""
+                + "select from llm\n"
+                + "where factId = 'Inventory:INV-001'\n"
+                + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001'\n"
+                + "control\n"
+                + "method = 'determine_replenishment_eligibility'\n"
+                + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability'\n"
+                + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE'\n"
+                + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.'\n"
+                + "result = ''";
+
+        String singleLineSql = ""
+                + "select from llm "
+                + "where factId = 'Inventory:INV-001' "
+                + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001' "
+                + "control "
+                + "method = 'determine_replenishment_eligibility' "
+                + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability' "
+                + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE' "
+                + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.' "
+                + "result = ''";
+
+        JsonObject multilineJson = compiler.compile(multilineSql);
+        JsonObject singleLineJson = compiler.compile(singleLineSql);
+
+        Console.log("test_12_multiline_json", multilineJson.toString());
+        Console.log("test_12_single_line_json", singleLineJson.toString());
+
+        Assertions.assertEquals(multilineJson, singleLineJson);
+
+        JsonObject task = multilineJson.getAsJsonObject("task");
+        JsonObject intent = task.getAsJsonObject("intent");
+        JsonArray select = task.getAsJsonArray("select");
+        JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
+        JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
+
+        Assertions.assertEquals("Inventory:INV-001", task.get("factId").getAsString());
+        Assertions.assertEquals(2, relatedFactIds.size());
+        Assertions.assertEquals("Demand:DEM-001", relatedFactIds.get(0).getAsString());
+        Assertions.assertEquals("Supplier:SUP-001", relatedFactIds.get(1).getAsString());
+
+        Assertions.assertNotNull(intent);
+        Assertions.assertEquals(0, intent.size());
+        Assertions.assertNotNull(select);
+        Assertions.assertEquals(0, select.size());
+
+        Assertions.assertEquals(5, controls.size());
+        Assertions.assertEquals("determine_replenishment_eligibility", controls.get("method").getAsString());
+        Assertions.assertEquals("Inventory.stockStatus, Demand.level, Supplier.availability", controls.get("parameters").getAsString());
+        Assertions.assertEquals("Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE", controls.get("expression").getAsString());
+        Assertions.assertEquals("When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.", controls.get("spec").getAsString());
+        Assertions.assertEquals("", controls.get("result").getAsString());
     }
 }

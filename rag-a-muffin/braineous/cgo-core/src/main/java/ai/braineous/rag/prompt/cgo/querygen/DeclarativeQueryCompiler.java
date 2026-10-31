@@ -15,30 +15,22 @@ public class DeclarativeQueryCompiler {
 
         String normalized = normalize(sql);
 
-        String selectText = readBetween(normalized, "select ", " from ");
+        assertProjectionFreeSelect(normalized);
+
         String factId = readQuotedValue(normalized, "factId");
         String relatedFactIdsText = readQuotedValue(normalized, "relatedFactIds");
         JsonObject controls = readControls(normalized);
 
-        List<String> selectFields = splitCsv(selectText);
         List<String> relatedFactIds = splitCsv(relatedFactIdsText);
-
-        if (selectFields.isEmpty()) {
-            throw new IllegalArgumentException("select must contain at least one field");
-        }
 
         if (factId == null || factId.trim().length() == 0) {
             throw new IllegalArgumentException("factId must be provided");
         }
 
-        String intentType = readIntentType(controls, selectFields);
-
         JsonObject root = new JsonObject();
         JsonObject task = new JsonObject();
 
         JsonObject intent = new JsonObject();
-        intent.addProperty("type", intentType);
-        intent.addProperty("goal", intentType);
 
         task.add("intent", intent);
         task.addProperty("factId", factId);
@@ -48,7 +40,7 @@ public class DeclarativeQueryCompiler {
         constraints.add("control", controls);
         task.add("constraints", constraints);
 
-        task.add("select", toJsonArray(selectFields));
+        task.add("select", new JsonArray());
 
         root.add("task", task);
 
@@ -57,39 +49,109 @@ public class DeclarativeQueryCompiler {
 
     private String normalize(String sql) {
         String trimmed = sql.trim();
+        StringBuilder collapsed = new StringBuilder();
 
-        String collapsed = trimmed.replace('\n', ' ');
-        collapsed = collapsed.replace('\r', ' ');
-        collapsed = collapsed.replace('\t', ' ');
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        boolean lastWasSpace = false;
 
-        while (collapsed.contains("  ")) {
-            collapsed = collapsed.replace("  ", " ");
+        for (int i = 0; i < trimmed.length(); i++) {
+            char c = trimmed.charAt(i);
+
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                collapsed.append(c);
+                lastWasSpace = false;
+                continue;
+            }
+
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                collapsed.append(c);
+                lastWasSpace = false;
+                continue;
+            }
+
+            if (inSingleQuote || inDoubleQuote) {
+                collapsed.append(c);
+                lastWasSpace = false;
+                continue;
+            }
+
+            if (c == '\n' || c == '\r' || c == '\t' || c == ' ') {
+                if (!lastWasSpace) {
+                    collapsed.append(' ');
+                    lastWasSpace = true;
+                }
+                continue;
+            }
+
+            collapsed.append(c);
+            lastWasSpace = false;
         }
 
-        return collapsed;
+        return collapsed.toString().trim();
     }
 
-    private String readBetween(String text, String startToken, String endToken) {
+    private void assertProjectionFreeSelect(String text) {
         String lower = text.toLowerCase();
 
-        int start = lower.indexOf(startToken);
-        if (start < 0) {
-            throw new IllegalArgumentException("missing " + startToken.trim());
+        int selectIndex = findKeyword(lower, "select", 0);
+        if (selectIndex < 0) {
+            throw new IllegalArgumentException("missing select");
         }
 
-        start = start + startToken.length();
+        int afterSelect = selectIndex + "select".length();
 
-        int end = lower.indexOf(endToken, start);
-        if (end < 0) {
-            throw new IllegalArgumentException("missing " + endToken.trim());
+        int fromIndex = findKeyword(lower, "from", afterSelect);
+        if (fromIndex < 0) {
+            throw new IllegalArgumentException("missing from");
         }
 
-        String value = text.substring(start, end).trim();
-        if (value.length() == 0) {
-            throw new IllegalArgumentException("empty " + startToken.trim());
+        String projection = text.substring(afterSelect, fromIndex).trim();
+        if (projection.length() > 0) {
+            throw new IllegalArgumentException("projection not supported");
+        }
+    }
+
+    private int findKeyword(String lower, String keyword, int searchFrom) {
+        int from = searchFrom;
+
+        while (from < lower.length()) {
+            int index = lower.indexOf(keyword, from);
+            if (index < 0) {
+                return -1;
+            }
+
+            if (isKeywordMatch(lower, keyword, index)) {
+                return index;
+            }
+
+            from = index + keyword.length();
         }
 
-        return value;
+        return -1;
+    }
+
+    private boolean isKeywordMatch(String lower, String keyword, int index) {
+        int beforeIndex = index - 1;
+        int afterIndex = index + keyword.length();
+
+        if (beforeIndex >= 0) {
+            char before = lower.charAt(beforeIndex);
+            if (isIdentifierChar(before)) {
+                return false;
+            }
+        }
+
+        if (afterIndex < lower.length()) {
+            char after = lower.charAt(afterIndex);
+            if (isIdentifierChar(after)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private String readQuotedValue(String text, String key) {
@@ -198,79 +260,141 @@ public class DeclarativeQueryCompiler {
     private JsonObject readControls(String text) {
         JsonObject controls = new JsonObject();
 
-        String lower = text.toLowerCase();
-        int controlIndex = lower.indexOf(" control ");
+        int controlIndex = findKeywordOutsideQuotes(text, "control", 0);
         if (controlIndex < 0) {
             return controls;
         }
 
-        String block = text.substring(controlIndex + " control ".length()).trim();
-        if (block.length() == 0) {
-            return controls;
-        }
+        String block = text.substring(controlIndex + "control".length());
+        int i = 0;
 
-        List<String> pairs = new ArrayList<String>();
-        StringBuilder current = new StringBuilder();
-        boolean inSingleQuote = false;
-        boolean inDoubleQuote = false;
-
-        for (int i = 0; i < block.length(); i++) {
-            char c = block.charAt(i);
-
-            if (c == '\'' && !inDoubleQuote) {
-                inSingleQuote = !inSingleQuote;
-                current.append(c);
-                continue;
+        while (i < block.length()) {
+            i = skipWhitespace(block, i);
+            if (i >= block.length()) {
+                break;
             }
 
-            if (c == '"' && !inSingleQuote) {
-                inDoubleQuote = !inDoubleQuote;
-                current.append(c);
-                continue;
+            int keyStart = i;
+            while (i < block.length() && isIdentifierChar(block.charAt(i))) {
+                i = i + 1;
             }
 
-            if (c == ',' && !inSingleQuote && !inDoubleQuote) {
-                String pair = current.toString().trim();
-                if (pair.length() > 0) {
-                    pairs.add(pair);
+            if (i == keyStart) {
+                throw new IllegalArgumentException("malformed control assignment");
+            }
+
+            String controlKey = block.substring(keyStart, i);
+
+            i = skipWhitespace(block, i);
+            if (i >= block.length() || block.charAt(i) != '=') {
+                throw new IllegalArgumentException("malformed control assignment");
+            }
+            i = i + 1;
+
+            i = skipWhitespace(block, i);
+            if (i >= block.length()) {
+                throw new IllegalArgumentException("malformed control assignment");
+            }
+
+            char quote = block.charAt(i);
+            if (quote != '\'' && quote != '"') {
+                throw new IllegalArgumentException("malformed control assignment");
+            }
+            i = i + 1;
+
+            int valueStart = i;
+            int closingQuote = -1;
+            while (i < block.length()) {
+                if (block.charAt(i) == quote) {
+                    closingQuote = i;
+                    break;
                 }
-                current.setLength(0);
-                continue;
+                i = i + 1;
             }
 
-            current.append(c);
-        }
-
-        String last = current.toString().trim();
-        if (last.length() > 0) {
-            pairs.add(last);
-        }
-
-        for (int i = 0; i < pairs.size(); i++) {
-            String pair = pairs.get(i);
-            int equalsIndex = pair.indexOf("=");
-
-            if (equalsIndex < 0) {
-                continue;
+            if (closingQuote < 0) {
+                throw new IllegalArgumentException("malformed control assignment");
             }
 
-            String controlKey = pair.substring(0, equalsIndex).trim();
-            String controlValue = pair.substring(equalsIndex + 1).trim();
-
-            controlValue = stripQuotes(controlValue);
-
-            if (controlKey.length() == 0) {
-                continue;
-            }
+            String controlValue = block.substring(valueStart, closingQuote);
+            i = closingQuote + 1;
 
             if (!isLegalControlKey(controlKey)) {
                 throw new IllegalArgumentException("unknown control key: " + controlKey);
             }
 
+            if (controls.has(controlKey)) {
+                throw new IllegalArgumentException("ambiguous control assignment");
+            }
+
             controls.addProperty(controlKey, controlValue);
+
+            int afterValue = skipWhitespace(block, i);
+            if (afterValue < block.length() && afterValue == i) {
+                throw new IllegalArgumentException("malformed control assignment");
+            }
         }
 
         return controls;
+    }
+
+    private int findKeywordOutsideQuotes(String text, String keyword, int searchFrom) {
+        if (text == null) {
+            return -1;
+        }
+
+        if (keyword == null) {
+            return -1;
+        }
+
+        String lower = text.toLowerCase();
+        String lowerKeyword = keyword.toLowerCase();
+
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        int i = searchFrom;
+
+        while (i < text.length()) {
+            char c = text.charAt(i);
+
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                i = i + 1;
+                continue;
+            }
+
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                i = i + 1;
+                continue;
+            }
+
+            if (!inSingleQuote && !inDoubleQuote) {
+                if (i + lowerKeyword.length() <= lower.length()) {
+                    if (lower.startsWith(lowerKeyword, i) && isKeywordMatch(lower, lowerKeyword, i)) {
+                        return i;
+                    }
+                }
+            }
+
+            i = i + 1;
+        }
+
+        return -1;
+    }
+
+    private int skipWhitespace(String text, int index) {
+        int i = index;
+
+        while (i < text.length()) {
+            char c = text.charAt(i);
+            if (c != ' ' && c != '\n' && c != '\r' && c != '\t') {
+                break;
+            }
+            i = i + 1;
+        }
+
+        return i;
     }
 
     private boolean isLegalControlKey(String controlKey) {
@@ -295,17 +419,6 @@ public class DeclarativeQueryCompiler {
         }
 
         return false;
-    }
-
-    private String readIntentType(JsonObject controls, List<String> selectFields) {
-        if (controls != null && controls.has("decision_mode")) {
-            String decisionMode = controls.get("decision_mode").getAsString();
-            if (decisionMode != null && decisionMode.trim().length() > 0) {
-                return decisionMode;
-            }
-        }
-
-        return selectFields.get(0);
     }
 
     private List<String> splitCsv(String csv) {

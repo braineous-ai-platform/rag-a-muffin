@@ -15,6 +15,7 @@ import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
@@ -26,6 +27,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@Disabled("Legacy pre-CPL V14 Interpret prototype; obsolete result contract.")
 public class InterpretFunctionalExecutionIT {
 
     // @Test
