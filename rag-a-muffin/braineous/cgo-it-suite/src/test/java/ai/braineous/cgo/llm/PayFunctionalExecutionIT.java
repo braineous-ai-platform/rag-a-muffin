@@ -40,7 +40,6 @@ public class PayFunctionalExecutionIT {
 
         request.getTask().setControls(
                 Arrays.asList(
-                        new Control("method", "payment_capture_eligibility"),
                         new Control("parameters", "CustomerAccount.status, PaymentMethod.type, RiskProfile.level, MerchantPolicy.capture"),
                         new Control("expression", "CustomerAccount.status is equal to ACTIVE and PaymentMethod.type is equal to CARD and RiskProfile.level is equal to LOW and MerchantPolicy.capture is equal to AUTO"),
                         new Control("spec", "The expression determines whether payment capture is eligible. When the expression evaluates to true, payment capture is eligible and the runtime result is ELIGIBLE. When the expression evaluates to false, payment capture is not eligible and the runtime result is INELIGIBLE."),

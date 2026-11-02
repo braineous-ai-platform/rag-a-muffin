@@ -69,7 +69,7 @@ public class LlmInstructionsFieldGeneratorTest {
         JsonArray expectedInstructions =
                 loadExpectedV14Instructions();
 
-        Assertions.assertEquals(12, expectedInstructions.size());
+        Assertions.assertEquals(10, expectedInstructions.size());
         Assertions.assertEquals(expectedInstructions.size(), instructions.size());
 
         int expectedIndex = 0;

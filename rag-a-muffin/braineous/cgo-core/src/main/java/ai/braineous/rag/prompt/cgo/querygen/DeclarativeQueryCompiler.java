@@ -398,10 +398,6 @@ public class DeclarativeQueryCompiler {
     }
 
     private boolean isLegalControlKey(String controlKey) {
-        if ("method".equals(controlKey)) {
-            return true;
-        }
-
         if ("parameters".equals(controlKey)) {
             return true;
         }

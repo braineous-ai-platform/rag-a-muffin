@@ -80,7 +80,7 @@ public class SpecIT {
                 reference.getAsJsonObject("llm_instructions")
                         .getAsJsonArray("instructions");
 
-        assertEquals(12, actualInstructions.size());
+        assertEquals(10, actualInstructions.size());
         assertEquals(expectedInstructions, actualInstructions);
 
         assertEquals(

@@ -17,7 +17,6 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW' "
                 + "control "
-                + "method = 'validate_customer_address' "
                 + "parameters = 'departure_code, arrival_code' "
                 + "expression = 'departure_code is present AND arrival_code is present' "
                 + "spec = 'if expression is true then allow, else deny' "
@@ -42,7 +41,6 @@ public class DeclarativeQueryCompilerTest {
 
         Assertions.assertEquals(0, select.size());
 
-        Assertions.assertEquals("validate_customer_address", controls.get("method").getAsString());
         Assertions.assertEquals("departure_code, arrival_code", controls.get("parameters").getAsString());
         Assertions.assertEquals("departure_code is present AND arrival_code is present", controls.get("expression").getAsString());
         Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
@@ -147,7 +145,6 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Flight:F100'\n"
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW'\n"
                 + "control\n"
-                + "method = 'validate_customer_address'\n"
                 + "parameters = 'departure_code, arrival_code'\n"
                 + "expression = 'departure_code != arrival_code'\n"
                 + "spec = 'if expression is true then allow, else deny'\n"
@@ -165,8 +162,6 @@ public class DeclarativeQueryCompilerTest {
                 0,
                 task.getAsJsonObject("intent").size()
         );
-        Assertions.assertEquals("validate_customer_address",
-                controls.get("method").getAsString());
         Assertions.assertEquals("departure_code, arrival_code",
                 controls.get("parameters").getAsString());
         Assertions.assertEquals("departure_code != arrival_code",
@@ -217,7 +212,6 @@ public class DeclarativeQueryCompilerTest {
                 + "select from llm "
                 + "where factId = 'Payment:P100' "
                 + "control "
-                + "method = 'decide_payment_capture' "
                 + "parameters = 'amount, currency, merchant' "
                 + "expression = 'amount > 0 AND currency = USD' "
                 + "spec = 'if expression is true then allow, else deny' "
@@ -232,8 +226,7 @@ public class DeclarativeQueryCompilerTest {
                 .getAsJsonObject("constraints")
                 .getAsJsonObject("control");
 
-        Assertions.assertEquals(5, controls.size());
-        Assertions.assertEquals("decide_payment_capture", controls.get("method").getAsString());
+        Assertions.assertEquals(4, controls.size());
         Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
         Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
         Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
@@ -251,7 +244,6 @@ public class DeclarativeQueryCompilerTest {
                 + "select from llm "
                 + "where factId = 'Payment:P200' "
                 + "control "
-                + "method = 'decide_refund_release' "
                 + "parameters = 'amount, currency, merchant' "
                 + "expression = 'amount > 0 AND currency = USD' "
                 + "spec = 'if expression is true then allow, else deny' "
@@ -266,8 +258,7 @@ public class DeclarativeQueryCompilerTest {
                 .getAsJsonObject("constraints")
                 .getAsJsonObject("control");
 
-        Assertions.assertEquals(5, controls.size());
-        Assertions.assertEquals("decide_refund_release", controls.get("method").getAsString());
+        Assertions.assertEquals(4, controls.size());
         Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
         Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
         Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
@@ -319,7 +310,6 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Inventory:INV-001'\n"
                 + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001'\n"
                 + "control\n"
-                + "method = 'determine_replenishment_eligibility'\n"
                 + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability'\n"
                 + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE'\n"
                 + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.'\n"
@@ -330,7 +320,6 @@ public class DeclarativeQueryCompilerTest {
                 + "where factId = 'Inventory:INV-001' "
                 + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001' "
                 + "control "
-                + "method = 'determine_replenishment_eligibility' "
                 + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability' "
                 + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE' "
                 + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.' "
@@ -360,8 +349,7 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertNotNull(select);
         Assertions.assertEquals(0, select.size());
 
-        Assertions.assertEquals(5, controls.size());
-        Assertions.assertEquals("determine_replenishment_eligibility", controls.get("method").getAsString());
+        Assertions.assertEquals(4, controls.size());
         Assertions.assertEquals("Inventory.stockStatus, Demand.level, Supplier.availability", controls.get("parameters").getAsString());
         Assertions.assertEquals("Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE", controls.get("expression").getAsString());
         Assertions.assertEquals("When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.", controls.get("spec").getAsString());
