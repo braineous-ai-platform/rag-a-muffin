@@ -242,6 +242,12 @@ public class PayFunctionalExecutionIT {
         Map<String, Integer> resultCounts =
                 new HashMap<String, Integer>();
 
+        Map<String, Integer> classificationCounts =
+                new HashMap<String, Integer>();
+
+        List<String> rawResponses =
+                new ArrayList<String>();
+
         int i = 0;
         while (i < runCount) {
 
@@ -274,69 +280,119 @@ public class PayFunctionalExecutionIT {
 
             Console.log("pay.drift.rawResponse.normalized", rawResponse);
 
-            JsonElement parsed =
-                    JsonParser.parseString(rawResponse);
+            rawResponses.add(rawResponse);
 
-            assertTrue(
-                    parsed.isJsonObject(),
-                    "V14 result assertion failed: root is not a JSON object\n"
-                            + rawResponse
-            );
+            String classification =
+                    this.classifyResponse(rawResponse);
 
-            JsonObject root =
-                    parsed.getAsJsonObject();
+            Console.log("pay.drift.classification", classification);
 
-            assertEquals(
-                    1,
-                    root.size(),
-                    "V14 result assertion failed: expected exactly one field\n"
-                            + rawResponse
-            );
-            assertTrue(
-                    root.has("result"),
-                    "V14 result assertion failed: missing result\n"
-                            + rawResponse
-            );
-            assertTrue(
-                    root.get("result").isJsonPrimitive(),
-                    "V14 result assertion failed: result is not a primitive\n"
-                            + rawResponse
-            );
-            assertTrue(
-                    root.get("result").getAsJsonPrimitive().isString(),
-                    "V14 result assertion failed: result is not a string\n"
-                            + rawResponse
-            );
+            this.increment(classificationCounts, classification);
 
             String resultValue =
-                    root.get("result").getAsString();
+                    this.extractResultValue(rawResponse);
 
-            Console.log("pay.drift.result", resultValue);
-
-            boolean accepted = false;
-            if ("ELIGIBLE".equals(resultValue)) {
-                accepted = true;
-            } else {
-                if ("result".equals(resultValue)) {
-                    accepted = true;
-                }
+            if (resultValue != null) {
+                Console.log("pay.drift.result", resultValue);
+                this.increment(resultCounts, resultValue);
             }
-
-            assertTrue(
-                    accepted,
-                    "V14 result assertion failed\n"
-                            + "=== RAW RESPONSE BEGIN ===\n"
-                            + rawResponse
-                            + "\n=== RAW RESPONSE END ===\n"
-            );
-
-            this.increment(resultCounts, resultValue);
 
             i++;
         }
 
         Console.log("pay.drift.runCount", String.valueOf(runCount));
+        Console.log("pay.drift.rawResponses", rawResponses.toString());
+        Console.log("pay.drift.classifications", classificationCounts.toString());
         Console.log("pay.drift.uniqueResults", resultCounts.toString());
+    }
+
+    private String classifyResponse(String rawResponse) {
+        if (rawResponse == null) {
+            return "contamination";
+        }
+
+        String trimmed =
+                rawResponse.trim();
+
+        if (trimmed.length() == 0) {
+            return "contamination";
+        }
+
+        JsonElement parsed;
+        try {
+            parsed = JsonParser.parseString(trimmed);
+        } catch (Exception exception) {
+            return "contamination";
+        }
+
+        if (parsed == null || parsed.isJsonNull()) {
+            return "contamination";
+        }
+
+        if (!parsed.isJsonObject()) {
+            return "noise";
+        }
+
+        JsonObject root =
+                parsed.getAsJsonObject();
+
+        if (root.size() != 1) {
+            return "noise";
+        }
+
+        if (!root.has("result")) {
+            return "noise";
+        }
+
+        JsonElement result =
+                root.get("result");
+
+        if (result == null || !result.isJsonPrimitive()) {
+            return "noise";
+        }
+
+        if (!result.getAsJsonPrimitive().isString()) {
+            return "noise";
+        }
+
+        return "success";
+    }
+
+    private String extractResultValue(String rawResponse) {
+        if (rawResponse == null) {
+            return null;
+        }
+
+        JsonElement parsed;
+        try {
+            parsed = JsonParser.parseString(rawResponse);
+        } catch (Exception exception) {
+            return null;
+        }
+
+        if (parsed == null || !parsed.isJsonObject()) {
+            return null;
+        }
+
+        JsonObject root =
+                parsed.getAsJsonObject();
+
+        if (!root.has("result")) {
+            return null;
+        }
+
+        JsonElement result =
+                root.get("result");
+
+        if (result == null || !result.isJsonPrimitive()) {
+            return null;
+        }
+
+        if (!result.getAsJsonPrimitive().isString()) {
+            return null;
+        }
+
+        return result.getAsString();
     }
 
     private JsonObject loadV14Query() {

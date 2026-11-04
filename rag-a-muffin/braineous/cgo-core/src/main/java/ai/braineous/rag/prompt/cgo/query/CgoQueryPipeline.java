@@ -86,6 +86,9 @@ public final class CgoQueryPipeline implements QueryPipeline {
         llmPayload.addProperty("stream", false);
 
         request.generateRequestId();
+        System.out.print("=== CGO OUTBOUND PROMPT BEGIN ===\n");
+        System.out.print(llmPayload.toString());
+        System.out.print("\n=== CGO OUTBOUND PROMPT END ===\n");
         String rawResponse =
                 this.intelligenceBridge.invoke(llmPayload.toString(), "{}");
         rawResponse = this.mapToJsonResponseConverter.convert(rawResponse);

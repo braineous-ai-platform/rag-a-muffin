@@ -9,6 +9,7 @@
     "phase2=Resolution",
     "execute task.controls.spec phase1 and phase2 in order. return task.controls.result = result",
     "respond only with task.controls.result value",
+    "stop immediately after you respond",
     "All generated responses must be in English."
   ]
 }

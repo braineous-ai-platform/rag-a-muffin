@@ -78,6 +78,7 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         instructions.add("phase2=Resolution");
         instructions.add("execute task.controls.spec phase1 and phase2 in order. return task.controls.result = result");
         instructions.add("respond only with task.controls.result value");
+        instructions.add("stop immediately after you respond");
         instructions.add("All generated responses must be in English.");
     }
 }

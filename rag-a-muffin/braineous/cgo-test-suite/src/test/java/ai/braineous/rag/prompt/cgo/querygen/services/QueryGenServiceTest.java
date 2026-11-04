@@ -140,7 +140,7 @@ public class QueryGenServiceTest {
 
         Console.log("querygen.instructions.expected", expectedInstructions.toString());
 
-        Assertions.assertEquals(10, instructions.size());
+        Assertions.assertEquals(11, instructions.size());
         Assertions.assertEquals(expectedInstructions, instructions);
 
         assertInstructionDoesNotExist(instructions, "Use the requested SELECT fields as keys.");
