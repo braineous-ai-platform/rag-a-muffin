@@ -42,7 +42,7 @@ public class PayFunctionalExecutionIT {
                 Arrays.asList(
                         new Control("parameters", "CustomerAccount.status, PaymentMethod.type, RiskProfile.level, MerchantPolicy.capture"),
                         new Control("expression", "CustomerAccount.status is equal to ACTIVE and PaymentMethod.type is equal to CARD and RiskProfile.level is equal to LOW and MerchantPolicy.capture is equal to AUTO"),
-                        new Control("spec", "The expression determines whether payment capture is eligible. When the expression evaluates to true, payment capture is eligible and the runtime result is ELIGIBLE. When the expression evaluates to false, payment capture is not eligible and the runtime result is INELIGIBLE."),
+                        new Control("spec", "The expression determines whether payment capture is eligible. When the expression evaluates to true, payment capture is eligible and the runtime result is success. When the expression evaluates to false, payment capture is not eligible and the runtime result is fail."),
                         new Control("result", "result")
                 )
         );
@@ -86,14 +86,28 @@ public class PayFunctionalExecutionIT {
         assertTrue(envelope.contains("\"task\""));
         assertTrue(envelope.contains("\"context\""));
 
+        assertNotNull(execution.getLlmResponseValidation());
+
         String rawResponse =
                 String.valueOf(execution.getRawResponse()).trim();
 
         Console.log("pay.functional.rawResponse.normalized", rawResponse);
 
-        // assertFalse(rawResponse.contains("\n"));
-        // assertFalse(rawResponse.contains("\r"));
-        // assertFalse(rawResponse.contains("\t"));
+        if (!execution.getLlmResponseValidation().isOk()) {
+            assertEquals("ERROR", execution.getStatus());
+            assertEquals("llm_response", execution.getStage());
+
+            Console.log(
+                    "pay.functional.model.contract.rejection.code",
+                    String.valueOf(execution.getLlmResponseValidation().getCode())
+            );
+            Console.log(
+                    "pay.functional.model.contract.rejection.rawResponse",
+                    rawResponse
+            );
+
+            return;
+        }
 
         JsonElement parsed =
                 JsonParser.parseString(rawResponse);
@@ -112,11 +126,15 @@ public class PayFunctionalExecutionIT {
                 root.get("result").getAsString();
 
         boolean accepted = false;
-        if ("ELIGIBLE".equals(resultValue)) {
+        if ("success".equals(resultValue)) {
             accepted = true;
         } else {
-            if ("result".equals(resultValue)) {
+            if ("fail".equals(resultValue)) {
                 accepted = true;
+            } else {
+                if ("result".equals(resultValue)) {
+                    accepted = true;
+                }
             }
         }
 

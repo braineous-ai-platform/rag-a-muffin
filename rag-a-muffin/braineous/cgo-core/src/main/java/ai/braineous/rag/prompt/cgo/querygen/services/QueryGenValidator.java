@@ -76,6 +76,26 @@ public final class QueryGenValidator implements PhaseResultValidator {
                 );
             }
 
+            JsonObject controls = task.getAsJsonObject("controls");
+
+            String spec = requireString(controls, "spec");
+            if (spec == null) {
+                return error(
+                        "querygen.contract.task.controls.spec_missing_or_invalid",
+                        "Missing or invalid 'task.controls.spec' (must be a non-empty string)",
+                        Collections.singletonMap("controls", controls.toString())
+                );
+            }
+
+            String specText = spec.toLowerCase();
+            if (specText.indexOf("success") < 0 || specText.indexOf("fail") < 0) {
+                return error(
+                        "querygen.contract.task.controls.spec_success_fail_undefined",
+                        "task.controls.spec must define success and fail",
+                        Collections.singletonMap("spec", spec)
+                );
+            }
+
             if (task.has("factId") && !task.get("factId").isJsonNull()) {
                 if (requireString(task, "factId") == null) {
                     return error(

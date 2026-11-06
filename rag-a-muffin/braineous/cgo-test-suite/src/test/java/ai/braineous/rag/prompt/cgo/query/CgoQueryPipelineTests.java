@@ -1,6 +1,7 @@
 package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.arc.IntelligenceBridge;
+import ai.braineous.rag.prompt.cgo.api.Control;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
@@ -27,6 +28,15 @@ public class CgoQueryPipelineTests {
     public void test_1() {
         QueryRequest<ValidateTask> request =
                 buildRequest();
+
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
@@ -109,6 +119,15 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
+
         AtomicInteger validationCount =
                 new AtomicInteger(0);
 
@@ -190,6 +209,15 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest(rule);
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
+
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
                         "{\"result\":\"ELIGIBLE\"}"
@@ -250,6 +278,15 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest(rule);
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
+
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
                         "{\"result\":\"ELIGIBLE\"}"
@@ -292,6 +329,15 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
+
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge("{bad-json");
 
@@ -322,6 +368,15 @@ public class CgoQueryPipelineTests {
     public void test_7() {
         QueryRequest<ValidateTask> request =
                 buildRequest();
+
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge("{\"unused\":true}");
@@ -363,6 +418,15 @@ public class CgoQueryPipelineTests {
         QueryRequest<ValidateTask> request =
                 buildRequest();
 
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
+
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
                         "{\"result\":\"ELIGIBLE\"}"
@@ -386,6 +450,15 @@ public class CgoQueryPipelineTests {
     public void test_9() {
         QueryRequest<ValidateTask> request =
                 buildRequest();
+
+        request.getTask().setControls(
+                Arrays.asList(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         String arcResponse =
                 "result=ELIGIBLE";

@@ -56,6 +56,14 @@ class ObserverTests {
 
         Meta meta = new Meta("v1", queryKind, "spine");
         ValidateTask task = new ValidateTask("validate flight airports", factId);
+        task.setControls(
+                List.of(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         Node node = new Node(
                 factId,
@@ -112,6 +120,14 @@ class ObserverTests {
 
         Meta meta = new Meta("v1", existingQueryKind, "spine");
         ValidateTask task = new ValidateTask("validate flight airports", factId);
+        task.setControls(
+                List.of(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         Node node = new Node(
                 factId,

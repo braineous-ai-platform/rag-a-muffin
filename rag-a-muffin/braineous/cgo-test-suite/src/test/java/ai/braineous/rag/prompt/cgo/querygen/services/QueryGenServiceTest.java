@@ -32,6 +32,16 @@ public class QueryGenServiceTest {
         QueryGenService service = new QueryGenService();
         QueryRequest request = buildRequest();
 
+        ValidateTask task = (ValidateTask) request.getTask();
+        List<Control> controls = new ArrayList<Control>(task.getControls());
+        controls.add(
+                new Control(
+                        "spec",
+                        "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                )
+        );
+        task.setControls(controls);
+
         QueryGenOutput output = service.generateQuery(request);
 
         Console.log("querygen.output.payload", output.getPayload().toString());

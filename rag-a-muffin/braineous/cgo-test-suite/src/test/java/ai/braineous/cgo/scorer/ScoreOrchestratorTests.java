@@ -155,6 +155,14 @@ public class ScoreOrchestratorTests {
                 "validate flight airports",
                 factId
         );
+        task.setControls(
+                List.of(
+                        new Control(
+                                "spec",
+                                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+                        )
+                )
+        );
 
         Node node = new Node(
                 factId,

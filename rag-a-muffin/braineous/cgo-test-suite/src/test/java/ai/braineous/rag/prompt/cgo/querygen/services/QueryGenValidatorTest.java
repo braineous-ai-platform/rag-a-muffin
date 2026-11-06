@@ -285,6 +285,122 @@ public class QueryGenValidatorTest {
         assertEquals("querygen_contract_validation", result.getStage());
     }
 
+    @Test
+    public void validate_shouldReturnError_whenSpecIsMissing() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").remove("spec");
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specMissing.payload", payload.toString());
+        Console.log("querygen.validator.specMissing.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.controls.spec_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.controls.spec' (must be a non-empty string)", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenSpecIsBlank() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").addProperty("spec", "   ");
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specBlank.payload", payload.toString());
+        Console.log("querygen.validator.specBlank.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.controls.spec_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.controls.spec' (must be a non-empty string)", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenSpecIsNotString() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").add("spec", new JsonObject());
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specNotString.payload", payload.toString());
+        Console.log("querygen.validator.specNotString.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.controls.spec_missing_or_invalid", result.getCode());
+        assertEquals("Missing or invalid 'task.controls.spec' (must be a non-empty string)", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenSpecDefinesSuccessOnly() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").addProperty(
+                "spec",
+                "When the expression is true, the runtime result is success."
+        );
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specSuccessOnly.payload", payload.toString());
+        Console.log("querygen.validator.specSuccessOnly.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.controls.spec_success_fail_undefined", result.getCode());
+        assertEquals("task.controls.spec must define success and fail", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnError_whenSpecDefinesFailOnly() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").addProperty(
+                "spec",
+                "When the expression is false, the runtime result is fail."
+        );
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specFailOnly.payload", payload.toString());
+        Console.log("querygen.validator.specFailOnly.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertFalse(result.isOk());
+        assertEquals("querygen.contract.task.controls.spec_success_fail_undefined", result.getCode());
+        assertEquals("task.controls.spec must define success and fail", result.getMessage());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
+    @Test
+    public void validate_shouldReturnOk_whenSpecDefinesSuccessAndFailWithCustomWording() {
+        QueryGenValidator validator = new QueryGenValidator();
+        JsonObject payload = buildValidPayload();
+        payload.getAsJsonObject("task").getAsJsonObject("controls").addProperty(
+                "spec",
+                "Custom developer rule: SUCCESS when replenish is required; FAIL when hold is required."
+        );
+
+        ValidationResult result = validator.validate(payload.toString());
+
+        Console.log("querygen.validator.specCustomWording.payload", payload.toString());
+        Console.log("querygen.validator.specCustomWording.result", String.valueOf(result));
+
+        assertNotNull(result);
+        assertTrue(result.isOk());
+        assertEquals("querygen.contract.ok", result.getCode());
+        assertEquals("querygen_contract_validation", result.getStage());
+    }
+
     private JsonObject buildValidPayload() {
         JsonObject root = new JsonObject();
 
@@ -300,7 +416,12 @@ public class QueryGenValidatorTest {
         root.add("context", context);
 
         JsonObject task = new JsonObject();
-        task.add("controls", new JsonObject());
+        JsonObject controls = new JsonObject();
+        controls.addProperty(
+                "spec",
+                "When the expression is true, the runtime result is success. When the expression is false, the runtime result is fail."
+        );
+        task.add("controls", controls);
         task.addProperty("factId", "Flight:F100");
 
         JsonArray select = new JsonArray();
