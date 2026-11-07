@@ -15,6 +15,7 @@
         <module>cgo-scorer</module>
         <module>cgo-observer</module>
         <module>cgo-history</module>
+        <module>cgo-nexus</module>
         <module>cgo-test-suite</module>
         <module>cgo-it-suite</module>
     </modules>

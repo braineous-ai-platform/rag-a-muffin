@@ -42,6 +42,11 @@
             <artifactId>cgo-history</artifactId>
             <version>${project.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.github.braineous-ai-platform</groupId>
+            <artifactId>cgo-nexus</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <!-- later: spring-boot-starter-web etc. -->
 
         <!-- Test only -->
