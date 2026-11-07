@@ -1,19 +1,18 @@
 package ai.braineous.cgo.nexus.model;
 
 import ai.braineous.rag.prompt.cgo.api.Fact;
-import java.util.List;
-import java.util.Map;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 
 public class ResolvedGraph {
 
     private Fact axis;
-    private Map<String, List<Fact>> relatedFacts;
+    private GraphSnapshot snapshot;
 
     public ResolvedGraph(
             Fact axis,
-            Map<String, List<Fact>> relatedFacts) {
+            GraphSnapshot snapshot) {
         this.axis = axis;
-        this.relatedFacts = relatedFacts;
+        this.snapshot = snapshot;
     }
 
     public Fact getAxis() {
@@ -24,11 +23,11 @@ public class ResolvedGraph {
         this.axis = axis;
     }
 
-    public Map<String, List<Fact>> getRelatedFacts() {
-        return relatedFacts;
+    public GraphSnapshot getSnapshot() {
+        return snapshot;
     }
 
-    public void setRelatedFacts(Map<String, List<Fact>> relatedFacts) {
-        this.relatedFacts = relatedFacts;
+    public void setSnapshot(GraphSnapshot snapshot) {
+        this.snapshot = snapshot;
     }
 }
