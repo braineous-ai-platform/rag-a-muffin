@@ -1,0 +1,8 @@
+security investigation
+
+context
+account: Account:emp-042
+location: germany
+device: macbook pro
+failedLoginAttempts: 3
+successfulLoginAttempts: 1

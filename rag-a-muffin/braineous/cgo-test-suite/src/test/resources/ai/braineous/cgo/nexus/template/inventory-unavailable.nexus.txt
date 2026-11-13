@@ -1,0 +1,4 @@
+inventory availability.
+
+context
+The result is 0.

@@ -1,0 +1,12 @@
+inventory availability.
+
+context
+the result is 0.
+
+rule
+if the result is greater than or equal to 1,
+the inventory is available.
+otherwise, the inventory is unavailable.
+
+decision
+state the inventory status as either available or unavailable.
