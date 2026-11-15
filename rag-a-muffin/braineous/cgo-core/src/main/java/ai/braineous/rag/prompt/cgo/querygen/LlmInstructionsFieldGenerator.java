@@ -47,6 +47,14 @@ public class LlmInstructionsFieldGenerator implements FieldGenerator {
         return new FieldGenerationResult(fieldDefinition, fieldValue, validationResult);
     }
 
+    public String generateNexusInstructions() {
+        return "This is the prompt.\n\n"
+                + "Context provides the facts.\n"
+                + "Rule defines the conditions.\n"
+                + "Decision defines the question.\n"
+                + "The response is the answer.";
+    }
+
     private void addExecutionModeInstructions(JsonArray instructions) {
         // instructions.add("You are an execution engine, not a document reader.");
         // instructions.add("Return only JSON.");

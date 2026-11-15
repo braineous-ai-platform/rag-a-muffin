@@ -149,6 +149,41 @@ public class LlmInstructionsFieldGeneratorTest {
         assertInstructionDoesNotExist(instructions, "Do not infer control values from context.");
     }
 
+    @Test
+    public void test_6() {
+        LlmInstructionsFieldGenerator generator = new LlmInstructionsFieldGenerator();
+
+        String actual = generator.generateNexusInstructions();
+
+        Console.log("llm.instructions.nexus", actual);
+
+        String expected =
+                "This is the prompt.\n\n"
+                        + "Context provides the facts.\n"
+                        + "Rule defines the conditions.\n"
+                        + "Decision defines the question.\n"
+                        + "The response is the answer.";
+
+        Assertions.assertEquals(expected, actual);
+
+        String[] lines = actual.split("\n", -1);
+        Assertions.assertEquals(6, lines.length);
+        Assertions.assertEquals("This is the prompt.", lines[0]);
+        Assertions.assertEquals("", lines[1]);
+        Assertions.assertEquals("Context provides the facts.", lines[2]);
+        Assertions.assertEquals("Rule defines the conditions.", lines[3]);
+        Assertions.assertEquals("Decision defines the question.", lines[4]);
+        Assertions.assertEquals("The response is the answer.", lines[5]);
+
+        Assertions.assertFalse(actual.startsWith(" "));
+        Assertions.assertFalse(actual.endsWith(" "));
+        Assertions.assertFalse(actual.endsWith("\n"));
+        Assertions.assertFalse(actual.contains("\t"));
+        Assertions.assertFalse(actual.contains(" \n"));
+        Assertions.assertFalse(actual.contains("\n "));
+        Assertions.assertFalse(actual.contains("  "));
+    }
+
     private void assertInstructionExists(JsonArray instructions, String expected) {
         boolean found = false;
 
