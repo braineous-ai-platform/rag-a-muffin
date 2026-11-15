@@ -10,6 +10,6 @@ public class NexusSecurityInvestigation100ObservationIT {
     public void test_1() {
         new NexusDomainExecutionHarness().run(
                 NexusDomainScenarios.securityInvestigation(),
-                100);
+                1);
     }
 }

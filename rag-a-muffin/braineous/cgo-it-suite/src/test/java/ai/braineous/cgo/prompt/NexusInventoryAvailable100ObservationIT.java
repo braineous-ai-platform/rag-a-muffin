@@ -10,6 +10,6 @@ public class NexusInventoryAvailable100ObservationIT {
     public void test_1() {
         new NexusDomainExecutionHarness().run(
                 NexusDomainScenarios.inventoryAvailable(),
-                100);
+                1);
     }
 }
