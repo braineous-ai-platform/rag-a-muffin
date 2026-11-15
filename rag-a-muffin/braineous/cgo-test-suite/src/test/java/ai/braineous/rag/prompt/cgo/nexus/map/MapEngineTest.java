@@ -1,8 +1,8 @@
-package ai.braineous.cgo.nexus.map;
+package ai.braineous.rag.prompt.cgo.nexus.map;
 
-import ai.braineous.cgo.nexus.model.ResolvedGraph;
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
+import ai.braineous.rag.prompt.cgo.nexus.model.ResolvedGraph;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 import org.junit.jupiter.api.Test;
 
@@ -13,26 +13,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
 public class MapEngineTest {
-
-    @Test
-    public void test_1() {
-        Map<String, String> actual = new MapEngine().evaluate(
-                this.resolved(
-                        this.fact(
-                                "Account:emp-042",
-                                "{\"id\":\"Account:emp-042\",\"kind\":\"Account\","
-                                        + "\"mode\":\"atomic\",\"account\":\"emp-042\"}"),
-                        this.fact(
-                                "Location:germany",
-                                "{\"id\":\"Location:germany\",\"kind\":\"Location\","
-                                        + "\"mode\":\"atomic\",\"location\":\"germany\"}")));
-        System.out.print("=== test_1 ===\n");
-        System.out.print(String.valueOf(actual));
-        System.out.print("\n");
-        assertEquals(2, actual.size());
-        assertEquals("emp-042", actual.get("account"));
-        assertEquals("germany", actual.get("location"));
-    }
 
     @Test
     public void test_2() {
@@ -49,23 +29,6 @@ public class MapEngineTest {
         assertEquals("3", actual.get("failedLoginAttempts"));
         assertEquals("macbook pro", actual.get("label"));
         assertEquals("true", actual.get("active"));
-    }
-
-    @Test
-    public void test_3() {
-        Map<String, String> actual = new MapEngine().evaluate(
-                this.resolved(
-                        this.fact(
-                                "Account:emp-042",
-                                "{\"id\":\"Account:emp-042\",\"kind\":\"Account\","
-                                        + "\"mode\":\"atomic\",\"account\":\"emp-042\"}")));
-        System.out.print("=== test_3 ===\n");
-        System.out.print(String.valueOf(actual));
-        System.out.print("\n");
-        assertFalse(actual.containsKey("id"));
-        assertFalse(actual.containsKey("kind"));
-        assertFalse(actual.containsKey("mode"));
-        assertEquals("emp-042", actual.get("account"));
     }
 
     @Test

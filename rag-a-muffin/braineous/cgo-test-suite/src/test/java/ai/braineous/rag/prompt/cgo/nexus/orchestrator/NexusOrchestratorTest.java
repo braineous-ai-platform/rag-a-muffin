@@ -1,4 +1,4 @@
-package ai.braineous.cgo.nexus.orchestrator;
+package ai.braineous.rag.prompt.cgo.nexus.orchestrator;
 
 import org.junit.jupiter.api.Test;
 

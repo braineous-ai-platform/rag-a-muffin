@@ -1,8 +1,9 @@
 package ai.braineous.cgo.nexus.arithmetic;
 
 import ai.braineous.cgo.nexus.harness.Phase0GraphHarness;
-import ai.braineous.cgo.nexus.model.ResolvedGraph;
-import ai.braineous.cgo.nexus.orchestrator.GraphResolver;
+import ai.braineous.rag.prompt.cgo.nexus.arithmetic.ArithmeticEngine;
+import ai.braineous.rag.prompt.cgo.nexus.model.ResolvedGraph;
+import ai.braineous.rag.prompt.cgo.nexus.orchestrator.GraphResolver;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphSnapshot;
 import org.junit.jupiter.api.Test;

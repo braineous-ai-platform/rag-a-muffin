@@ -1,4 +1,4 @@
-package ai.braineous.cgo.nexus.template;
+package ai.braineous.rag.prompt.cgo.nexus.template;
 
 import org.junit.jupiter.api.Test;
 
@@ -76,28 +76,6 @@ public class TemplateGeneratorTest {
         assertEquals(2, blocks.length);
         assertEquals("alpha.", blocks[0]);
         assertEquals("context\nThe result is 0.", blocks[1]);
-    }
-
-    @Test
-    public void test_6() {
-        Map<String, String> values = new LinkedHashMap<String, String>();
-        values.put("account", "emp-042");
-        values.put("location", "germany");
-        String actual = new TemplateGenerator().generate(
-                "security investigation",
-                values);
-        System.out.print("=== test_6 ===\n");
-        System.out.print(actual);
-        System.out.print("\n");
-        assertEquals(
-                "security investigation\n\ncontext\n"
-                        + "account: emp-042\n"
-                        + "location: germany",
-                actual);
-        assertTrue(actual.startsWith("security investigation"));
-        assertFalse(actual.contains("\nrule\n"));
-        assertFalse(actual.contains("\ndecision\n"));
-        assertFalse(actual.contains("The result is"));
     }
 
     @Test

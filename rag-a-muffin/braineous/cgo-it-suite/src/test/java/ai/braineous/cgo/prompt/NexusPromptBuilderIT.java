@@ -1,6 +1,6 @@
 package ai.braineous.cgo.prompt;
 
-import ai.braineous.cgo.nexus.orchestrator.NexusOrchestrator;
+import ai.braineous.rag.prompt.cgo.nexus.orchestrator.NexusOrchestrator;
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;

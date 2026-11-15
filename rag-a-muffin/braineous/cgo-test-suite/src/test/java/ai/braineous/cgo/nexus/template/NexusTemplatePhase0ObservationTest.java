@@ -1,6 +1,6 @@
 package ai.braineous.cgo.nexus.template;
 
-import ai.braineous.cgo.nexus.orchestrator.NexusOrchestrator;
+import ai.braineous.rag.prompt.cgo.nexus.orchestrator.NexusOrchestrator;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.models.cgo.graph.BindResult;
 import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
