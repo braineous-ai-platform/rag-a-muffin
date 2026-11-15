@@ -315,6 +315,131 @@ public class PromptBuilderTests {
         );
     }
 
+    @Test
+    public void test_9() {
+        PromptBuilder builder = new PromptBuilder();
+        String nexus =
+                "inventory availability.\n\ncontext\nThe result is 0.";
+        String rule =
+                "rule\n"
+                        + "if the result is greater than or equal to 1,\n"
+                        + "the inventory is available.\n"
+                        + "otherwise, the inventory is unavailable.";
+        String decision =
+                "decision\n"
+                        + "state the inventory status as either available or unavailable.";
+
+        PromptRequestOutput output =
+                builder.generateExecutionPrompt(nexus, rule, decision);
+        String prompt =
+                output.getRequestOutput().get("prompt").getAsString();
+
+        Console.log("execution.prompt.nexus", prompt);
+
+        Assertions.assertEquals(
+                nexus + "\n\n" + rule + "\n\n" + decision,
+                prompt);
+        Assertions.assertTrue(prompt.startsWith(nexus));
+        Assertions.assertTrue(prompt.indexOf(nexus) < prompt.indexOf(rule));
+        Assertions.assertTrue(prompt.indexOf(rule) < prompt.indexOf(decision));
+        Assertions.assertEquals(
+                "prompt.execution.ok",
+                output.getValidationResult().getCode());
+        Assertions.assertFalse(prompt.contains("llm_instructions"));
+        Assertions.assertFalse(prompt.contains("task.controls"));
+    }
+
+    @Test
+    public void test_10() {
+        String nexus =
+                "security investigation\n\ncontext\n"
+                        + "account: Account:emp-042\n"
+                        + "location: germany\n"
+                        + "device: macbook pro\n"
+                        + "failedLoginAttempts: 3\n"
+                        + "successfulLoginAttempts: 1";
+        String rule =
+                "rule\n"
+                        + "when multiple failed login attempts are followed by\n"
+                        + "a successful login attempt,\n"
+                        + "the activity warrants a security investigation.\n"
+                        + "otherwise, routine monitoring is sufficient.";
+        String decision =
+                "decision\n"
+                        + "based on the context and the rule,\n"
+                        + "does this account activity warrant a security investigation\n"
+                        + "or routine monitoring?";
+
+        String prompt =
+                new PromptBuilder()
+                        .generateExecutionPrompt(nexus, rule, decision)
+                        .getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+
+        Console.log("execution.prompt.nexus.verbatim", prompt);
+
+        Assertions.assertEquals(
+                "security investigation\n\ncontext\n"
+                        + "account: Account:emp-042\n"
+                        + "location: germany\n"
+                        + "device: macbook pro\n"
+                        + "failedLoginAttempts: 3\n"
+                        + "successfulLoginAttempts: 1\n\n"
+                        + rule
+                        + "\n\n"
+                        + decision,
+                prompt);
+        Assertions.assertTrue(prompt.contains("account: Account:emp-042"));
+        Assertions.assertTrue(prompt.contains("failedLoginAttempts: 3"));
+        Assertions.assertFalse(prompt.contains("Failed Login"));
+        Assertions.assertEquals(
+                prompt.indexOf("\n\nrule\n"),
+                nexus.length());
+        Assertions.assertEquals(
+                prompt.indexOf("\n\ndecision\n"),
+                nexus.length() + 2 + rule.length());
+    }
+
+    @Test
+    public void test_11() {
+        PromptBuilder builder = new PromptBuilder();
+
+        String allNull =
+                builder.generateExecutionPrompt(null, null, null)
+                        .getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+        Console.log("execution.prompt.nexus.null.all", allNull);
+        Assertions.assertEquals("\n\n\n\n", allNull);
+
+        String nexusOnly =
+                builder.generateExecutionPrompt(
+                                "inventory availability.\n\ncontext\nThe result is 0.",
+                                null,
+                                null)
+                        .getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+        Console.log("execution.prompt.nexus.null.rule.decision", nexusOnly);
+        Assertions.assertEquals(
+                "inventory availability.\n\ncontext\nThe result is 0.\n\n\n\n",
+                nexusOnly);
+
+        String ruleAndDecision =
+                builder.generateExecutionPrompt(
+                                null,
+                                "rule\nbody",
+                                "decision\nbody")
+                        .getRequestOutput()
+                        .get("prompt")
+                        .getAsString();
+        Console.log("execution.prompt.nexus.null.title", ruleAndDecision);
+        Assertions.assertEquals(
+                "\n\nrule\nbody\n\ndecision\nbody",
+                ruleAndDecision);
+    }
+
     private QueryRequest<ValidateTask> buildRequest() {
 
         Meta meta =

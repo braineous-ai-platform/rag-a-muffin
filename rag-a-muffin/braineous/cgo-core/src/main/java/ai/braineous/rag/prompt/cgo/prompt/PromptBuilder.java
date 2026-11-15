@@ -95,6 +95,35 @@ public class PromptBuilder {
         return new PromptRequestOutput(root, result);
     }
 
+    public PromptRequestOutput generateExecutionPrompt(
+            String nexusTitleAndContext,
+            String ruleSection,
+            String decisionSection) {
+        StringBuilder prompt = new StringBuilder();
+        if (nexusTitleAndContext != null) {
+            prompt.append(nexusTitleAndContext);
+        }
+        prompt.append("\n\n");
+        if (ruleSection != null) {
+            prompt.append(ruleSection);
+        }
+        prompt.append("\n\n");
+        if (decisionSection != null) {
+            prompt.append(decisionSection);
+        }
+
+        JsonObject root = new JsonObject();
+        root.addProperty("prompt", prompt.toString());
+
+        ValidationResult result =
+                ValidationResult.ok(
+                        "prompt.execution.ok",
+                        "Execution prompt generated"
+                );
+
+        return new PromptRequestOutput(root, result);
+    }
+
     private String buildExecutionPromptText(JsonObject llmQuery) {
         StringBuilder prompt = new StringBuilder();
 
