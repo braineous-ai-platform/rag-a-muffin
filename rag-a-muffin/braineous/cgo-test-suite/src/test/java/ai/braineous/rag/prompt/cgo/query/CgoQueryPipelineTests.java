@@ -2,6 +2,8 @@ package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.arc.IntelligenceBridge;
 import ai.braineous.rag.prompt.cgo.api.Control;
+import ai.braineous.rag.prompt.cgo.api.Edge;
+import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
@@ -9,7 +11,11 @@ import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
+import ai.braineous.rag.prompt.cgo.querygen.LlmInstructionsFieldGenerator;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
+import ai.braineous.rag.prompt.models.cgo.graph.BindResult;
+import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
+import ai.braineous.rag.prompt.models.cgo.graph.Input;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
@@ -18,6 +24,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -531,6 +538,187 @@ public class CgoQueryPipelineTests {
                 execution.getRawResponse(),
                 validatorRaw.get()
         );
+    }
+
+    @Test
+    public void test_10() {
+        Fact inventory = this.hydrateInventoryUnavailable();
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        String instructions =
+                new LlmInstructionsFieldGenerator().generateNexusInstructions();
+        String expectedNexus =
+                "inventory availability.\n\ncontext\nThe result is 0.";
+        String ruleSection =
+                "rule\n"
+                        + "if the result is greater than or equal to 1,\n"
+                        + "the inventory is available.\n"
+                        + "otherwise, the inventory is unavailable.";
+        String decisionSection =
+                "decision\n"
+                        + "state the inventory status as either available or unavailable.";
+        String expectedPrompt =
+                instructions
+                        + "\n\n"
+                        + expectedNexus
+                        + "\n\n"
+                        + ruleSection
+                        + "\n\n"
+                        + decisionSection;
+
+        String arcResponse =
+                "result=ELIGIBLE";
+        String expectedJson =
+                "{\"result\":\"ELIGIBLE\"}";
+
+        AtomicInteger validationCount =
+                new AtomicInteger(0);
+        AtomicReference<String> validatorRaw =
+                new AtomicReference<String>();
+        final QueryResultValidator queryResultValidator =
+                new QueryResultValidator();
+        PhaseResultValidator validator =
+                new PhaseResultValidator() {
+                    @Override
+                    public ValidationResult validate(String raw) {
+                        validationCount.incrementAndGet();
+                        validatorRaw.set(raw);
+                        return queryResultValidator.validate(raw);
+                    }
+                };
+
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge(arcResponse);
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(
+                        new PromptBuilder(),
+                        intelligenceBridge,
+                        validator
+                );
+
+        QueryExecution<ValidateTask> execution =
+                pipeline.execute(
+                        request,
+                        inventory,
+                        List.of("Sales"),
+                        "(Inventory.quantityOnHand - Inventory.quantityReserved) / Sales.quantitySold",
+                        "inventory availability.",
+                        ruleSection,
+                        decisionSection);
+
+        String assembledPrompt =
+                intelligenceBridge.lastPrompt.get("prompt").getAsString();
+
+        Console.log("pipeline.nexus.prompt", String.valueOf(intelligenceBridge.lastPrompt));
+        Console.log("pipeline.nexus.raw", execution.getRawResponse());
+        Console.log("pipeline.nexus.promptValidation", String.valueOf(execution.getPromptValidation()));
+        Console.log("pipeline.nexus.llmValidation", String.valueOf(execution.getLlmResponseValidation()));
+
+        Assertions.assertEquals(1, intelligenceBridge.callCount);
+        Assertions.assertNotNull(intelligenceBridge.lastPrompt);
+        Assertions.assertEquals(2, intelligenceBridge.lastPrompt.size());
+        Assertions.assertTrue(intelligenceBridge.lastPrompt.has("prompt"));
+        Assertions.assertTrue(intelligenceBridge.lastPrompt.has("stream"));
+        Assertions.assertEquals(expectedPrompt, assembledPrompt);
+        Assertions.assertTrue(assembledPrompt.startsWith(instructions));
+        Assertions.assertEquals(
+                assembledPrompt.indexOf(expectedNexus),
+                instructions.length() + 2);
+        Assertions.assertEquals(
+                assembledPrompt.indexOf("\n\nrule\n"),
+                instructions.length() + 2 + expectedNexus.length());
+        Assertions.assertEquals(
+                assembledPrompt.indexOf("\n\ndecision\n"),
+                instructions.length() + 2 + expectedNexus.length() + 2 + ruleSection.length());
+        Assertions.assertFalse(
+                intelligenceBridge.lastPrompt.get("stream").getAsBoolean());
+        Assertions.assertFalse(assembledPrompt.contains("llm_instructions"));
+        Assertions.assertFalse(assembledPrompt.contains("task.controls"));
+        Assertions.assertFalse(intelligenceBridge.lastPrompt.has("llm_instructions"));
+        Assertions.assertFalse(intelligenceBridge.lastPrompt.has("task"));
+        Assertions.assertFalse(intelligenceBridge.lastPrompt.has("context"));
+
+        Assertions.assertEquals(1, validationCount.get());
+        Assertions.assertEquals(expectedJson, validatorRaw.get());
+        Assertions.assertEquals(expectedJson, execution.getRawResponse());
+
+        Assertions.assertNotNull(execution.getPromptValidation());
+        Assertions.assertTrue(execution.getPromptValidation().isOk());
+        Assertions.assertEquals(
+                "prompt.execution.ok",
+                execution.getPromptValidation().getCode());
+        Assertions.assertNotEquals(
+                "querygen.contract.ok",
+                execution.getPromptValidation().getCode());
+
+        Assertions.assertNotNull(execution.getLlmResponseValidation());
+        Assertions.assertTrue(execution.getLlmResponseValidation().isOk());
+        Assertions.assertEquals(
+                "queryresult.contract.ok",
+                execution.getLlmResponseValidation().getCode());
+
+        Assertions.assertNull(execution.getDomainValidation());
+        Assertions.assertTrue(execution.isOk());
+
+        JsonObject llmQuery =
+                execution.getLlmResponse()
+                        .getLlmRequest()
+                        .getLlmQuery();
+        Assertions.assertNotNull(llmQuery);
+        Assertions.assertEquals(expectedPrompt, llmQuery.get("prompt").getAsString());
+        Assertions.assertFalse(llmQuery.has("llm_instructions"));
+        Assertions.assertFalse(llmQuery.has("task"));
+        Assertions.assertFalse(llmQuery.has("context"));
+        Assertions.assertSame(
+                request,
+                execution.getLlmResponse().getLlmRequest().getQueryRequest());
+    }
+
+    private Fact hydrateInventoryUnavailable() {
+        GraphBuilder graphBuilder = GraphBuilder.getInstance();
+        Fact product = this.fact(
+                "Product:PROD-SHAMPOO-250",
+                "{\"id\":\"Product:PROD-SHAMPOO-250\",\"kind\":\"Product\","
+                        + "\"mode\":\"atomic\",\"productId\":\"PROD-SHAMPOO-250\","
+                        + "\"sku\":\"SHAMPOO-250\",\"name\":\"Shampoo 250 mL\","
+                        + "\"unitOfMeasure\":\"bottle\"}");
+        Fact inventory = this.fact(
+                "Inventory:INV-001",
+                "{\"id\":\"Inventory:INV-001\",\"kind\":\"Inventory\","
+                        + "\"mode\":\"atomic\",\"inventoryId\":\"INV-001\","
+                        + "\"quantityOnHand\":0,\"quantityReserved\":0,"
+                        + "\"product\":\"Product:PROD-SHAMPOO-250\"}");
+        Fact sales = this.fact(
+                "Sales:SALE-001",
+                "{\"id\":\"Sales:SALE-001\",\"kind\":\"Sales\","
+                        + "\"mode\":\"atomic\",\"saleId\":\"SALE-001\","
+                        + "\"quantitySold\":25,"
+                        + "\"product\":\"Product:PROD-SHAMPOO-250\"}");
+        graphBuilder.addNode(product);
+        graphBuilder.addNode(inventory);
+        graphBuilder.addNode(sales);
+        BindResult inventoryProduct = graphBuilder.bind(this.edgeInput(inventory, product), null);
+        BindResult salesProduct = graphBuilder.bind(this.edgeInput(sales, product), null);
+        Assertions.assertTrue(inventoryProduct.isOk());
+        Assertions.assertTrue(salesProduct.isOk());
+        return inventory;
+    }
+
+    private Fact fact(String id, String text) {
+        Fact fact = new Fact(id, text);
+        fact.setMode("atomic");
+        return fact;
+    }
+
+    private Input edgeInput(Fact from, Fact to) {
+        Edge edge = new Edge();
+        edge.setId("Edge:" + from.getId() + "->" + to.getId());
+        edge.setFromFactId(from.getId());
+        edge.setToFactId(to.getId());
+        edge.setMode("relational");
+        return new Input(from, to, edge);
     }
 
     private QueryRequest<ValidateTask> buildRequest() {
