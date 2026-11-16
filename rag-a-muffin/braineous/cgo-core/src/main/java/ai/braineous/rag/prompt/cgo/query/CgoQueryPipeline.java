@@ -10,7 +10,9 @@ import ai.braineous.rag.prompt.cgo.querygen.model.QueryGenOutput;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryGenService;
 import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
 import ai.braineous.rag.prompt.utils.Resources;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import java.util.List;
@@ -156,8 +158,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
             }
         }
 
-        JsonObject parsedResponse =
-                this.parseLlmResponse(rawResponse);
+        this.parseLlmResponseIfJsonObject(rawResponse);
 
         QueryExecution<T> execution =
                 new QueryExecution<T>(
@@ -277,8 +278,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
             }
         }
 
-        JsonObject parsedResponse =
-                this.parseLlmResponse(rawResponse);
+        this.parseLlmResponseIfJsonObject(rawResponse);
 
         QueryExecution<T> execution =
                 new QueryExecution<T>(
@@ -355,6 +355,24 @@ public final class CgoQueryPipeline implements QueryPipeline {
         llmResponse.setSuccess(true);
 
         return llmResponse;
+    }
+
+    private JsonObject parseLlmResponseIfJsonObject(String rawResponse) {
+        if (QueryResultValidator.isAcceptedScalar(rawResponse == null ? null : rawResponse.trim())) {
+            return null;
+        }
+        if (rawResponse == null) {
+            return null;
+        }
+        try {
+            JsonElement parsed = JsonParser.parseString(rawResponse);
+            if (parsed == null || !parsed.isJsonObject()) {
+                return null;
+            }
+        } catch (JsonParseException e) {
+            return null;
+        }
+        return this.parseLlmResponse(rawResponse);
     }
 
     private JsonObject parseLlmResponse(String rawResponse) {

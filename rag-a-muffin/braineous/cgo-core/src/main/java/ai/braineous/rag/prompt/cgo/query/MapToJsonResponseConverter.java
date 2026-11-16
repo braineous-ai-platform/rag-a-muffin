@@ -1,5 +1,6 @@
 package ai.braineous.rag.prompt.cgo.query;
 
+import ai.braineous.rag.prompt.cgo.querygen.services.QueryResultValidator;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
@@ -11,28 +12,30 @@ public class MapToJsonResponseConverter {
     }
 
     public String convert(String rawResponse) {
-        String extracted = this.extractResultValue(rawResponse);
+        String extracted = this.extractAcceptedScalar(rawResponse);
         if (extracted == null) {
             return rawResponse;
         }
-
-        JsonObject root = new JsonObject();
-        root.addProperty("result", extracted);
-        return root.toString();
+        return extracted;
     }
 
-    private String extractResultValue(String rawResponse) {
+    private String extractAcceptedScalar(String rawResponse) {
         if (rawResponse == null) {
             return null;
         }
 
-        String fromJson = this.extractFromJsonObject(rawResponse);
-        if (fromJson != null) {
+        String trimmed = rawResponse.trim();
+        if (QueryResultValidator.isAcceptedScalar(trimmed)) {
+            return trimmed;
+        }
+
+        String fromJson = this.extractFromJson(trimmed);
+        if (QueryResultValidator.isAcceptedScalar(fromJson)) {
             return fromJson;
         }
 
         String fromMap = this.extractFromResultKey(rawResponse);
-        if (fromMap != null) {
+        if (QueryResultValidator.isAcceptedScalar(fromMap)) {
             return fromMap;
         }
 
@@ -41,15 +44,25 @@ public class MapToJsonResponseConverter {
             return null;
         }
 
-        String fromStrippedJson = this.extractFromJsonObject(stripped);
-        if (fromStrippedJson != null) {
+        String strippedTrimmed = stripped.trim();
+        if (QueryResultValidator.isAcceptedScalar(strippedTrimmed)) {
+            return strippedTrimmed;
+        }
+
+        String fromStrippedJson = this.extractFromJson(strippedTrimmed);
+        if (QueryResultValidator.isAcceptedScalar(fromStrippedJson)) {
             return fromStrippedJson;
         }
 
-        return this.extractFromResultKey(stripped);
+        String fromStrippedMap = this.extractFromResultKey(stripped);
+        if (QueryResultValidator.isAcceptedScalar(fromStrippedMap)) {
+            return fromStrippedMap;
+        }
+
+        return null;
     }
 
-    private String extractFromJsonObject(String candidate) {
+    private String extractFromJson(String candidate) {
         JsonElement parsed = null;
 
         try {
@@ -58,7 +71,15 @@ public class MapToJsonResponseConverter {
             parsed = null;
         }
 
-        if (parsed == null || !parsed.isJsonObject()) {
+        if (parsed == null) {
+            return null;
+        }
+
+        if (parsed.isJsonPrimitive() && parsed.getAsJsonPrimitive().isString()) {
+            return parsed.getAsString();
+        }
+
+        if (!parsed.isJsonObject()) {
             return null;
         }
 

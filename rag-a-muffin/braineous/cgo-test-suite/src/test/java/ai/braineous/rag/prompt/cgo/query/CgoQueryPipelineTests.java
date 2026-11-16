@@ -47,7 +47,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":\"ELIGIBLE\"}"
+                        "success"
                 );
 
         CgoQueryPipeline pipeline =
@@ -85,7 +85,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertEquals("ok", execution.getStage());
 
         Assertions.assertEquals(
-                "{\"result\":\"ELIGIBLE\"}",
+                "success",
                 execution.getRawResponse()
         );
 
@@ -227,7 +227,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":\"ELIGIBLE\"}"
+                        "success"
                 );
 
         CgoQueryPipeline pipeline =
@@ -296,7 +296,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":\"ELIGIBLE\"}"
+                        "success"
                 );
 
         CgoQueryPipeline pipeline =
@@ -363,7 +363,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertNotNull(execution.getLlmResponseValidation());
         Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
         Assertions.assertEquals(
-                "queryresult.contract.invalid_json",
+                "queryresult.contract.noise",
                 execution.getLlmResponseValidation().getCode()
         );
 
@@ -412,7 +412,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertNotNull(execution.getLlmResponseValidation());
         Assertions.assertFalse(execution.getLlmResponseValidation().isOk());
         Assertions.assertEquals(
-                "queryresult.contract.result_missing",
+                "queryresult.contract.noise",
                 execution.getLlmResponseValidation().getCode()
         );
 
@@ -436,7 +436,7 @@ public class CgoQueryPipelineTests {
 
         CountingIntelligenceBridge intelligenceBridge =
                 new CountingIntelligenceBridge(
-                        "{\"result\":\"ELIGIBLE\"}"
+                        "success"
                 );
 
         CgoQueryPipeline pipeline =
@@ -468,10 +468,10 @@ public class CgoQueryPipelineTests {
         );
 
         String arcResponse =
-                "result=ELIGIBLE";
+                "result=success";
 
         String expectedJson =
-                "{\"result\":\"ELIGIBLE\"}";
+                "success";
 
         AtomicInteger validationCount =
                 new AtomicInteger(0);
@@ -568,9 +568,9 @@ public class CgoQueryPipelineTests {
                         + decisionSection;
 
         String arcResponse =
-                "result=ELIGIBLE";
+                "result=success";
         String expectedJson =
-                "{\"result\":\"ELIGIBLE\"}";
+                "success";
 
         AtomicInteger validationCount =
                 new AtomicInteger(0);

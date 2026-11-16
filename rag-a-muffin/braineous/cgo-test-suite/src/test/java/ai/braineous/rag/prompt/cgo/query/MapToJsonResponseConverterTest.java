@@ -1,159 +1,127 @@
 package ai.braineous.rag.prompt.cgo.query;
 
 import ai.braineous.rag.prompt.observe.Console;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParser;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 public class MapToJsonResponseConverterTest {
 
     @Test
-    public void convert_equalsSeparatedResult_buildsFlatJson() {
+    public void convert_bareSuccess_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "success";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.bare.success.raw", raw);
+        Console.log("map.scalar.bare.success.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_bareFail_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "fail";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.bare.fail.raw", raw);
+        Console.log("map.scalar.bare.fail.out", converted);
+
+        Assertions.assertEquals("fail", converted);
+    }
+
+    @Test
+    public void convert_jsonStringPrimitive_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "\"success\"";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.json.string.raw", raw);
+        Console.log("map.scalar.json.string.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_jsonObjectResult_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "{\"result\":\"success\"}";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.object.raw", raw);
+        Console.log("map.scalar.object.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_equalsSeparatedSuccess_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "result=success";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.equals.raw", raw);
+        Console.log("map.scalar.equals.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_colonSeparatedFail_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "result: fail";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.colon.raw", raw);
+        Console.log("map.scalar.colon.out", converted);
+
+        Assertions.assertEquals("fail", converted);
+    }
+
+    @Test
+    public void convert_markdownFencedSuccess_returnsScalar() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "```\nsuccess\n```";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.fence.raw", raw);
+        Console.log("map.scalar.fence.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_trimsWhitespace() {
+        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
+
+        String raw = "  success  ";
+        String converted = converter.convert(raw);
+
+        Console.log("map.scalar.trim.raw", raw);
+        Console.log("map.scalar.trim.out", converted);
+
+        Assertions.assertEquals("success", converted);
+    }
+
+    @Test
+    public void convert_nonContractValue_passthroughUnchanged() {
         MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
 
         String raw = "result=ELIGIBLE";
-        String json = converter.convert(raw);
+        String converted = converter.convert(raw);
 
-        Console.log("map.json.equals.raw", raw);
-        Console.log("map.json.equals.json", json);
+        Console.log("map.scalar.noise.raw", raw);
+        Console.log("map.scalar.noise.out", converted);
 
-        this.assertFlatResult(json, "ELIGIBLE");
-    }
-
-    @Test
-    public void convert_colonSeparatedResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "result: ELIGIBLE";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.colon.raw", raw);
-        Console.log("map.json.colon.json", json);
-
-        this.assertFlatResult(json, "ELIGIBLE");
-    }
-
-    @Test
-    public void convert_jsonStringResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "{\"result\":\"ELIGIBLE\"}";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.object.raw", raw);
-        Console.log("map.json.object.json", json);
-
-        this.assertFlatResult(json, "ELIGIBLE");
-        Assertions.assertEquals("{\"result\":\"ELIGIBLE\"}", json);
-    }
-
-    @Test
-    public void convert_jsonStringResultValueResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "{\"result\": \"result\"}";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.object.result.value.raw", raw);
-        Console.log("map.json.object.result.value.json", json);
-
-        this.assertFlatResult(json, "result");
-        Assertions.assertEquals("{\"result\":\"result\"}", json);
-    }
-
-    @Test
-    public void convert_markdownFencedEqualsResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "```\nresult=ELIGIBLE\n```";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.fence.equals.raw", raw);
-        Console.log("map.json.fence.equals.json", json);
-
-        this.assertFlatResult(json, "ELIGIBLE");
-    }
-
-    @Test
-    public void convert_markdownFencedJsonResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "```json\n{\"result\":\"ELIGIBLE\"}\n```";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.fence.object.raw", raw);
-        Console.log("map.json.fence.object.json", json);
-
-        this.assertFlatResult(json, "ELIGIBLE");
-    }
-
-    @Test
-    public void convert_trimsWhitespaceAroundResultKeyAndValue() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "  result  :   ELIGIBLE  ";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.trim.raw", raw);
-        Console.log("map.json.trim.json", json);
-
-        this.assertFlatResult(json, "ELIGIBLE");
-    }
-
-    @Test
-    public void convert_usesFirstDelimiterWhenBothArePresent() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "result:=ELIGIBLE";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.first.delimiter.raw", raw);
-        Console.log("map.json.first.delimiter.json", json);
-
-        this.assertFlatResult(json, "=ELIGIBLE");
-    }
-
-    @Test
-    public void convert_preservesDelimitersInsideValues() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "result: a=b:c";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.embedded.raw", raw);
-        Console.log("map.json.embedded.json", json);
-
-        this.assertFlatResult(json, "a=b:c");
-    }
-
-    @Test
-    public void convert_preservesExtractedValueAsJsonString() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "result=200";
-        String json = converter.convert(raw);
-        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-
-        Console.log("map.json.strings.json", json);
-
-        Assertions.assertTrue(root.get("result").isJsonPrimitive());
-        Assertions.assertTrue(root.get("result").getAsJsonPrimitive().isString());
-        Assertions.assertEquals("200", root.get("result").getAsString());
-        Assertions.assertFalse(root.get("result").getAsJsonPrimitive().isNumber());
-    }
-
-    @Test
-    public void convert_resultEqualsResult_buildsFlatJson() {
-        MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
-
-        String raw = "result=result";
-        String json = converter.convert(raw);
-
-        Console.log("map.json.result.equals.result.raw", raw);
-        Console.log("map.json.result.equals.result.json", json);
-
-        this.assertFlatResult(json, "result");
+        Assertions.assertSame(raw, converted);
+        Assertions.assertEquals(raw, converted);
     }
 
     @Test
@@ -161,13 +129,13 @@ public class MapToJsonResponseConverterTest {
         MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
 
         String raw = "{\"unused\":true}";
-        String json = converter.convert(raw);
+        String converted = converter.convert(raw);
 
-        Console.log("map.json.missing.raw", raw);
-        Console.log("map.json.missing.json", json);
+        Console.log("map.scalar.missing.raw", raw);
+        Console.log("map.scalar.missing.out", converted);
 
-        Assertions.assertSame(raw, json);
-        Assertions.assertEquals(raw, json);
+        Assertions.assertSame(raw, converted);
+        Assertions.assertEquals(raw, converted);
     }
 
     @Test
@@ -175,23 +143,12 @@ public class MapToJsonResponseConverterTest {
         MapToJsonResponseConverter converter = new MapToJsonResponseConverter();
 
         String raw = "{bad-json";
-        String json = converter.convert(raw);
+        String converted = converter.convert(raw);
 
-        Console.log("map.json.malformed.raw", raw);
-        Console.log("map.json.malformed.json", json);
+        Console.log("map.scalar.malformed.raw", raw);
+        Console.log("map.scalar.malformed.out", converted);
 
-        Assertions.assertSame(raw, json);
-        Assertions.assertEquals(raw, json);
-    }
-
-    private void assertFlatResult(String json, String expectedValue) {
-        JsonObject root = JsonParser.parseString(json).getAsJsonObject();
-
-        Assertions.assertEquals(1, root.size());
-        Assertions.assertTrue(root.has("result"));
-        Assertions.assertTrue(root.get("result").isJsonPrimitive());
-        Assertions.assertTrue(root.get("result").getAsJsonPrimitive().isString());
-        Assertions.assertEquals(expectedValue, root.get("result").getAsString());
-        Assertions.assertEquals("{\"result\":\"" + expectedValue + "\"}", json);
+        Assertions.assertSame(raw, converted);
+        Assertions.assertEquals(raw, converted);
     }
 }

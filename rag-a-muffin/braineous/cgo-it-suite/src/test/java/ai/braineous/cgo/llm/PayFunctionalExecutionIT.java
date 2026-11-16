@@ -109,21 +109,8 @@ public class PayFunctionalExecutionIT {
             return;
         }
 
-        JsonElement parsed =
-                JsonParser.parseString(rawResponse);
-
-        assertTrue(parsed.isJsonObject());
-
-        JsonObject root =
-                parsed.getAsJsonObject();
-
-        assertEquals(1, root.size());
-        assertTrue(root.has("result"));
-        assertTrue(root.get("result").isJsonPrimitive());
-        assertTrue(root.get("result").getAsJsonPrimitive().isString());
-
         String resultValue =
-                root.get("result").getAsString();
+                rawResponse;
 
         boolean accepted = false;
         if ("success".equals(resultValue)) {
@@ -131,10 +118,6 @@ public class PayFunctionalExecutionIT {
         } else {
             if ("fail".equals(resultValue)) {
                 accepted = true;
-            } else {
-                if ("result".equals(resultValue)) {
-                    accepted = true;
-                }
             }
         }
 
@@ -336,44 +319,11 @@ public class PayFunctionalExecutionIT {
             return "contamination";
         }
 
-        JsonElement parsed;
-        try {
-            parsed = JsonParser.parseString(trimmed);
-        } catch (Exception exception) {
-            return "contamination";
+        if ("success".equals(trimmed) || "fail".equals(trimmed)) {
+            return "success";
         }
 
-        if (parsed == null || parsed.isJsonNull()) {
-            return "contamination";
-        }
-
-        if (!parsed.isJsonObject()) {
-            return "noise";
-        }
-
-        JsonObject root =
-                parsed.getAsJsonObject();
-
-        if (root.size() != 1) {
-            return "noise";
-        }
-
-        if (!root.has("result")) {
-            return "noise";
-        }
-
-        JsonElement result =
-                root.get("result");
-
-        if (result == null || !result.isJsonPrimitive()) {
-            return "noise";
-        }
-
-        if (!result.getAsJsonPrimitive().isString()) {
-            return "noise";
-        }
-
-        return "success";
+        return "noise";
     }
 
     private String extractResultValue(String rawResponse) {
@@ -381,36 +331,12 @@ public class PayFunctionalExecutionIT {
             return null;
         }
 
-        JsonElement parsed;
-        try {
-            parsed = JsonParser.parseString(rawResponse);
-        } catch (Exception exception) {
-            return null;
+        String trimmed = rawResponse.trim();
+        if ("success".equals(trimmed) || "fail".equals(trimmed)) {
+            return trimmed;
         }
 
-        if (parsed == null || !parsed.isJsonObject()) {
-            return null;
-        }
-
-        JsonObject root =
-                parsed.getAsJsonObject();
-
-        if (!root.has("result")) {
-            return null;
-        }
-
-        JsonElement result =
-                root.get("result");
-
-        if (result == null || !result.isJsonPrimitive()) {
-            return null;
-        }
-
-        if (!result.getAsJsonPrimitive().isString()) {
-            return null;
-        }
-
-        return result.getAsString();
+        return null;
     }
 
     private JsonObject loadV14Query() {
