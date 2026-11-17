@@ -16,15 +16,21 @@ public class DeclarativeQueryCompiler {
         String normalized = normalize(sql);
 
         assertProjectionFreeSelect(normalized);
+        assertSupportedFields(normalized);
 
         String factId = readQuotedValue(normalized, "factId");
         String relatedFactIdsText = readQuotedValue(normalized, "relatedFactIds");
-        JsonObject controls = readControls(normalized);
+        String expression = readQuotedValue(normalized, "expression");
+        String definition = readQuotedValue(normalized, "definition");
 
         List<String> relatedFactIds = splitCsv(relatedFactIdsText);
 
         if (factId == null || factId.trim().length() == 0) {
             throw new IllegalArgumentException("factId must be provided");
+        }
+
+        if (definition == null || definition.trim().length() == 0) {
+            throw new IllegalArgumentException("definition must be provided");
         }
 
         JsonObject root = new JsonObject();
@@ -35,10 +41,8 @@ public class DeclarativeQueryCompiler {
         task.add("intent", intent);
         task.addProperty("factId", factId);
         task.add("relatedFactIds", toJsonArray(relatedFactIds));
-
-        JsonObject constraints = new JsonObject();
-        constraints.add("control", controls);
-        task.add("constraints", constraints);
+        task.addProperty("expression", expression == null ? "" : expression);
+        task.addProperty("definition", definition);
 
         task.add("select", new JsonArray());
 
@@ -112,6 +116,75 @@ public class DeclarativeQueryCompiler {
         if (projection.length() > 0) {
             throw new IllegalArgumentException("projection not supported");
         }
+    }
+
+    private void assertSupportedFields(String text) {
+        boolean inSingleQuote = false;
+        boolean inDoubleQuote = false;
+        int i = 0;
+
+        while (i < text.length()) {
+            char c = text.charAt(i);
+
+            if (c == '\'' && !inDoubleQuote) {
+                inSingleQuote = !inSingleQuote;
+                i = i + 1;
+                continue;
+            }
+
+            if (c == '"' && !inSingleQuote) {
+                inDoubleQuote = !inDoubleQuote;
+                i = i + 1;
+                continue;
+            }
+
+            if (inSingleQuote || inDoubleQuote) {
+                i = i + 1;
+                continue;
+            }
+
+            if (isIdentifierChar(c)) {
+                int start = i;
+                while (i < text.length() && isIdentifierChar(text.charAt(i))) {
+                    i = i + 1;
+                }
+
+                String word = text.substring(start, i);
+                int afterWord = skipWhitespace(text, i);
+
+                if (afterWord < text.length() && text.charAt(afterWord) == '=') {
+                    if (!isLegalQueryField(word)) {
+                        throw new IllegalArgumentException("unsupported query field: " + word);
+                    }
+                } else if ("control".equalsIgnoreCase(word)) {
+                    throw new IllegalArgumentException("unsupported query field: control");
+                }
+
+                continue;
+            }
+
+            i = i + 1;
+        }
+    }
+
+    private boolean isLegalQueryField(String field) {
+        if ("factId".equalsIgnoreCase(field)) {
+            return true;
+        }
+
+        if ("relatedFactIds".equalsIgnoreCase(field)) {
+            return true;
+        }
+
+        if ("expression".equalsIgnoreCase(field)) {
+            return true;
+        }
+
+        if ("definition".equalsIgnoreCase(field)) {
+            return true;
+        }
+
+        return false;
     }
 
     private int findKeyword(String lower, String keyword, int searchFrom) {
@@ -257,132 +330,6 @@ public class DeclarativeQueryCompiler {
         return false;
     }
 
-    private JsonObject readControls(String text) {
-        JsonObject controls = new JsonObject();
-
-        int controlIndex = findKeywordOutsideQuotes(text, "control", 0);
-        if (controlIndex < 0) {
-            return controls;
-        }
-
-        String block = text.substring(controlIndex + "control".length());
-        int i = 0;
-
-        while (i < block.length()) {
-            i = skipWhitespace(block, i);
-            if (i >= block.length()) {
-                break;
-            }
-
-            int keyStart = i;
-            while (i < block.length() && isIdentifierChar(block.charAt(i))) {
-                i = i + 1;
-            }
-
-            if (i == keyStart) {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-
-            String controlKey = block.substring(keyStart, i);
-
-            i = skipWhitespace(block, i);
-            if (i >= block.length() || block.charAt(i) != '=') {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-            i = i + 1;
-
-            i = skipWhitespace(block, i);
-            if (i >= block.length()) {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-
-            char quote = block.charAt(i);
-            if (quote != '\'' && quote != '"') {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-            i = i + 1;
-
-            int valueStart = i;
-            int closingQuote = -1;
-            while (i < block.length()) {
-                if (block.charAt(i) == quote) {
-                    closingQuote = i;
-                    break;
-                }
-                i = i + 1;
-            }
-
-            if (closingQuote < 0) {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-
-            String controlValue = block.substring(valueStart, closingQuote);
-            i = closingQuote + 1;
-
-            if (!isLegalControlKey(controlKey)) {
-                throw new IllegalArgumentException("unknown control key: " + controlKey);
-            }
-
-            if (controls.has(controlKey)) {
-                throw new IllegalArgumentException("ambiguous control assignment");
-            }
-
-            controls.addProperty(controlKey, controlValue);
-
-            int afterValue = skipWhitespace(block, i);
-            if (afterValue < block.length() && afterValue == i) {
-                throw new IllegalArgumentException("malformed control assignment");
-            }
-        }
-
-        return controls;
-    }
-
-    private int findKeywordOutsideQuotes(String text, String keyword, int searchFrom) {
-        if (text == null) {
-            return -1;
-        }
-
-        if (keyword == null) {
-            return -1;
-        }
-
-        String lower = text.toLowerCase();
-        String lowerKeyword = keyword.toLowerCase();
-
-        boolean inSingleQuote = false;
-        boolean inDoubleQuote = false;
-        int i = searchFrom;
-
-        while (i < text.length()) {
-            char c = text.charAt(i);
-
-            if (c == '\'' && !inDoubleQuote) {
-                inSingleQuote = !inSingleQuote;
-                i = i + 1;
-                continue;
-            }
-
-            if (c == '"' && !inSingleQuote) {
-                inDoubleQuote = !inDoubleQuote;
-                i = i + 1;
-                continue;
-            }
-
-            if (!inSingleQuote && !inDoubleQuote) {
-                if (i + lowerKeyword.length() <= lower.length()) {
-                    if (lower.startsWith(lowerKeyword, i) && isKeywordMatch(lower, lowerKeyword, i)) {
-                        return i;
-                    }
-                }
-            }
-
-            i = i + 1;
-        }
-
-        return -1;
-    }
-
     private int skipWhitespace(String text, int index) {
         int i = index;
 
@@ -395,26 +342,6 @@ public class DeclarativeQueryCompiler {
         }
 
         return i;
-    }
-
-    private boolean isLegalControlKey(String controlKey) {
-        if ("parameters".equals(controlKey)) {
-            return true;
-        }
-
-        if ("expression".equals(controlKey)) {
-            return true;
-        }
-
-        if ("spec".equals(controlKey)) {
-            return true;
-        }
-
-        if ("result".equals(controlKey)) {
-            return true;
-        }
-
-        return false;
     }
 
     private List<String> splitCsv(String csv) {

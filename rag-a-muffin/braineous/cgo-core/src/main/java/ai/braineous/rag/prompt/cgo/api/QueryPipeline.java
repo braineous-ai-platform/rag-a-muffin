@@ -3,6 +3,8 @@ package ai.braineous.rag.prompt.cgo.api;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import ai.braineous.rag.prompt.cgo.query.QueryTask;
 
+import java.util.List;
+
 /**
  * API-level entry point for executing CGO queries.
  *
@@ -14,11 +16,14 @@ import ai.braineous.rag.prompt.cgo.query.QueryTask;
 public interface QueryPipeline {
 
     /**
-     * Execute a query request.
-     *
-     * For now we return a minimal QueryExecution wrapper.
-     * The response/result shape will be designed in the "response phase" later.
+     * Execute a query through the Nexus-first cognitive path.
      */
-    <T extends QueryTask> QueryExecution<T> execute(QueryRequest<T> request);
+    <T extends QueryTask> QueryExecution<T> execute(
+            QueryRequest<T> request,
+            Fact axis,
+            List<String> relatedFacts,
+            String expression,
+            String definition,
+            String ruleSection,
+            String decisionSection);
 }
-

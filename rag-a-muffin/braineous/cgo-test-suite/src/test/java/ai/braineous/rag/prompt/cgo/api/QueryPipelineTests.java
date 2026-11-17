@@ -45,7 +45,19 @@ class QueryPipelineTests {
         FakeQueryPipeline pipeline = new FakeQueryPipeline();
 
         // act
-        QueryExecution<ValidateTask> execution = pipeline.execute(request);
+        Fact axis = new Fact(
+                factId,
+                "{\"id\":\"F100\",\"kind\":\"Flight\",\"mode\":\"relational\",\"from\":\"AUS\",\"to\":\"DFW\"}"
+        );
+
+        QueryExecution<ValidateTask> execution = pipeline.execute(
+                request,
+                axis,
+                List.of(),
+                null,
+                "validate flight airports",
+                null,
+                null);
 
         // assert
         assertNotNull(execution, "QueryExecution should not be null");

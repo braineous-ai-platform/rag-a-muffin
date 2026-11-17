@@ -16,11 +16,8 @@ public class DeclarativeQueryCompilerTest {
                 + "select from llm "
                 + "where factId = 'Flight:F100' "
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW' "
-                + "control "
-                + "parameters = 'departure_code, arrival_code' "
-                + "expression = 'departure_code is present AND arrival_code is present' "
-                + "spec = 'if expression is true then allow, else deny' "
-                + "result = 'decision'";
+                + "and expression = 'departure_code is present AND arrival_code is present' "
+                + "and definition = 'Flight Airport Validation'";
 
         JsonObject json = compiler.compile(sql);
 
@@ -30,7 +27,6 @@ public class DeclarativeQueryCompilerTest {
         JsonObject intent = task.getAsJsonObject("intent");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
         JsonArray select = task.getAsJsonArray("select");
-        JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals(0, intent.size());
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
@@ -39,12 +35,23 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         Assertions.assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
 
-        Assertions.assertEquals(0, select.size());
+        Assertions.assertEquals("departure_code is present AND arrival_code is present", task.get("expression").getAsString());
+        Assertions.assertEquals("Flight Airport Validation", task.get("definition").getAsString());
 
-        Assertions.assertEquals("departure_code, arrival_code", controls.get("parameters").getAsString());
-        Assertions.assertEquals("departure_code is present AND arrival_code is present", controls.get("expression").getAsString());
-        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
-        Assertions.assertEquals("decision", controls.get("result").getAsString());
+        Assertions.assertEquals(0, select.size());
+        Assertions.assertEquals(
+                java.util.Set.of("intent", "factId", "relatedFactIds", "expression", "definition", "select"),
+                task.keySet()
+        );
+        Assertions.assertFalse(task.has("constraints"));
+        Assertions.assertFalse(task.has("control"));
+        Assertions.assertFalse(task.has("parameters"));
+        Assertions.assertFalse(task.has("spec"));
+        Assertions.assertFalse(task.has("result"));
+        Assertions.assertFalse(task.has("rule"));
+        Assertions.assertFalse(task.has("decision"));
+        Assertions.assertFalse(task.has("ruleSection"));
+        Assertions.assertFalse(task.has("decisionSection"));
     }
 
     @Test
@@ -54,7 +61,8 @@ public class DeclarativeQueryCompilerTest {
         String sql = ""
                 + "select from llm "
                 + "where factId = 'Flight:F100' "
-                + "and relatedFactIds = 'Airport:AUS, Airport:DFW'";
+                + "and relatedFactIds = 'Airport:AUS, Airport:DFW' "
+                + "and definition = 'Flight Airport Validation'";
 
         JsonObject json = compiler.compile(sql);
 
@@ -64,7 +72,6 @@ public class DeclarativeQueryCompilerTest {
         JsonObject intent = task.getAsJsonObject("intent");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
         JsonArray select = task.getAsJsonArray("select");
-        JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals(0, intent.size());
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
@@ -73,9 +80,10 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertEquals("Airport:AUS", relatedFactIds.get(0).getAsString());
         Assertions.assertEquals("Airport:DFW", relatedFactIds.get(1).getAsString());
 
+        Assertions.assertEquals("", task.get("expression").getAsString());
+        Assertions.assertEquals("Flight Airport Validation", task.get("definition").getAsString());
         Assertions.assertEquals(0, select.size());
-
-        Assertions.assertEquals(0, controls.size());
+        Assertions.assertFalse(task.has("constraints"));
     }
 
     @Test
@@ -84,7 +92,8 @@ public class DeclarativeQueryCompilerTest {
 
         String sql = ""
                 + "select from llm "
-                + "where relatedFactIds = 'Airport:AUS,Airport:DFW'";
+                + "where relatedFactIds = 'Airport:AUS,Airport:DFW' "
+                + "and definition = 'Flight Airport Validation'";
 
         try {
             compiler.compile(sql);
@@ -102,7 +111,8 @@ public class DeclarativeQueryCompilerTest {
         String sql = ""
                 + "from llm "
                 + "where factId = 'Flight:F100' "
-                + "and relatedFactIds = 'Airport:AUS,Airport:DFW'";
+                + "and relatedFactIds = 'Airport:AUS,Airport:DFW' "
+                + "and definition = 'Flight Airport Validation'";
 
         try {
             compiler.compile(sql);
@@ -120,7 +130,8 @@ public class DeclarativeQueryCompilerTest {
         String sql = ""
                 + "select from llm "
                 + "where factId = 'Flight:F100' "
-                + "and relatedFactIds = 'Airport:AUS, Airport:DFW, Airport:JFK'";
+                + "and relatedFactIds = 'Airport:AUS, Airport:DFW, Airport:JFK' "
+                + "and definition = 'Flight Airport Validation'";
 
         JsonObject json = compiler.compile(sql);
 
@@ -144,32 +155,25 @@ public class DeclarativeQueryCompilerTest {
                 + "select from llm\n"
                 + "where factId = 'Flight:F100'\n"
                 + "and relatedFactIds = 'Airport:AUS,Airport:DFW'\n"
-                + "control\n"
-                + "parameters = 'departure_code, arrival_code'\n"
-                + "expression = 'departure_code != arrival_code'\n"
-                + "spec = 'if expression is true then allow, else deny'\n"
-                + "result = 'decision'\n";
+                + "and expression = 'departure_code != arrival_code'\n"
+                + "and definition = 'Flight Airport Validation'\n";
 
         JsonObject json = compiler.compile(sql);
 
         Console.log("test_6_json", json.toString());
 
         JsonObject task = json.getAsJsonObject("task");
-        JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
         Assertions.assertEquals(
                 0,
                 task.getAsJsonObject("intent").size()
         );
-        Assertions.assertEquals("departure_code, arrival_code",
-                controls.get("parameters").getAsString());
         Assertions.assertEquals("departure_code != arrival_code",
-                controls.get("expression").getAsString());
-        Assertions.assertEquals("if expression is true then allow, else deny",
-                controls.get("spec").getAsString());
-        Assertions.assertEquals("decision",
-                controls.get("result").getAsString());
+                task.get("expression").getAsString());
+        Assertions.assertEquals("Flight Airport Validation",
+                task.get("definition").getAsString());
+        Assertions.assertFalse(task.has("constraints"));
     }
 
     @Test
@@ -191,7 +195,8 @@ public class DeclarativeQueryCompilerTest {
 
         String sql = ""
                 + "select from llm "
-                + "where factId = 'Flight:F100'";
+                + "where factId = 'Flight:F100' "
+                + "and definition = 'Flight Airport Validation'";
 
         JsonObject json = compiler.compile(sql);
 
@@ -202,6 +207,8 @@ public class DeclarativeQueryCompilerTest {
 
         Assertions.assertEquals("Flight:F100", task.get("factId").getAsString());
         Assertions.assertEquals(0, relatedFactIds.size());
+        Assertions.assertEquals("", task.get("expression").getAsString());
+        Assertions.assertEquals("Flight Airport Validation", task.get("definition").getAsString());
     }
 
     @Test
@@ -210,30 +217,15 @@ public class DeclarativeQueryCompilerTest {
 
         String sql = ""
                 + "select from llm "
-                + "where factId = 'Payment:P100' "
-                + "control "
-                + "parameters = 'amount, currency, merchant' "
-                + "expression = 'amount > 0 AND currency = USD' "
-                + "spec = 'if expression is true then allow, else deny' "
-                + "result = 'decision'";
+                + "where factId = 'Payment:P100'";
 
-        JsonObject json = compiler.compile(sql);
-
-        Console.log("test_9_json", json.toString());
-
-        JsonObject controls = json
-                .getAsJsonObject("task")
-                .getAsJsonObject("constraints")
-                .getAsJsonObject("control");
-
-        Assertions.assertEquals(4, controls.size());
-        Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
-        Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
-        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
-        Assertions.assertEquals("decision", controls.get("result").getAsString());
-        Assertions.assertFalse(controls.has("currency"));
-        Assertions.assertFalse(controls.has("merchant"));
-        Assertions.assertFalse(controls.has("else deny"));
+        try {
+            compiler.compile(sql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_9_exception", e.getMessage());
+            Assertions.assertEquals("definition must be provided", e.getMessage());
+        }
     }
 
     @Test
@@ -241,31 +233,17 @@ public class DeclarativeQueryCompilerTest {
         DeclarativeQueryCompiler compiler = new DeclarativeQueryCompiler();
 
         String sql = ""
-                + "select from llm "
-                + "where factId = 'Payment:P200' "
-                + "control "
-                + "parameters = 'amount, currency, merchant' "
-                + "expression = 'amount > 0 AND currency = USD' "
-                + "spec = 'if expression is true then allow, else deny' "
-                + "result = 'decision'";
+                + "select * from llm "
+                + "where factId = 'Flight:F100' "
+                + "and definition = 'Flight Airport Validation'";
 
-        JsonObject json = compiler.compile(sql);
-
-        Console.log("test_10_json", json.toString());
-
-        JsonObject controls = json
-                .getAsJsonObject("task")
-                .getAsJsonObject("constraints")
-                .getAsJsonObject("control");
-
-        Assertions.assertEquals(4, controls.size());
-        Assertions.assertEquals("amount, currency, merchant", controls.get("parameters").getAsString());
-        Assertions.assertEquals("amount > 0 AND currency = USD", controls.get("expression").getAsString());
-        Assertions.assertEquals("if expression is true then allow, else deny", controls.get("spec").getAsString());
-        Assertions.assertEquals("decision", controls.get("result").getAsString());
-        Assertions.assertFalse(controls.has("currency"));
-        Assertions.assertFalse(controls.has("merchant"));
-        Assertions.assertFalse(controls.has("else deny"));
+        try {
+            compiler.compile(sql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_10_exception", e.getMessage());
+            Assertions.assertEquals("projection not supported", e.getMessage());
+        }
     }
 
     @Test
@@ -275,29 +253,116 @@ public class DeclarativeQueryCompilerTest {
         String unknownSql = ""
                 + "select from llm "
                 + "where factId = 'Payment:P200' "
-                + "control "
-                + "unknown_flag = 'true'";
+                + "and definition = 'Pay Validation' "
+                + "and unknown_flag = 'true'";
 
         try {
             compiler.compile(unknownSql);
             Assertions.fail("expected exception");
         } catch (IllegalArgumentException e) {
             Console.log("test_11_unknown_exception", e.getMessage());
-            Assertions.assertEquals("unknown control key: unknown_flag", e.getMessage());
+            Assertions.assertEquals("unsupported query field: unknown_flag", e.getMessage());
         }
 
-        String decisionModeSql = ""
+        String controlSql = ""
                 + "select from llm "
                 + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
                 + "control "
-                + "decision_mode = 'validate_customer_address'";
+                + "parameters = 'amount, currency, merchant'";
 
         try {
-            compiler.compile(decisionModeSql);
+            compiler.compile(controlSql);
             Assertions.fail("expected exception");
         } catch (IllegalArgumentException e) {
-            Console.log("test_11_decision_mode_exception", e.getMessage());
-            Assertions.assertEquals("unknown control key: decision_mode", e.getMessage());
+            Console.log("test_11_control_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: control", e.getMessage());
+        }
+
+        String specSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
+                + "and spec = 'if expression is true then allow, else deny'";
+
+        try {
+            compiler.compile(specSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_spec_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: spec", e.getMessage());
+        }
+
+        String parametersSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
+                + "and parameters = 'amount, currency, merchant'";
+
+        try {
+            compiler.compile(parametersSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_parameters_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: parameters", e.getMessage());
+        }
+
+        String resultSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
+                + "and result = 'decision'";
+
+        try {
+            compiler.compile(resultSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_result_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: result", e.getMessage());
+        }
+
+        String ruleSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
+                + "and rule = 'amount must be present'";
+
+        try {
+            compiler.compile(ruleSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_rule_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: rule", e.getMessage());
+        }
+
+        String decisionSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and definition = 'Pay Validation' "
+                + "and decision = 'allow or deny'";
+
+        try {
+            compiler.compile(decisionSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_decision_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: decision", e.getMessage());
+        }
+
+        String fifthConstructSql = ""
+                + "select from llm "
+                + "where factId = 'Payment:P200' "
+                + "and relatedFactIds = 'Customer:C1' "
+                + "and expression = 'amount > 0' "
+                + "and definition = 'Pay Validation' "
+                + "and title = 'Pay V1'";
+
+        try {
+            compiler.compile(fifthConstructSql);
+            Assertions.fail("expected exception");
+        } catch (IllegalArgumentException e) {
+            Console.log("test_11_fifth_construct_exception", e.getMessage());
+            Assertions.assertEquals("unsupported query field: title", e.getMessage());
         }
     }
 
@@ -309,21 +374,15 @@ public class DeclarativeQueryCompilerTest {
                 + "select from llm\n"
                 + "where factId = 'Inventory:INV-001'\n"
                 + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001'\n"
-                + "control\n"
-                + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability'\n"
-                + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE'\n"
-                + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.'\n"
-                + "result = ''";
+                + "and expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE'\n"
+                + "and definition = 'Inventory Replenish Decision'";
 
         String singleLineSql = ""
                 + "select from llm "
                 + "where factId = 'Inventory:INV-001' "
                 + "and relatedFactIds = 'Demand:DEM-001,Supplier:SUP-001' "
-                + "control "
-                + "parameters = 'Inventory.stockStatus, Demand.level, Supplier.availability' "
-                + "expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE' "
-                + "spec = 'When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.' "
-                + "result = ''";
+                + "and expression = 'Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE' "
+                + "and definition = 'Inventory Replenish Decision'";
 
         JsonObject multilineJson = compiler.compile(multilineSql);
         JsonObject singleLineJson = compiler.compile(singleLineSql);
@@ -337,7 +396,6 @@ public class DeclarativeQueryCompilerTest {
         JsonObject intent = task.getAsJsonObject("intent");
         JsonArray select = task.getAsJsonArray("select");
         JsonArray relatedFactIds = task.getAsJsonArray("relatedFactIds");
-        JsonObject controls = task.getAsJsonObject("constraints").getAsJsonObject("control");
 
         Assertions.assertEquals("Inventory:INV-001", task.get("factId").getAsString());
         Assertions.assertEquals(2, relatedFactIds.size());
@@ -349,10 +407,11 @@ public class DeclarativeQueryCompilerTest {
         Assertions.assertNotNull(select);
         Assertions.assertEquals(0, select.size());
 
-        Assertions.assertEquals(4, controls.size());
-        Assertions.assertEquals("Inventory.stockStatus, Demand.level, Supplier.availability", controls.get("parameters").getAsString());
-        Assertions.assertEquals("Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE", controls.get("expression").getAsString());
-        Assertions.assertEquals("When the expression is true, the result is REPLENISH. Otherwise, the result is HOLD.", controls.get("spec").getAsString());
-        Assertions.assertEquals("", controls.get("result").getAsString());
+        Assertions.assertEquals("Inventory.stockStatus is equal to LOW and Demand.level is equal to HIGH and Supplier.availability is equal to AVAILABLE", task.get("expression").getAsString());
+        Assertions.assertEquals("Inventory Replenish Decision", task.get("definition").getAsString());
+        Assertions.assertFalse(task.has("constraints"));
+        Assertions.assertFalse(task.has("parameters"));
+        Assertions.assertFalse(task.has("spec"));
+        Assertions.assertFalse(task.has("result"));
     }
 }

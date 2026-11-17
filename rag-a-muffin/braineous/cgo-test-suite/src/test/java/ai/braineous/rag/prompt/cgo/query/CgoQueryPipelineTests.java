@@ -31,6 +31,18 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class CgoQueryPipelineTests {
 
+    private static final String NEXUS_EXPRESSION =
+            "(Inventory.quantityOnHand - Inventory.quantityReserved) / Sales.quantitySold";
+    private static final String NEXUS_DEFINITION = "inventory availability.";
+    private static final String NEXUS_RULE_SECTION =
+            "rule\n"
+                    + "if the result is greater than or equal to 1,\n"
+                    + "the inventory is available.\n"
+                    + "otherwise, the inventory is unavailable.";
+    private static final String NEXUS_DECISION_SECTION =
+            "decision\n"
+                    + "state the inventory status as either available or unavailable.";
+
     @Test
     public void test_1() {
         QueryRequest<ValidateTask> request =
@@ -54,7 +66,7 @@ public class CgoQueryPipelineTests {
                 new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.ok.raw", execution.getRawResponse());
         Console.log("pipeline.ok.promptValidation", String.valueOf(execution.getPromptValidation()));
@@ -68,15 +80,12 @@ public class CgoQueryPipelineTests {
         String promptText =
                 intelligenceBridge.lastPrompt.get("prompt").getAsString();
 
-        JsonObject parsedPrompt =
-                JsonParser.parseString(promptText).getAsJsonObject();
-
         JsonObject llmQuery =
                 execution.getLlmResponse()
                         .getLlmRequest()
                         .getLlmQuery();
 
-        Assertions.assertEquals(llmQuery, parsedPrompt);
+        Assertions.assertEquals(promptText, llmQuery.get("prompt").getAsString());
 
         Assertions.assertNotNull(execution);
         Assertions.assertSame(request, execution.getRequest());
@@ -92,7 +101,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertNotNull(execution.getPromptValidation());
         Assertions.assertTrue(execution.getPromptValidation().isOk());
         Assertions.assertEquals(
-                "querygen.contract.ok",
+                "prompt.execution.ok",
                 execution.getPromptValidation().getCode()
         );
 
@@ -170,7 +179,7 @@ public class CgoQueryPipelineTests {
                 );
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.llm.validation.fail", execution.toJsonString());
 
@@ -234,7 +243,7 @@ public class CgoQueryPipelineTests {
                 new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.domain.ok", execution.toJsonString());
 
@@ -303,7 +312,7 @@ public class CgoQueryPipelineTests {
                 new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.domain.fail", execution.toJsonString());
 
@@ -352,7 +361,7 @@ public class CgoQueryPipelineTests {
                 new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.malformed.json", execution.toJsonString());
 
@@ -392,7 +401,7 @@ public class CgoQueryPipelineTests {
                 new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.result.missing", execution.toJsonString());
 
@@ -405,7 +414,7 @@ public class CgoQueryPipelineTests {
         Assertions.assertNotNull(execution.getPromptValidation());
         Assertions.assertTrue(execution.getPromptValidation().isOk());
         Assertions.assertEquals(
-                "querygen.contract.ok",
+                "prompt.execution.ok",
                 execution.getPromptValidation().getCode()
         );
 
@@ -445,7 +454,7 @@ public class CgoQueryPipelineTests {
         pipeline.setInMemoryMode(true);
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.in.memory", execution.toJsonString());
 
@@ -503,7 +512,7 @@ public class CgoQueryPipelineTests {
                 );
 
         QueryExecution<ValidateTask> execution =
-                pipeline.execute(request);
+                this.executeNexus(pipeline, request);
 
         Console.log("pipeline.map.arc", arcResponse);
         Console.log("pipeline.map.constructed", String.valueOf(validatorRaw.get()));
@@ -550,22 +559,14 @@ public class CgoQueryPipelineTests {
                 new LlmInstructionsFieldGenerator().generateNexusInstructions();
         String expectedNexus =
                 "inventory availability.\n\ncontext\nThe result is 0.";
-        String ruleSection =
-                "rule\n"
-                        + "if the result is greater than or equal to 1,\n"
-                        + "the inventory is available.\n"
-                        + "otherwise, the inventory is unavailable.";
-        String decisionSection =
-                "decision\n"
-                        + "state the inventory status as either available or unavailable.";
         String expectedPrompt =
                 instructions
                         + "\n\n"
                         + expectedNexus
                         + "\n\n"
-                        + ruleSection
+                        + NEXUS_RULE_SECTION
                         + "\n\n"
-                        + decisionSection;
+                        + NEXUS_DECISION_SECTION;
 
         String arcResponse =
                 "result=success";
@@ -603,10 +604,10 @@ public class CgoQueryPipelineTests {
                         request,
                         inventory,
                         List.of("Sales"),
-                        "(Inventory.quantityOnHand - Inventory.quantityReserved) / Sales.quantitySold",
-                        "inventory availability.",
-                        ruleSection,
-                        decisionSection);
+                        NEXUS_EXPRESSION,
+                        NEXUS_DEFINITION,
+                        NEXUS_RULE_SECTION,
+                        NEXUS_DECISION_SECTION);
 
         String assembledPrompt =
                 intelligenceBridge.lastPrompt.get("prompt").getAsString();
@@ -631,7 +632,7 @@ public class CgoQueryPipelineTests {
                 instructions.length() + 2 + expectedNexus.length());
         Assertions.assertEquals(
                 assembledPrompt.indexOf("\n\ndecision\n"),
-                instructions.length() + 2 + expectedNexus.length() + 2 + ruleSection.length());
+                instructions.length() + 2 + expectedNexus.length() + 2 + NEXUS_RULE_SECTION.length());
         Assertions.assertFalse(
                 intelligenceBridge.lastPrompt.get("stream").getAsBoolean());
         Assertions.assertFalse(assembledPrompt.contains("llm_instructions"));
@@ -674,6 +675,20 @@ public class CgoQueryPipelineTests {
         Assertions.assertSame(
                 request,
                 execution.getLlmResponse().getLlmRequest().getQueryRequest());
+    }
+
+    private QueryExecution<ValidateTask> executeNexus(
+            CgoQueryPipeline pipeline,
+            QueryRequest<ValidateTask> request) {
+        Fact inventory = this.hydrateInventoryUnavailable();
+        return pipeline.execute(
+                request,
+                inventory,
+                List.of("Sales"),
+                NEXUS_EXPRESSION,
+                NEXUS_DEFINITION,
+                NEXUS_RULE_SECTION,
+                NEXUS_DECISION_SECTION);
     }
 
     private Fact hydrateInventoryUnavailable() {

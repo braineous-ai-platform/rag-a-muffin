@@ -7,6 +7,7 @@ import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
+import ai.braineous.rag.prompt.cgo.api.QueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.CgoQueryPipeline;
 import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
@@ -32,8 +33,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public final class NexusDomainExecutionHarness {
 
     public void run(NexusDomainScenario scenario, int invocations) {
+        this.run(
+                scenario,
+                scenario.getRelatedFacts(),
+                scenario.getExpression(),
+                scenario.getDefinition(),
+                invocations);
+    }
+
+    public void run(
+            NexusDomainScenario scenario,
+            List<String> relatedFacts,
+            String expression,
+            String definition,
+            int invocations) {
         assertNotNull(scenario);
         assertTrue(invocations > 0);
+        assertNotNull(relatedFacts);
 
         Map<String, Fact> facts = this.hydrate(scenario);
         Fact axis = facts.get(scenario.getAxisId());
@@ -41,7 +57,7 @@ public final class NexusDomainExecutionHarness {
 
         String instructions =
                 new LlmInstructionsFieldGenerator().generateNexusInstructions();
-        CgoQueryPipeline pipeline =
+        QueryPipeline pipeline =
                 new CgoQueryPipeline(new PromptBuilder());
 
         int successCount = 0;
@@ -58,9 +74,9 @@ public final class NexusDomainExecutionHarness {
                     pipeline.execute(
                             request,
                             axis,
-                            scenario.getRelatedFacts(),
-                            scenario.getExpression(),
-                            scenario.getDefinition(),
+                            relatedFacts,
+                            expression,
+                            definition,
                             scenario.getRuleSection(),
                             scenario.getDecisionSection());
 
