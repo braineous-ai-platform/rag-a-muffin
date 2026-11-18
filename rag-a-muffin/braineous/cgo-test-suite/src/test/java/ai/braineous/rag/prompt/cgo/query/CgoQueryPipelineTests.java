@@ -5,6 +5,8 @@ import ai.braineous.rag.prompt.cgo.api.Control;
 import ai.braineous.rag.prompt.cgo.api.Edge;
 import ai.braineous.rag.prompt.cgo.api.Fact;
 import ai.braineous.rag.prompt.cgo.api.GraphContext;
+import ai.braineous.rag.prompt.cgo.api.LLMRequest;
+import ai.braineous.rag.prompt.cgo.api.LLMResponse;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
@@ -675,6 +677,110 @@ public class CgoQueryPipelineTests {
         Assertions.assertSame(
                 request,
                 execution.getLlmResponse().getLlmRequest().getQueryRequest());
+    }
+
+    @Test
+    public void test_11() {
+        QueryExecution<ValidateTask> execution =
+                new QueryExecution<ValidateTask>(null);
+
+        Console.log("pipeline.developer.null.llmResponse", execution.toJsonString());
+
+        Assertions.assertNull(execution.getLlmQuery());
+        JsonObject json = execution.toJson();
+        Assertions.assertNotNull(json);
+        Assertions.assertEquals(0, json.size());
+        Assertions.assertFalse(json.has("request"));
+        Assertions.assertFalse(json.has("rawResponse"));
+        Assertions.assertFalse(json.has("promptValidation"));
+        Assertions.assertFalse(json.has("llmResponseValidation"));
+        Assertions.assertFalse(json.has("domainValidation"));
+        Assertions.assertFalse(json.has("status"));
+        Assertions.assertFalse(json.has("stage"));
+        Assertions.assertFalse(json.has("ok"));
+        Assertions.assertFalse(json.has("llmResponse"));
+    }
+
+    @Test
+    public void test_12() {
+        QueryExecution<ValidateTask> execution =
+                new QueryExecution<ValidateTask>(null);
+        LLMResponse llmResponse = new LLMResponse();
+        execution.setLlmResponse(llmResponse);
+
+        Console.log("pipeline.developer.null.llmRequest", execution.toJsonString());
+
+        Assertions.assertNull(execution.getLlmQuery());
+        JsonObject json = execution.toJson();
+        Assertions.assertNotNull(json);
+        Assertions.assertEquals(0, json.size());
+        Assertions.assertFalse(json.has("request"));
+        Assertions.assertFalse(json.has("rawResponse"));
+        Assertions.assertFalse(json.has("promptValidation"));
+        Assertions.assertFalse(json.has("llmResponseValidation"));
+        Assertions.assertFalse(json.has("domainValidation"));
+        Assertions.assertFalse(json.has("status"));
+        Assertions.assertFalse(json.has("stage"));
+        Assertions.assertFalse(json.has("ok"));
+        Assertions.assertFalse(json.has("llmResponse"));
+
+        LLMRequest llmRequest = new LLMRequest();
+        llmResponse.setLlmRequest(llmRequest);
+
+        Console.log("pipeline.developer.null.llmQuery", execution.toJsonString());
+
+        Assertions.assertNull(execution.getLlmQuery());
+        JsonObject empty = execution.toJson();
+        Assertions.assertNotNull(empty);
+        Assertions.assertEquals(0, empty.size());
+    }
+
+    @Test
+    public void test_13() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge("success");
+
+        CgoQueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
+
+        QueryExecution<ValidateTask> execution =
+                this.executeNexus(pipeline, request);
+
+        JsonObject stored =
+                execution.getLlmResponse()
+                        .getLlmRequest()
+                        .getLlmQuery();
+        JsonObject returned = execution.getLlmQuery();
+        JsonObject json = execution.toJson();
+
+        Console.log("pipeline.developer.llmQuery", json.toString());
+
+        Assertions.assertNotNull(stored);
+        Assertions.assertSame(stored, returned);
+        Assertions.assertSame(returned, json);
+
+        String promptText =
+                intelligenceBridge.lastPrompt.get("prompt").getAsString();
+        Assertions.assertEquals(promptText, json.get("prompt").getAsString());
+
+        Assertions.assertFalse(json.has("request"));
+        Assertions.assertFalse(json.has("rawResponse"));
+        Assertions.assertFalse(json.has("promptValidation"));
+        Assertions.assertFalse(json.has("llmResponseValidation"));
+        Assertions.assertFalse(json.has("domainValidation"));
+        Assertions.assertFalse(json.has("status"));
+        Assertions.assertFalse(json.has("stage"));
+        Assertions.assertFalse(json.has("ok"));
+        Assertions.assertFalse(json.has("llmResponse"));
+        Assertions.assertFalse(json.has("queryRequest"));
+        Assertions.assertFalse(json.has("context"));
+        Assertions.assertFalse(json.has("task"));
+        Assertions.assertFalse(json.has("nodes"));
+        Assertions.assertFalse(json.has("factId"));
+        Assertions.assertFalse(json.has("llmRequest"));
     }
 
     private QueryExecution<ValidateTask> executeNexus(

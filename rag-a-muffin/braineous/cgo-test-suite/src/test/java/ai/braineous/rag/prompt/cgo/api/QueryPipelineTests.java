@@ -4,6 +4,7 @@ import ai.braineous.rag.prompt.cgo.query.Node;
 import ai.braineous.rag.prompt.cgo.query.QueryRequest;
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Map;
 
@@ -72,5 +73,33 @@ class QueryPipelineTests {
         assertSame(context, execution.getRequest().getContext(), "Context should be preserved");
         assertSame(task, execution.getRequest().getTask(), "Task should be preserved");
         assertEquals(factId, execution.getRequest().getTask().getFactId(), "Task should still reference the same factId");
+    }
+
+    @Test
+    void execute_shouldKeepSevenArgumentQueryExecutionSignature() throws Exception {
+        Method[] methods = QueryPipeline.class.getDeclaredMethods();
+        int executeCount = 0;
+        Method execute = null;
+        int i = 0;
+        while (i < methods.length) {
+            if ("execute".equals(methods[i].getName())) {
+                executeCount = executeCount + 1;
+                execute = methods[i];
+            }
+            i = i + 1;
+        }
+
+        assertEquals(1, executeCount);
+        assertNotNull(execute);
+        Class<?>[] params = execute.getParameterTypes();
+        assertEquals(7, params.length);
+        assertEquals(QueryRequest.class, params[0]);
+        assertEquals(Fact.class, params[1]);
+        assertEquals(List.class, params[2]);
+        assertEquals(String.class, params[3]);
+        assertEquals(String.class, params[4]);
+        assertEquals(String.class, params[5]);
+        assertEquals(String.class, params[6]);
+        assertEquals(QueryExecution.class, execute.getReturnType());
     }
 }

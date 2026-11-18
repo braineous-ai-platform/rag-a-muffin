@@ -139,6 +139,16 @@ public final class QueryExecution<T extends QueryTask> {
         this.llmResponse = llmResponse;
     }
 
+    public JsonObject getLlmQuery() {
+        if (this.llmResponse == null) {
+            return null;
+        }
+        if (this.llmResponse.getLlmRequest() == null) {
+            return null;
+        }
+        return this.llmResponse.getLlmRequest().getLlmQuery();
+    }
+
     //--------------------------------------------------------
     public boolean isOk() {
         return (promptValidation == null || promptValidation.isOk())
@@ -188,55 +198,11 @@ public final class QueryExecution<T extends QueryTask> {
 
     //----------------------------------------------------------
     public JsonObject toJson() {
-
-        JsonObject out = new JsonObject();
-
-        // ---- request ----
-        if (this.request != null) {
-            out.add("request", this.request.toJson());
-        } else {
-            out.add("request", null);
+        JsonObject llmQuery = this.getLlmQuery();
+        if (llmQuery != null) {
+            return llmQuery;
         }
-
-        // ---- rawResponse ----
-        if (this.rawResponse != null) {
-            out.addProperty("rawResponse", this.rawResponse);
-        } else {
-            out.add("rawResponse", null);
-        }
-
-        // ---- validations ----
-        if (this.promptValidation != null) {
-            out.add("promptValidation", this.promptValidation.toJson());
-        } else {
-            out.add("promptValidation", null);
-        }
-
-        if (this.llmResponseValidation != null) {
-            out.add("llmResponseValidation", this.llmResponseValidation.toJson());
-        } else {
-            out.add("llmResponseValidation", null);
-        }
-
-        if (this.domainValidation != null) {
-            out.add("domainValidation", this.domainValidation.toJson());
-        } else {
-            out.add("domainValidation", null);
-        }
-
-        // ---- derived convenience (optional, but useful for logs) ----
-        out.addProperty("status", getStatus());
-        out.addProperty("stage", getStage());
-        out.addProperty("ok", isOk());
-
-        //-----llm_response-----------------------------------------
-        if(this.llmResponse != null){
-            out.add("llmResponse", this.llmResponse.toJson());
-        }else{
-            out.add("llmResponse", null);
-        }
-
-        return out;
+        return new JsonObject();
     }
 
     public String toJsonString() {

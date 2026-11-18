@@ -14,6 +14,7 @@ import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Objects;
 
 public final class CgoQueryPipeline implements QueryPipeline {
@@ -99,16 +100,16 @@ public final class CgoQueryPipeline implements QueryPipeline {
             return new QueryExecution<T>(request, null, promptValidation, null, null);
         }
 
+        JsonObject llmQuery = executionPrompt.getRequestOutput();
         String executionPromptText =
-                executionPrompt.getRequestOutput()
-                        .get("prompt")
-                        .getAsString();
+                llmQuery.get("prompt")
+                        .getAsString()
+                        .toLowerCase(Locale.ROOT);
+        llmQuery.addProperty("prompt", executionPromptText);
 
         JsonObject llmPayload = new JsonObject();
         llmPayload.addProperty("prompt", executionPromptText);
         llmPayload.addProperty("stream", false);
-
-        JsonObject llmQuery = executionPrompt.getRequestOutput();
 
         request.generateRequestId();
         System.out.print("=== CGO OUTBOUND PROMPT BEGIN ===\n");
