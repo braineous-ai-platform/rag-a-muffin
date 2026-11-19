@@ -22,6 +22,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -57,6 +58,13 @@ public final class NexusDomainExecutionHarness {
 
         String instructions =
                 new LlmInstructionsFieldGenerator().generateNexusInstructions();
+        String expectedInstructions = instructions.toLowerCase(Locale.ROOT);
+        String expectedNexusMarker =
+                scenario.getExpectedNexusMarker().toLowerCase(Locale.ROOT);
+        String expectedRuleSection =
+                scenario.getRuleSection().toLowerCase(Locale.ROOT);
+        String expectedDecisionSection =
+                scenario.getDecisionSection().toLowerCase(Locale.ROOT);
         QueryPipeline pipeline =
                 new CgoQueryPipeline(new PromptBuilder());
 
@@ -98,19 +106,19 @@ public final class NexusDomainExecutionHarness {
             assertTrue(llmQuery.has("prompt"));
             String assembledPrompt =
                     llmQuery.get("prompt").getAsString();
-            assertTrue(assembledPrompt.startsWith(instructions));
-            assertTrue(assembledPrompt.contains(scenario.getExpectedNexusMarker()));
-            assertTrue(assembledPrompt.contains(scenario.getRuleSection()));
-            assertTrue(assembledPrompt.contains(scenario.getDecisionSection()));
+            assertTrue(assembledPrompt.startsWith(expectedInstructions));
+            assertTrue(assembledPrompt.contains(expectedNexusMarker));
+            assertTrue(assembledPrompt.contains(expectedRuleSection));
+            assertTrue(assembledPrompt.contains(expectedDecisionSection));
             assertTrue(
-                    assembledPrompt.indexOf(instructions)
-                            < assembledPrompt.indexOf(scenario.getExpectedNexusMarker()));
+                    assembledPrompt.indexOf(expectedInstructions)
+                            < assembledPrompt.indexOf(expectedNexusMarker));
             assertTrue(
-                    assembledPrompt.indexOf(scenario.getExpectedNexusMarker())
-                            < assembledPrompt.indexOf(scenario.getRuleSection()));
+                    assembledPrompt.indexOf(expectedNexusMarker)
+                            < assembledPrompt.indexOf(expectedRuleSection));
             assertTrue(
-                    assembledPrompt.indexOf(scenario.getRuleSection())
-                            < assembledPrompt.indexOf(scenario.getDecisionSection()));
+                    assembledPrompt.indexOf(expectedRuleSection)
+                            < assembledPrompt.indexOf(expectedDecisionSection));
             assertFalse(assembledPrompt.contains("llm_instructions"));
             assertFalse(assembledPrompt.contains("task.controls"));
 

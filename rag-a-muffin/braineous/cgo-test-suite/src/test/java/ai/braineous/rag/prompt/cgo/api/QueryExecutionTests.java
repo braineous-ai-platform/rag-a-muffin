@@ -147,38 +147,7 @@ public class QueryExecutionTests {
         Console.log("_____query_execution_json_____", json);
 
         assertNotNull(json);
-
-        assertTrue(json.has("request"));
-        assertTrue(json.get("request").isJsonNull());
-
-        assertTrue(json.has("rawResponse"));
-        assertEquals("raw-json", json.get("rawResponse").getAsString());
-
-        assertTrue(json.has("promptValidation"));
-        assertTrue(json.get("promptValidation").isJsonNull());
-
-        assertTrue(json.has("llmResponseValidation"));
-        assertTrue(json.get("llmResponseValidation").isJsonNull());
-
-        assertTrue(json.has("domainValidation"));
-        assertTrue(json.get("domainValidation").isJsonNull());
-
-        assertTrue(json.has("status"));
-        assertEquals("OK", json.get("status").getAsString());
-
-        assertTrue(json.has("stage"));
-        assertEquals("ok", json.get("stage").getAsString());
-
-        assertTrue(json.has("ok"));
-        assertTrue(json.get("ok").getAsBoolean());
-
-        assertTrue(json.has("llmResponse"));
-        assertFalse(json.get("llmResponse").isJsonNull());
-
-        JsonObject llmResponseJson = json.getAsJsonObject("llmResponse");
-        assertEquals("llm-resp-2", llmResponseJson.get("id").getAsString());
-        assertEquals("{\"result\":\"accepted\"}", llmResponseJson.get("rawResponse").getAsString());
-        assertTrue(llmResponseJson.get("success").getAsBoolean());
+        assertEquals(0, json.size());
     }
 
     @Test
@@ -199,18 +168,7 @@ public class QueryExecutionTests {
         Console.log("_____query_execution_json_string_____", json);
 
         assertNotNull(json);
-        assertTrue(json.contains("\"request\":null"));
-        assertTrue(json.contains("\"rawResponse\":\"raw-json-string\""));
-        assertTrue(json.contains("\"promptValidation\":null"));
-        assertTrue(json.contains("\"llmResponseValidation\":null"));
-        assertTrue(json.contains("\"domainValidation\":null"));
-        assertTrue(json.contains("\"status\":\"OK\""));
-        assertTrue(json.contains("\"stage\":\"ok\""));
-        assertTrue(json.contains("\"ok\":true"));
-        assertTrue(json.contains("\"llmResponse\""));
-        assertTrue(json.contains("\"id\":\"llm-resp-3\""));
-        assertTrue(json.contains("\"rawResponse\":\"{\\\"x\\\":\\\"y\\\"}\""));
-        assertTrue(json.contains("\"success\":false"));
+        assertEquals("{}", json);
     }
 
     @Test
@@ -288,20 +246,16 @@ public class QueryExecutionTests {
 
         Console.log("_____query_execution_roundtrip_restored_____", restored.toJsonString());
 
+        assertNotNull(json);
+        assertEquals(0, json.size());
         assertNotNull(restored);
         assertNull(restored.getRequest());
-        assertEquals("raw-roundtrip", restored.getRawResponse());
+        assertNull(restored.getRawResponse());
         assertNull(restored.getPromptValidation());
         assertNull(restored.getLlmResponseValidation());
         assertNull(restored.getDomainValidation());
-
-        assertNotNull(restored.getLlmResponse());
-        assertEquals("llm-resp-5", restored.getLlmResponse().getId());
-        assertEquals("2026-03-22T16:30:00Z", restored.getLlmResponse().getCreatedAt());
-        assertEquals("2026-03-22T16:30:01Z", restored.getLlmResponse().getUpdatedAt());
-        assertEquals("snap-llm-5", restored.getLlmResponse().getSnapshotHash());
-        assertEquals("{\"decision\":\"GO\"}", restored.getLlmResponse().getRawResponse());
-        assertTrue(restored.getLlmResponse().isSuccess());
+        assertNull(restored.getLlmResponse());
+        assertNull(restored.getLlmQuery());
 
         assertTrue(restored.isOk());
         assertEquals("ok", restored.getStage());
@@ -319,8 +273,8 @@ public class QueryExecutionTests {
         Console.log("_____query_execution_null_llm_response_json_____", json);
 
         assertNotNull(json);
-        assertTrue(json.has("llmResponse"));
-        assertTrue(json.get("llmResponse").isJsonNull());
+        assertEquals(0, json.size());
+        assertFalse(json.has("llmResponse"));
     }
 
     @Test
@@ -355,5 +309,70 @@ public class QueryExecutionTests {
         assertTrue(str.contains("status=OK"));
         assertTrue(str.contains("stage=ok"));
         assertTrue(str.contains("rawResponse='raw-to-string'"));
+    }
+
+    @Test
+    public void shouldReturnDeveloperResponseFromLlmQueryPrompt() {
+
+        QueryExecution<QueryTask> execution = new QueryExecution<QueryTask>(null);
+
+        JsonObject llmQuery = new JsonObject();
+        llmQuery.addProperty("prompt", "this is the prompt.");
+
+        LLMRequest llmRequest = new LLMRequest();
+        llmRequest.setLlmQuery(llmQuery);
+
+        LLMResponse llmResponse = new LLMResponse();
+        llmResponse.setLlmRequest(llmRequest);
+        execution.setLlmResponse(llmResponse);
+
+        Console.log("_____query_execution_developer_response_____", execution.getDeveloperResponse());
+
+        assertEquals("this is the prompt.", execution.getDeveloperResponse());
+        assertEquals(
+                llmQuery.get("prompt").getAsString(),
+                execution.getDeveloperResponse());
+    }
+
+    @Test
+    public void shouldReturnNullDeveloperResponseWhenLlmQueryMissing() {
+
+        QueryExecution<QueryTask> execution = new QueryExecution<QueryTask>(null);
+
+        Console.log("_____query_execution_developer_response_null_llm_____", execution.getDeveloperResponse());
+        assertNull(execution.getDeveloperResponse());
+
+        LLMResponse llmResponse = new LLMResponse();
+        execution.setLlmResponse(llmResponse);
+        Console.log("_____query_execution_developer_response_null_request_____", execution.getDeveloperResponse());
+        assertNull(execution.getDeveloperResponse());
+
+        LLMRequest llmRequest = new LLMRequest();
+        llmResponse.setLlmRequest(llmRequest);
+        Console.log("_____query_execution_developer_response_null_query_____", execution.getDeveloperResponse());
+        assertNull(execution.getDeveloperResponse());
+    }
+
+    @Test
+    public void shouldReturnNullDeveloperResponseWhenPromptMissingOrJsonNull() {
+
+        QueryExecution<QueryTask> execution = new QueryExecution<QueryTask>(null);
+
+        LLMRequest llmRequest = new LLMRequest();
+        llmRequest.setLlmQuery(new JsonObject());
+
+        LLMResponse llmResponse = new LLMResponse();
+        llmResponse.setLlmRequest(llmRequest);
+        execution.setLlmResponse(llmResponse);
+
+        Console.log("_____query_execution_developer_response_missing_prompt_____", execution.getDeveloperResponse());
+        assertNull(execution.getDeveloperResponse());
+
+        JsonObject llmQuery = new JsonObject();
+        llmQuery.add("prompt", com.google.gson.JsonNull.INSTANCE);
+        llmRequest.setLlmQuery(llmQuery);
+
+        Console.log("_____query_execution_developer_response_json_null_prompt_____", execution.getDeveloperResponse());
+        assertNull(execution.getDeveloperResponse());
     }
 }

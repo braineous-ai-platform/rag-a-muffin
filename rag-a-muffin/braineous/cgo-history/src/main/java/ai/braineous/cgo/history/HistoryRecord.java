@@ -122,7 +122,7 @@ public final class HistoryRecord {
         com.google.gson.JsonObject out = new com.google.gson.JsonObject();
 
         if (this.queryExecution != null) {
-            out.add("queryExecution", this.queryExecution.toJson());
+            out.add("queryExecution", this.queryExecution.toHistoryJson());
         } else {
             out.add("queryExecution", null);
         }

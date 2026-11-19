@@ -70,6 +70,27 @@ public final class CgoQueryPipeline implements QueryPipeline {
     }
 
     @Override
+    public <T extends QueryTask> String executeDeveloper(
+            QueryRequest<T> request,
+            Fact axis,
+            List<String> relatedFacts,
+            String expression,
+            String definition,
+            String ruleSection,
+            String decisionSection) {
+        QueryExecution<T> execution =
+                this.execute(
+                        request,
+                        axis,
+                        relatedFacts,
+                        expression,
+                        definition,
+                        ruleSection,
+                        decisionSection);
+        return execution.getDeveloperResponse();
+    }
+
+    @Override
     public <T extends QueryTask> QueryExecution<T> execute(
             QueryRequest<T> request,
             Fact axis,
@@ -112,11 +133,12 @@ public final class CgoQueryPipeline implements QueryPipeline {
         llmPayload.addProperty("stream", false);
 
         request.generateRequestId();
+        String arcInput = llmPayload.toString();
         System.out.print("=== CGO OUTBOUND PROMPT BEGIN ===\n");
-        System.out.print(llmPayload.toString());
+        // System.out.print(arcInput);
         System.out.print("\n=== CGO OUTBOUND PROMPT END ===\n");
         String rawResponse =
-                this.intelligenceBridge.invoke(llmPayload.toString(), "{}");
+                this.intelligenceBridge.invoke(arcInput, "{}");
         rawResponse = this.mapToJsonResponseConverter.convert(rawResponse);
 
         LLMResponse llmResponse =
@@ -140,6 +162,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
                 failedExecution.setLlmResponse(llmResponse);
                 failedExecution.setInMemoryMode(this.inMemoryMode);
+                failedExecution.setArcInput(arcInput);
                 this.score(failedExecution);
 
                 return failedExecution;
@@ -165,6 +188,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
                 failedExecution.setLlmResponse(llmResponse);
                 failedExecution.setInMemoryMode(this.inMemoryMode);
+                failedExecution.setArcInput(arcInput);
                 this.score(failedExecution);
 
                 return failedExecution;
@@ -184,6 +208,7 @@ public final class CgoQueryPipeline implements QueryPipeline {
 
         execution.setLlmResponse(llmResponse);
         execution.setInMemoryMode(this.inMemoryMode);
+        execution.setArcInput(arcInput);
 
         this.score(execution);
 

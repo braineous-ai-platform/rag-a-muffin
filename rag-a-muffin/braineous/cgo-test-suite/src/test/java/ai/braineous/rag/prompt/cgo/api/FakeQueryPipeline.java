@@ -26,6 +26,25 @@ final class FakeQueryPipeline implements QueryPipeline {
         return new QueryExecution<>(request);
     }
 
+    @Override
+    public <T extends QueryTask> String executeDeveloper(
+            QueryRequest<T> request,
+            Fact axis,
+            List<String> relatedFacts,
+            String expression,
+            String definition,
+            String ruleSection,
+            String decisionSection) {
+        return this.execute(
+                request,
+                axis,
+                relatedFacts,
+                expression,
+                definition,
+                ruleSection,
+                decisionSection).getDeveloperResponse();
+    }
+
     public QueryRequest<?> getLastRequest() {
         return lastRequest;
     }

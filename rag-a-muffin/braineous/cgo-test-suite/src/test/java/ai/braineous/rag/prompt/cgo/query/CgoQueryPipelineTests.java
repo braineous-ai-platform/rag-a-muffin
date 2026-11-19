@@ -10,6 +10,7 @@ import ai.braineous.rag.prompt.cgo.api.LLMResponse;
 import ai.braineous.rag.prompt.cgo.api.LLMResponseValidatorRule;
 import ai.braineous.rag.prompt.cgo.api.Meta;
 import ai.braineous.rag.prompt.cgo.api.QueryExecution;
+import ai.braineous.rag.prompt.cgo.api.QueryPipeline;
 import ai.braineous.rag.prompt.cgo.api.ValidateTask;
 import ai.braineous.rag.prompt.cgo.api.ValidationResult;
 import ai.braineous.rag.prompt.cgo.prompt.PromptBuilder;
@@ -27,6 +28,7 @@ import org.junit.jupiter.api.Test;
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -562,13 +564,14 @@ public class CgoQueryPipelineTests {
         String expectedNexus =
                 "inventory availability.\n\ncontext\nThe result is 0.";
         String expectedPrompt =
-                instructions
+                (instructions
                         + "\n\n"
                         + expectedNexus
                         + "\n\n"
                         + NEXUS_RULE_SECTION
                         + "\n\n"
-                        + NEXUS_DECISION_SECTION;
+                        + NEXUS_DECISION_SECTION)
+                        .toLowerCase(Locale.ROOT);
 
         String arcResponse =
                 "result=success";
@@ -625,9 +628,9 @@ public class CgoQueryPipelineTests {
         Assertions.assertTrue(intelligenceBridge.lastPrompt.has("prompt"));
         Assertions.assertTrue(intelligenceBridge.lastPrompt.has("stream"));
         Assertions.assertEquals(expectedPrompt, assembledPrompt);
-        Assertions.assertTrue(assembledPrompt.startsWith(instructions));
+        Assertions.assertTrue(assembledPrompt.startsWith(instructions.toLowerCase(Locale.ROOT)));
         Assertions.assertEquals(
-                assembledPrompt.indexOf(expectedNexus),
+                assembledPrompt.indexOf(expectedNexus.toLowerCase(Locale.ROOT)),
                 instructions.length() + 2);
         Assertions.assertEquals(
                 assembledPrompt.indexOf("\n\nrule\n"),
@@ -677,6 +680,22 @@ public class CgoQueryPipelineTests {
         Assertions.assertSame(
                 request,
                 execution.getLlmResponse().getLlmRequest().getQueryRequest());
+
+        Assertions.assertEquals(intelligenceBridge.lastRequestJson, execution.getArcInput());
+        JsonObject capturedArcInput =
+                JsonParser.parseString(execution.getArcInput()).getAsJsonObject();
+        Assertions.assertEquals(expectedPrompt, capturedArcInput.get("prompt").getAsString());
+        Assertions.assertTrue(capturedArcInput.has("stream"));
+        Assertions.assertFalse(capturedArcInput.get("stream").getAsBoolean());
+
+        JsonObject developerJson = execution.toJson();
+        Assertions.assertSame(llmQuery, developerJson);
+        Assertions.assertFalse(developerJson.has("arcInput"));
+        Assertions.assertFalse(developerJson.has("stream"));
+        Assertions.assertFalse(developerJson.has("request"));
+        Assertions.assertFalse(developerJson.has("rawResponse"));
+        Assertions.assertFalse(developerJson.has("status"));
+        Assertions.assertEquals(expectedPrompt, developerJson.get("prompt").getAsString());
     }
 
     @Test
@@ -781,6 +800,42 @@ public class CgoQueryPipelineTests {
         Assertions.assertFalse(json.has("nodes"));
         Assertions.assertFalse(json.has("factId"));
         Assertions.assertFalse(json.has("llmRequest"));
+    }
+
+    @Test
+    public void test_14() {
+        QueryRequest<ValidateTask> request =
+                buildRequest();
+
+        CountingIntelligenceBridge intelligenceBridge =
+                new CountingIntelligenceBridge("success");
+
+        QueryPipeline pipeline =
+                new CgoQueryPipeline(new PromptBuilder(), intelligenceBridge);
+
+        Fact inventory = this.hydrateInventoryUnavailable();
+        String returned =
+                pipeline.executeDeveloper(
+                        request,
+                        inventory,
+                        List.of("Sales"),
+                        NEXUS_EXPRESSION,
+                        NEXUS_DEFINITION,
+                        NEXUS_RULE_SECTION,
+                        NEXUS_DECISION_SECTION);
+
+        Console.log("pipeline.developer.response", returned);
+
+        Assertions.assertEquals(1, intelligenceBridge.callCount);
+        Assertions.assertNotNull(returned);
+        Assertions.assertEquals(String.class, returned.getClass());
+        Assertions.assertEquals(
+                intelligenceBridge.lastPrompt.get("prompt").getAsString(),
+                returned);
+        Assertions.assertEquals(returned, returned.toLowerCase(Locale.ROOT));
+        Assertions.assertFalse(returned.trim().startsWith("{"));
+        Assertions.assertFalse(returned.contains("\"stream\""));
+        Assertions.assertFalse(returned.contains("\"prompt\""));
     }
 
     private QueryExecution<ValidateTask> executeNexus(
@@ -913,6 +968,7 @@ public class CgoQueryPipelineTests {
         private final String rawResponse;
         private int callCount;
         private JsonObject lastPrompt;
+        private String lastRequestJson;
 
         private CountingIntelligenceBridge(String rawResponse) {
             this.rawResponse = rawResponse;
@@ -921,6 +977,7 @@ public class CgoQueryPipelineTests {
         @Override
         public String invoke(String requestJson, String environmentJson) {
             this.callCount++;
+            this.lastRequestJson = requestJson;
             this.lastPrompt = JsonParser.parseString(requestJson).getAsJsonObject();
             return this.rawResponse;
         }

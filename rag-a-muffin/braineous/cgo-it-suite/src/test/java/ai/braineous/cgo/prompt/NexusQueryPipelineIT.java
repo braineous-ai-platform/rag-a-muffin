@@ -16,12 +16,14 @@ import ai.braineous.rag.prompt.models.cgo.graph.GraphBuilder;
 import ai.braineous.rag.prompt.models.cgo.graph.Input;
 import ai.braineous.rag.prompt.observe.Console;
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -106,6 +108,9 @@ public class NexusQueryPipelineIT {
                         + RULE_SECTION
                         + "\n\n"
                         + DECISION_SECTION;
+        expectedPrompt = expectedPrompt.toLowerCase(Locale.ROOT);
+        String expectedInstructions = instructions.toLowerCase(Locale.ROOT);
+        String expectedNexus = EXPECTED_NEXUS.toLowerCase(Locale.ROOT);
 
         QueryRequest<ValidateTask> request =
                 this.buildInventoryUnavailableRequest();
@@ -150,17 +155,17 @@ public class NexusQueryPipelineIT {
         assertNotNull(execution.getRawResponse());
         assertNotNull(llmQuery);
         assertEquals(expectedPrompt, assembledPrompt);
-        assertTrue(assembledPrompt.startsWith(instructions));
-        assertTrue(assembledPrompt.contains(EXPECTED_NEXUS));
+        assertTrue(assembledPrompt.startsWith(expectedInstructions));
+        assertTrue(assembledPrompt.contains(expectedNexus));
         assertEquals(
-                assembledPrompt.indexOf(EXPECTED_NEXUS),
-                instructions.length() + 2);
+                assembledPrompt.indexOf(expectedNexus),
+                expectedInstructions.length() + 2);
         assertEquals(
                 assembledPrompt.indexOf("\n\nrule\n"),
-                instructions.length() + 2 + EXPECTED_NEXUS.length());
+                expectedInstructions.length() + 2 + expectedNexus.length());
         assertEquals(
                 assembledPrompt.indexOf("\n\ndecision\n"),
-                instructions.length() + 2 + EXPECTED_NEXUS.length() + 2 + RULE_SECTION.length());
+                expectedInstructions.length() + 2 + expectedNexus.length() + 2 + RULE_SECTION.length());
         assertFalse(assembledPrompt.contains("llm_instructions"));
         assertFalse(llmQuery.has("llm_instructions"));
         assertFalse(llmQuery.has("task"));
@@ -175,6 +180,29 @@ public class NexusQueryPipelineIT {
         assertSame(
                 request,
                 execution.getLlmResponse().getLlmRequest().getQueryRequest());
+
+        assertNotNull(execution.getArcInput());
+        JsonObject arcInput =
+                JsonParser.parseString(execution.getArcInput()).getAsJsonObject();
+        assertEquals(
+                execution.getLlmQuery().get("prompt").getAsString(),
+                arcInput.get("prompt").getAsString());
+        assertTrue(arcInput.has("stream"));
+        assertFalse(arcInput.get("stream").getAsBoolean());
+        assertEquals(
+                arcInput.get("prompt").getAsString().toLowerCase(Locale.ROOT),
+                arcInput.get("prompt").getAsString());
+
+        JsonObject developerJson = execution.toJson();
+        assertSame(execution.getLlmQuery(), developerJson);
+        assertFalse(developerJson.has("arcInput"));
+        assertFalse(developerJson.has("stream"));
+        assertFalse(developerJson.has("request"));
+        assertFalse(developerJson.has("rawResponse"));
+        assertFalse(developerJson.has("status"));
+        assertFalse(developerJson.has("stage"));
+        assertFalse(developerJson.has("ok"));
+        assertFalse(developerJson.has("llmResponse"));
     }
 
     private QueryRequest<ValidateTask> buildInventoryUnavailableRequest() {

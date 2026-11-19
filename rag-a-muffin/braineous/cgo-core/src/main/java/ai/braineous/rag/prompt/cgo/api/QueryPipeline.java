@@ -26,4 +26,13 @@ public interface QueryPipeline {
             String definition,
             String ruleSection,
             String decisionSection);
+
+    <T extends QueryTask> String executeDeveloper(
+            QueryRequest<T> request,
+            Fact axis,
+            List<String> relatedFacts,
+            String expression,
+            String definition,
+            String ruleSection,
+            String decisionSection);
 }

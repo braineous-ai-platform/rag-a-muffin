@@ -38,13 +38,18 @@ public class QueryExecutionTest {
                 llmValidation,
                 domainValidation
         );
+        JsonObject capturedArcPayload = new JsonObject();
+        capturedArcPayload.addProperty("prompt", "this is the prompt.");
+        capturedArcPayload.addProperty("stream", false);
+        String capturedArcInput = capturedArcPayload.toString();
+        exec.setArcInput(capturedArcInput);
 
         // Act
-        JsonObject json = exec.toJson();
+        JsonObject json = exec.toHistoryJson();
         Console.log("UT:QueryExecution.json:original", json.toString());
 
         QueryExecution<?> rt = QueryExecution.fromJson(json);
-        JsonObject rtJson = rt.toJson();
+        JsonObject rtJson = rt.toHistoryJson();
         Console.log("UT:QueryExecution.json:rehydrated", rtJson.toString());
 
         // Assert: request exists and task type preserved
@@ -79,6 +84,21 @@ public class QueryExecutionTest {
         org.junit.jupiter.api.Assertions.assertEquals("ERROR", rt.getStatus());
         org.junit.jupiter.api.Assertions.assertNotNull(rt.getPrimaryValidation());
         org.junit.jupiter.api.Assertions.assertEquals("CONTRACT_VIOLATION", rt.getPrimaryValidation().getCode());
+
+        org.junit.jupiter.api.Assertions.assertEquals(capturedArcInput, rt.getArcInput());
+        org.junit.jupiter.api.Assertions.assertTrue(json.has("arcInput"));
+        org.junit.jupiter.api.Assertions.assertEquals(capturedArcInput, json.get("arcInput").getAsString());
+        org.junit.jupiter.api.Assertions.assertEquals(capturedArcInput, rtJson.get("arcInput").getAsString());
+        JsonObject restoredArcInput =
+                com.google.gson.JsonParser.parseString(rt.getArcInput()).getAsJsonObject();
+        org.junit.jupiter.api.Assertions.assertEquals(
+                "this is the prompt.",
+                restoredArcInput.get("prompt").getAsString());
+        org.junit.jupiter.api.Assertions.assertFalse(restoredArcInput.get("stream").getAsBoolean());
+
+        JsonObject developerJson = exec.toJson();
+        org.junit.jupiter.api.Assertions.assertFalse(developerJson.has("arcInput"));
+        org.junit.jupiter.api.Assertions.assertFalse(rt.toJson().has("arcInput"));
 
         // Small observability snapshot
         ValidationResult primary = rt.getPrimaryValidation();
@@ -129,7 +149,7 @@ public class QueryExecutionTest {
         );
 
         // Act
-        JsonObject json = exec.toJson();
+        JsonObject json = exec.toHistoryJson();
         Console.log("UT:QueryExecution.toJson:null_shape", json.toString());
 
         // Assert: keys exist
@@ -195,7 +215,7 @@ public class QueryExecutionTest {
                 null
         );
 
-        JsonObject json = exec.toJson();
+        JsonObject json = exec.toHistoryJson();
 
         // Tamper derived fields (should be ignored)
         json.addProperty("ok", true);
